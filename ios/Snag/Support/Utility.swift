@@ -33,4 +33,19 @@ class SnagUtility {
         return "macOS \(os)"
         #endif
     }
+    
+    static func appIcon() -> String? {
+        #if canImport(UIKit)
+        guard let icons = Bundle.main.infoDictionary?["CFBundleIcons"] as? [String: Any],
+              let primaryIcon = icons["CFBundlePrimaryIcon"] as? [String: Any],
+              let iconFiles = primaryIcon["CFBundleIconFiles"] as? [String],
+              let lastIcon = iconFiles.last,
+              let image = UIImage(named: lastIcon) else {
+            return nil
+        }
+        return image.pngData()?.base64EncodedString()
+        #else
+        return nil
+        #endif
+    }
 }

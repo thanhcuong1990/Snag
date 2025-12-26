@@ -2,7 +2,8 @@ import Cocoa
 
 class SnagProjectController: NSObject, ObservableObject {
     
-    var projectName: String?
+    @Published var projectName: String?
+    @Published var appIcon: String?
     
     @Published var deviceControllers: [SnagDeviceController] = []
     @Published var selectedDeviceController: SnagDeviceController? {
@@ -13,6 +14,14 @@ class SnagProjectController: NSObject, ObservableObject {
     
     @discardableResult
     func addPacket(newPacket: SnagPacket) -> Bool {
+        
+        if self.projectName == nil {
+            self.projectName = newPacket.project?.projectName
+        }
+        
+        if self.appIcon == nil {
+            self.appIcon = newPacket.project?.appIcon
+        }
         
         for deviceController in self.deviceControllers {
             

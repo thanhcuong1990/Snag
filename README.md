@@ -89,13 +89,25 @@ For detailed instructions on how to publish this package yourself, see [android/
 Start the client and add the **OkHttp** interceptor:
 
 ```kotlin
+
 // 1. Initialise in Application class
+import com.snag.Snag
 Snag.start(context)
 
-// 2. Add to OkHttpClient
+// 2. Add to OkHttpClient (Standard)
+import com.snag.SnagInterceptor
 val okHttpClient = OkHttpClient.Builder()
     .addInterceptor(SnagInterceptor.getInstance())
     .build()
+
+// OR: Add to OkHttpClient (Reflection-safe for Production)
+private fun OkHttpClient.Builder.addSnagIfAvailable() {
+    try {
+        val interceptor = Class.forName("com.snag.SnagInterceptor")
+            .getMethod("getInstance").invoke(null) as okhttp3.Interceptor
+        addInterceptor(interceptor)
+    } catch (_: Throwable) {}
+}
 ```
 
 ---
