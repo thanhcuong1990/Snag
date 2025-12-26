@@ -79,7 +79,7 @@ Snag.start(configuration: config)
 Add the dependency to your `build.gradle`:
 
 ```groovy
-implementation 'io.github.thanhcuong1990:snag:1.0.0'
+implementation 'io.github.thanhcuong1990:snag:1.0.1'
 ```
 
 For detailed instructions on how to publish this package yourself, see [android/publishing.md](android/publishing.md).
