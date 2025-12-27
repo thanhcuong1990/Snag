@@ -9,7 +9,7 @@ plugins {
 }
 
 mavenPublishing {
-    coordinates("io.github.thanhcuong1990", "snag", "1.0.3")
+    coordinates("io.github.thanhcuong1990", "snag", "1.0.4")
     publishToMavenCentral(SonatypeHost.CENTRAL_PORTAL, automaticRelease = false)
     configure(AndroidSingleVariantLibrary())
 
@@ -65,7 +65,7 @@ android {
 
     buildTypes {
         release {
-            isMinifyEnabled = true
+            isMinifyEnabled = false
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"

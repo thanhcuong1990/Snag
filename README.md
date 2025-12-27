@@ -79,7 +79,7 @@ Snag.start(configuration: config)
 Add the dependency to your `build.gradle`:
 
 ```groovy
-implementation 'io.github.thanhcuong1990:snag:1.0.3'
+implementation 'io.github.thanhcuong1990:snag:1.0.4'
 ```
 
 For detailed instructions on how to publish this package yourself, see [android/publishing.md](android/publishing.md).
@@ -88,25 +88,116 @@ For detailed instructions on how to publish this package yourself, see [android/
 
 Start the client and add the **OkHttp** interceptor:
 
+> Important: Only enable Snag in **non-production** builds (e.g. debug/staging). Do not initialize Snag or attach the interceptor in release/production.
+
+In the snippets below, `BuildConfig` refers to your **app module** `BuildConfig`.
+
+**Option A: Simple Android setup (you control the OkHttpClient)**
+
 ```kotlin
 
-// 1. Initialise in Application class
+import android.content.Context
 import com.snag.Snag
-Snag.start(context)
 
-// 2. Add to OkHttpClient (Standard)
+fun initSnagIfNonProd(context: Context) {
+  if (BuildConfig.DEBUG || BuildConfig.FLAVOR == "staging") {
+    Snag.start(context.applicationContext)
+  }
+}
+```
+
+```kotlin
 import com.snag.SnagInterceptor
-val okHttpClient = OkHttpClient.Builder()
-    .addInterceptor(SnagInterceptor.getInstance())
-    .build()
+import okhttp3.OkHttpClient
 
-// OR: Add to OkHttpClient (Reflection-safe for Production)
-private fun OkHttpClient.Builder.addSnagIfAvailable() {
+fun buildOkHttpClient(): OkHttpClient {
+  val builder = OkHttpClient.Builder()
+  if (BuildConfig.DEBUG || BuildConfig.FLAVOR == "staging") {
+    builder.addInterceptor(SnagInterceptor.getInstance())
+  }
+  return builder.build()
+}
+```
+
+**Option B: React Native setup (OkHttpClientProvider + reflection-safe initializer)**
+
+Create `NetworkDebugInitializer.kt` (for example: `android/app/src/main/java/your/package/name/NetworkDebugInitializer.kt`)
+
+```kotlin
+package your.package.name
+
+import android.content.Context
+import android.util.Log
+import com.facebook.react.modules.network.OkHttpClientProvider
+import okhttp3.Interceptor
+import okhttp3.OkHttpClient
+
+object NetworkDebugInitializer {
+
+  private const val TAG = "NetworkDebugInitializer"
+  private const val SNAG_CLASS = "com.snag.Snag"
+  private const val SNAG_INTERCEPTOR_CLASS = "com.snag.SnagInterceptor"
+
+  private val isDebugOrStaging: Boolean
+    get() = BuildConfig.DEBUG || BuildConfig.FLAVOR == "staging"
+
+  fun initForReactNative(context: Context, existingBuilder: OkHttpClient.Builder? = null): Boolean {
+    if (!isDebugOrStaging || !isAvailable()) return false
+
+    startIfAvailable(context)
+    configureOkHttpClientProvider(context, existingBuilder)
+    return true
+  }
+
+  fun isAvailable(): Boolean =
     try {
-        val interceptor = Class.forName("com.snag.SnagInterceptor")
-            .getMethod("getInstance").invoke(null) as okhttp3.Interceptor
-        addInterceptor(interceptor)
-    } catch (_: Throwable) {}
+      Class.forName(SNAG_CLASS)
+      Class.forName(SNAG_INTERCEPTOR_CLASS)
+      true
+    } catch (_: Throwable) {
+      false
+    }
+
+  private fun startIfAvailable(context: Context) =
+    runCatching {
+        val snagClass = Class.forName(SNAG_CLASS)
+        val startMethod = snagClass.getMethod("start", Context::class.java)
+        startMethod.invoke(null, context)
+      }
+      .onFailure { Log.d(TAG, "Snag.start() not available: ${it.message}") }
+
+  private fun configureOkHttpClientProvider(
+    context: Context,
+    existingBuilder: OkHttpClient.Builder? = null,
+  ) {
+    val appContext = context.applicationContext
+    OkHttpClientProvider.setOkHttpClientFactory {
+      val builder = existingBuilder ?: OkHttpClientProvider.createClientBuilder(appContext)
+      addSnagInterceptorIfAvailable(builder)
+      builder.build()
+    }
+  }
+
+  private fun addSnagInterceptorIfAvailable(builder: OkHttpClient.Builder) {
+    if (builder.interceptors().any { it.javaClass.name == SNAG_INTERCEPTOR_CLASS }) return
+
+    runCatching {
+        val interceptorClass = Class.forName(SNAG_INTERCEPTOR_CLASS)
+        val getInstanceMethod = interceptorClass.getMethod("getInstance")
+        val interceptor = getInstanceMethod.invoke(null) as? Interceptor
+        interceptor?.let(builder::addInterceptor) ?: Log.d(TAG, "SnagInterceptor instance is null")
+      }
+      .onFailure { Log.d(TAG, "SnagInterceptor not available: ${it.message}") }
+  }
+}
+```
+
+Call it from your `MainApplication.kt`:
+
+```kotlin
+override fun onCreate() {
+  super.onCreate()
+  NetworkDebugInitializer.initForReactNative(applicationContext)
 }
 ```
 
