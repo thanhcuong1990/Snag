@@ -18,9 +18,59 @@ class SnagUtility {
     
     static func deviceName() -> String {
         #if canImport(UIKit)
-        return UIDevice.current.name
+        let explicitName = UIDevice.current.name.trimmingCharacters(in: .whitespacesAndNewlines)
+        let model = UIDevice.current.model.trimmingCharacters(in: .whitespacesAndNewlines)
+        let modelName = self.deviceModelName() ?? model
+        
+        if explicitName.isEmpty {
+            return modelName
+        }
+        
+        if explicitName.caseInsensitiveCompare(model) == .orderedSame {
+            return modelName
+        }
+        
+        return explicitName
         #else
         return Host.current().name ?? "Unknown Device"
+        #endif
+    }
+
+    static func deviceModelName() -> String? {
+        #if canImport(UIKit)
+        let identifier = self.deviceModelIdentifier()
+        guard let identifier, !identifier.isEmpty else { return nil }
+        
+        let map: [String: String] = [
+            "iPhone15,4": "iPhone 15",
+            "iPhone15,5": "iPhone 15 Plus",
+            "iPhone16,1": "iPhone 15 Pro",
+            "iPhone16,2": "iPhone 15 Pro Max"
+        ]
+        
+        return map[identifier] ?? identifier
+        #else
+        return nil
+        #endif
+    }
+
+    static func deviceModelIdentifier() -> String? {
+        #if canImport(UIKit)
+        if let simId = ProcessInfo.processInfo.environment["SIMULATOR_MODEL_IDENTIFIER"], !simId.isEmpty {
+            return simId
+        }
+        
+        var systemInfo = utsname()
+        uname(&systemInfo)
+        
+        let machine = withUnsafePointer(to: &systemInfo.machine) { ptr -> String in
+            let int8Ptr = UnsafeRawPointer(ptr).assumingMemoryBound(to: CChar.self)
+            return String(cString: int8Ptr)
+        }
+        
+        return machine
+        #else
+        return nil
         #endif
     }
     

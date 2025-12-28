@@ -38,9 +38,10 @@
 		<string>UIInterfaceOrientationLandscapeRight</string>
 	</array>
 	<key>NSLocalNetworkUsageDescription</key>
-	<string>Snag needs access to your local network to send captured requests to the Snag macOS app.</string>
+	<string>This app uses the local network to discover nearby devices using Bonjour.</string>
 	<key>NSBonjourServices</key>
 	<array>
+		<string>_http._tcp</string>
 		<string>_Snag._tcp</string>
 	</array>
 </dict>

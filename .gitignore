@@ -86,3 +86,4 @@ Carthage/Build/
 # Uncomment the next line if you would like to ignore the Xcode workspace files
 # *.xcworkspace
 .build/
+dist/

@@ -31,6 +31,22 @@
 2. Open `mac/Snag.xcodeproj` in Xcode.
 3. Build and Run.
 
+### Build DMG + upload to GitHub Releases (local)
+
+Prerequisites:
+
+- `gh` installed and authenticated (`gh auth login`)
+- Xcode command line tools installed
+
+Commands:
+
+```bash
+chmod +x scripts/release_macos_dmg.sh
+./scripts/release_macos_dmg.sh
+```
+
+This builds `Snag.app` (Release, signing disabled), creates `dist/Snag_<version>.dmg`, then uploads it to the GitHub Release tag `v<version>` (derived from `mac/Snag/Info.plist`).
+
 ---
 
 ## 📱 iOS Integration
@@ -58,6 +74,19 @@ import Snag
 #if DEBUG
 Snag.start()
 #endif
+```
+
+### Local Network permissions (required on real devices)
+
+Add the following to your app's `Info.plist` to allow Bonjour discovery on a real device:
+
+```xml
+<key>NSLocalNetworkUsageDescription</key>
+<string>This app uses the local network to discover nearby devices using Bonjour.</string>
+<key>NSBonjourServices</key>
+<array>
+    <string>_Snag._tcp</string>
+</array>
 ```
 
 ### Configuration (Optional)
