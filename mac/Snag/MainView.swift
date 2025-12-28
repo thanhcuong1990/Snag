@@ -29,8 +29,6 @@ struct MainView: View {
 }
 
 // MARK: - View Controller Wrappers
-// These allow us to keep the existing ViewControllers (which now host SwiftUI views) 
-// but arrange them in a SwiftUI layout.
 
 struct ProjectsViewControllerWrapper: NSViewControllerRepresentable {
     func makeNSViewController(context: Context) -> ProjectsViewController {
