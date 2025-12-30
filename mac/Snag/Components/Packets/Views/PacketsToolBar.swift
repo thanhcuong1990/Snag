@@ -4,6 +4,8 @@ struct PacketsToolBar: View {
     @ObservedObject var viewModelWrapper: PacketsViewModelWrapper
     @FocusState.Binding var isAddressFilterFocused: Bool
     
+    @ObservedObject private var searchViewModel = SearchViewModel.shared
+    
     var body: some View {
         GeometryReader { geo in
             VStack(spacing: 0) {
@@ -30,6 +32,17 @@ struct PacketsToolBar: View {
         .padding(.vertical, 4)
         .background(Color.controlBackgroundColor)
         .overlay(Divider(), alignment: .bottom)
+        .onAppear {
+            // Apply persistence on load
+            viewModelWrapper.addressFilter = searchViewModel.searchText
+            viewModelWrapper.updateFilters()
+            
+            // Link SearchViewModel to PacketsViewModelWrapper
+            searchViewModel.onApplyFilter = { text in
+                viewModelWrapper.addressFilter = text
+                viewModelWrapper.updateFilters()
+            }
+        }
     }
     
     private var domainRow: some View {
@@ -54,8 +67,11 @@ struct PacketsToolBar: View {
             .foregroundColor(isSelected ? .primary : .secondary)
             .contentShape(Rectangle())
             .onTapGesture {
-                viewModelWrapper.addressFilter = domain.lowercased()
-                viewModelWrapper.updateFilters()
+                let text = domain.lowercased()
+                // Update SearchViewModel (which updates wrapper via binding/callback)
+                searchViewModel.searchText = text
+                // Force immediate update
+                searchViewModel.submitSearch()
                 isAddressFilterFocused = true
             }
     }
@@ -101,11 +117,28 @@ struct PacketsToolBar: View {
                 .foregroundColor(.secondary)
                 .font(.system(size: 11))
             
-            TextField("Filter URL...", text: $viewModelWrapper.addressFilter)
-                .textFieldStyle(PlainTextFieldStyle())
-                .font(.system(size: 11))
-                .focused($isAddressFilterFocused)
-                .onChange(of: viewModelWrapper.addressFilter) { _ in viewModelWrapper.updateFilters() }
+            ZStack(alignment: .trailing) {
+                TextField("Filter URL...", text: $searchViewModel.searchText)
+                    .textFieldStyle(PlainTextFieldStyle())
+                    .font(.system(size: 11))
+                    .focused($isAddressFilterFocused)
+                    .onSubmit {
+                        searchViewModel.submitSearch()
+                    }
+                    .padding(.trailing, 16)
+                
+                if !searchViewModel.searchText.isEmpty {
+                    Button(action: {
+                        searchViewModel.searchText = ""
+                        searchViewModel.submitSearch()
+                    }) {
+                        Image(systemName: "xmark.circle.fill")
+                            .foregroundColor(.secondary)
+                            .font(.system(size: 11))
+                    }
+                    .buttonStyle(PlainButtonStyle())
+                }
+            }
             
             Divider().frame(height: 14)
             

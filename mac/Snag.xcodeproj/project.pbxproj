@@ -16,6 +16,11 @@
 		A50374E62EFDAA3700FA0067 /* Constants.swift in Sources */ = {isa = PBXBuildFile; fileRef = A50374E42EFDAA3700FA0067 /* Constants.swift */; };
 		A50374E72EFDAA3700FA0067 /* SnagMenu.swift in Sources */ = {isa = PBXBuildFile; fileRef = A50374E52EFDAA3700FA0067 /* SnagMenu.swift */; };
 		A50374EA2EFDAA5300FA0067 /* NSWindow+Setup.swift in Sources */ = {isa = PBXBuildFile; fileRef = A50374E82EFDAA5300FA0067 /* NSWindow+Setup.swift */; };
+		A51C9AAF2F03A7D6009E7B66 /* SearchViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = A51C9AAE2F03A7D6009E7B66 /* SearchViewModel.swift */; };
+		A51C9AB42F03AB45009E7B66 /* RecentSearchRow.swift in Sources */ = {isa = PBXBuildFile; fileRef = A51C9AB12F03AB45009E7B66 /* RecentSearchRow.swift */; };
+		A51C9AB52F03AB45009E7B66 /* SidebarDeviceRow.swift in Sources */ = {isa = PBXBuildFile; fileRef = A51C9AB22F03AB45009E7B66 /* SidebarDeviceRow.swift */; };
+		A51C9AB62F03AB45009E7B66 /* EmptySidebarState.swift in Sources */ = {isa = PBXBuildFile; fileRef = A51C9AB02F03AB45009E7B66 /* EmptySidebarState.swift */; };
+		A51C9AB72F03AB45009E7B66 /* SidebarProjectHeader.swift in Sources */ = {isa = PBXBuildFile; fileRef = A51C9AB32F03AB45009E7B66 /* SidebarProjectHeader.swift */; };
 		A530145C2EFC5AB7008A8420 /* JSONWebView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A530144E2EFC5AB7008A8420 /* JSONWebView.swift */; };
 		A530145D2EFC5AB7008A8420 /* DetailsTheme.swift in Sources */ = {isa = PBXBuildFile; fileRef = A53014512EFC5AB7008A8420 /* DetailsTheme.swift */; };
 		A530145E2EFC5AB7008A8420 /* OverviewView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A530145A2EFC5AB7008A8420 /* OverviewView.swift */; };
@@ -112,6 +117,11 @@
 		A50374E42EFDAA3700FA0067 /* Constants.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Constants.swift; sourceTree = "<group>"; };
 		A50374E52EFDAA3700FA0067 /* SnagMenu.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SnagMenu.swift; sourceTree = "<group>"; };
 		A50374E82EFDAA5300FA0067 /* NSWindow+Setup.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "NSWindow+Setup.swift"; sourceTree = "<group>"; };
+		A51C9AAE2F03A7D6009E7B66 /* SearchViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SearchViewModel.swift; sourceTree = "<group>"; };
+		A51C9AB02F03AB45009E7B66 /* EmptySidebarState.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EmptySidebarState.swift; sourceTree = "<group>"; };
+		A51C9AB12F03AB45009E7B66 /* RecentSearchRow.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RecentSearchRow.swift; sourceTree = "<group>"; };
+		A51C9AB22F03AB45009E7B66 /* SidebarDeviceRow.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SidebarDeviceRow.swift; sourceTree = "<group>"; };
+		A51C9AB32F03AB45009E7B66 /* SidebarProjectHeader.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SidebarProjectHeader.swift; sourceTree = "<group>"; };
 		A530144C2EFC5AB7008A8420 /* CodeTextView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CodeTextView.swift; sourceTree = "<group>"; };
 		A530144D2EFC5AB7008A8420 /* CurlHighlightedTextView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CurlHighlightedTextView.swift; sourceTree = "<group>"; };
 		A530144E2EFC5AB7008A8420 /* JSONWebView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = JSONWebView.swift; sourceTree = "<group>"; };
@@ -332,6 +342,10 @@
 		A556F1182EF3E3DB004B8A98 /* Sidebar */ = {
 			isa = PBXGroup;
 			children = (
+				A51C9AB02F03AB45009E7B66 /* EmptySidebarState.swift */,
+				A51C9AB12F03AB45009E7B66 /* RecentSearchRow.swift */,
+				A51C9AB22F03AB45009E7B66 /* SidebarDeviceRow.swift */,
+				A51C9AB32F03AB45009E7B66 /* SidebarProjectHeader.swift */,
 				A556F1172EF3E3DB004B8A98 /* SidebarView.swift */,
 			);
 			path = Sidebar;
@@ -509,6 +523,7 @@
 		BCFC853421383641001EC6D7 /* Packets */ = {
 			isa = PBXGroup;
 			children = (
+				A51C9AAE2F03A7D6009E7B66 /* SearchViewModel.swift */,
 				A50374E12EFDA7B300FA0067 /* Views */,
 				A53014682EFCE427008A8420 /* PacketRowView.swift */,
 				A53014692EFCE427008A8420 /* PacketsViewModelWrapper.swift */,
@@ -715,6 +730,7 @@
 				A556F1192EF3E3DB004B8A98 /* SidebarView.swift in Sources */,
 				BCEB9AB9217DD653008BBF3C /* Date.swift in Sources */,
 				BCF47D04216BA0B400BC144A /* TextStyles.swift in Sources */,
+				A51C9AAF2F03A7D6009E7B66 /* SearchViewModel.swift in Sources */,
 				BC911A472168EB0A00B755D4 /* ContentBar.swift in Sources */,
 				BCFC85332138354D001EC6D7 /* DevicesViewController.swift in Sources */,
 				BC32643621738AF0006452FE /* KeyValueRepresentation.swift in Sources */,
@@ -732,6 +748,10 @@
 				A54C27E82EF71557000C8FD2 /* SnagPacket.swift in Sources */,
 				A54C27E92EF71557000C8FD2 /* SnagDeviceModel.swift in Sources */,
 				BC7E67E7216E181400E1289E /* DataJSONRepresentation.swift in Sources */,
+				A51C9AB42F03AB45009E7B66 /* RecentSearchRow.swift in Sources */,
+				A51C9AB52F03AB45009E7B66 /* SidebarDeviceRow.swift in Sources */,
+				A51C9AB62F03AB45009E7B66 /* EmptySidebarState.swift in Sources */,
+				A51C9AB72F03AB45009E7B66 /* SidebarProjectHeader.swift in Sources */,
 				A556F1122EF3BDF9004B8A98 /* DevicesView.swift in Sources */,
 				BCFC854021384667001EC6D7 /* ProjectsViewModel.swift in Sources */,
 				BCB6FD6921627D5400D6F03C /* TransparentSplitView.swift in Sources */,
