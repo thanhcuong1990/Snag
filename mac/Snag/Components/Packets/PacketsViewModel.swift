@@ -13,6 +13,56 @@ enum PacketFilterCategory: String, CaseIterable {
 
 class PacketsViewModel: BaseListViewModel<SnagPacket>  {
     
+    private static let mediaPathExtensions: Set<String> = [
+        "png", "jpg", "jpeg", "gif", "webp", "heic", "heif", "bmp", "tiff", "tif", "svg", "ico",
+        "mp4", "m4v", "mov", "webm", "mkv", "avi", "mpeg", "mpg", "m3u8", "ts",
+        "mp3", "m4a", "aac", "wav", "ogg", "oga", "flac", "opus"
+    ]
+    
+    private static let nonFetchAssetPathExtensions: Set<String> = [
+        "js", "mjs", "css",
+        "woff", "woff2", "ttf", "otf", "eot",
+        "map",
+        "json",
+        "pdf"
+    ]
+    
+    private func urlPathExtension(_ urlString: String?) -> String? {
+        guard var s = urlString?.lowercased(), !s.isEmpty else { return nil }
+        if let q = s.firstIndex(of: "?") { s = String(s[..<q]) }
+        if let h = s.firstIndex(of: "#") { s = String(s[..<h]) }
+        if let slash = s.lastIndex(of: "/") { s = String(s[s.index(after: slash)...]) }
+        guard let dot = s.lastIndex(of: "."), dot < s.index(before: s.endIndex) else { return nil }
+        return String(s[s.index(after: dot)...])
+    }
+    
+    private func isMediaPacket(_ packet: SnagPacket) -> Bool {
+        if let contentType = packet.requestInfo?.responseContentType?.lowercased() {
+            return contentType.contains("image") || contentType.contains("video") || contentType.contains("audio")
+        }
+        if let ext = urlPathExtension(packet.requestInfo?.url) {
+            return Self.mediaPathExtensions.contains(ext)
+        }
+        return false
+    }
+    
+    private func isNonFetchAssetPacket(_ packet: SnagPacket) -> Bool {
+        if let contentType = packet.requestInfo?.responseContentType?.lowercased() {
+            if contentType.contains("image") || contentType.contains("video") || contentType.contains("audio") {
+                return true
+            }
+            if contentType.contains("javascript") || contentType.contains("css") || contentType.contains("font") {
+                return true
+            }
+            return false
+        }
+        if let ext = urlPathExtension(packet.requestInfo?.url) {
+            if Self.mediaPathExtensions.contains(ext) { return true }
+            if Self.nonFetchAssetPathExtensions.contains(ext) { return true }
+        }
+        return false
+    }
+    
     var categoryFilter: PacketFilterCategory = .all {
         didSet {
             self.refreshItems()
@@ -83,21 +133,12 @@ class PacketsViewModel: BaseListViewModel<SnagPacket>  {
         case .all:
             return items
         case .fetchXHR:
-            // Fetch/XHR typically means main API requests, excluding common static assets
             return items.filter { packet in
-                guard let contentType = packet.requestInfo?.responseContentType?.lowercased() else { return true }
-                return !contentType.contains("image") && 
-                       !contentType.contains("video") && 
-                       !contentType.contains("audio") &&
-                       !contentType.contains("javascript") &&
-                       !contentType.contains("css")
+                return !isNonFetchAssetPacket(packet)
             }
         case .media:
             return items.filter { packet in
-                guard let contentType = packet.requestInfo?.responseContentType?.lowercased() else { return false }
-                return contentType.contains("image") || 
-                       contentType.contains("video") || 
-                       contentType.contains("audio")
+                return isMediaPacket(packet)
             }
         case .status1xx:
             return items.filter { $0.requestInfo?.statusCode?.prefix(1) == "1" }
@@ -113,12 +154,16 @@ class PacketsViewModel: BaseListViewModel<SnagPacket>  {
     }
     
     func performAddressFiltration(_ items: [SnagPacket])  -> [SnagPacket] {
-        guard addressFilterTerm.count > 0 else {
+        let term = addressFilterTerm.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !term.isEmpty else {
             return items
         }
         
+        let lowerTerm = term.lowercased()
         return items.filter {
-            $0.requestInfo?.url?.contains(self.addressFilterTerm) ?? true }
+            guard let url = $0.requestInfo?.url else { return true }
+            return url.lowercased().contains(lowerTerm)
+        }
     }
     
     func performMethodFiltration(_ items: [SnagPacket])  -> [SnagPacket] {

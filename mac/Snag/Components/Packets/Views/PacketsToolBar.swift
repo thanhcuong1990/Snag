@@ -6,23 +6,93 @@ struct PacketsToolBar: View {
     
     var body: some View {
         GeometryReader { geo in
-            HStack(spacing: 0) {
-                filterInputs
-                    .frame(width: geo.size.width * 0.5, alignment: .leading)
+            VStack(spacing: 0) {
+                HStack(spacing: 0) {
+                    filterInputs
+                        .frame(width: geo.size.width * 0.5, alignment: .leading)
+                    
+                    categoryFilters.padding(.leading, 30)
+                    
+                    Spacer()
+                    
+                    trashButton
+                }
+                .frame(height: 32)
                 
-                categoryFilters.padding(.leading, 30)
-                
-                Spacer()
-                
-                trashButton
+                if !domains.isEmpty {
+                    domainRow
+                }
             }
-            .frame(width: geo.size.width, height: geo.size.height)
+            .frame(width: geo.size.width, height: geo.size.height, alignment: .topLeading)
         }
-        .frame(height: 32)
+        .frame(height: domains.isEmpty ? 32 : 54)
         .padding(.horizontal, 12)
         .padding(.vertical, 4)
         .background(Color.controlBackgroundColor)
         .overlay(Divider(), alignment: .bottom)
+    }
+    
+    private var domainRow: some View {
+        ScrollView(.horizontal, showsIndicators: false) {
+            HStack(spacing: 6) {
+                ForEach(domains, id: \.self) { domain in
+                    domainChip(domain)
+                }
+            }
+            .padding(.vertical, 2)
+        }
+    }
+    
+    private func domainChip(_ domain: String) -> some View {
+        let isSelected = viewModelWrapper.addressFilter.lowercased() == domain.lowercased()
+        return Text(domain)
+            .font(.system(size: 11, weight: isSelected ? .semibold : .regular))
+            .padding(.horizontal, 8)
+            .padding(.vertical, 3)
+            .background(Color.secondary.opacity(isSelected ? 0.18 : 0.12))
+            .cornerRadius(4)
+            .foregroundColor(isSelected ? .primary : .secondary)
+            .contentShape(Rectangle())
+            .onTapGesture {
+                viewModelWrapper.addressFilter = domain.lowercased()
+                viewModelWrapper.updateFilters()
+                isAddressFilterFocused = true
+            }
+    }
+    
+    private var domains: [String] {
+        var counts: [String: Int] = [:]
+        let sourceItems = SnagController.shared.selectedProjectController?.selectedDeviceController?.packets ?? []
+        for item in sourceItems {
+            guard let s = item.requestInfo?.url, let domain = extractDomain(s) else { continue }
+            let main = mainDomain(domain)
+            counts[main, default: 0] += 1
+        }
+        return counts.keys.sorted { a, b in
+            let ca = counts[a, default: 0]
+            let cb = counts[b, default: 0]
+            if ca != cb { return ca > cb }
+            return a.localizedCaseInsensitiveCompare(b) == .orderedAscending
+        }
+    }
+    
+    private func extractDomain(_ urlString: String) -> String? {
+        let s = urlString.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !s.isEmpty else { return nil }
+        if let host = URL(string: s)?.host, !host.isEmpty { return host }
+        if !s.contains("://"), let host = URL(string: "https://" + s)?.host, !host.isEmpty { return host }
+        return nil
+    }
+
+    private func mainDomain(_ host: String) -> String {
+        let h = host.lowercased().trimmingCharacters(in: CharacterSet(charactersIn: "."))
+        if h.isEmpty { return host }
+        if h == "localhost" { return h }
+        if h.contains(":") { return h }
+        let parts = h.split(separator: ".").map { String($0) }
+        if parts.count < 2 { return h }
+        if parts.allSatisfy({ $0.allSatisfy(\.isNumber) }) { return h }
+        return parts.suffix(2).joined(separator: ".")
     }
     
     private var filterInputs: some View {
