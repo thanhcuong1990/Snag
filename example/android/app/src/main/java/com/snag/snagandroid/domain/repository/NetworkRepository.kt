@@ -13,6 +13,7 @@ interface NetworkRepository {
     suspend fun deletePost(): Result<String>
     suspend fun getImage(): Result<List<Any>> // Using List<Any> to hold bitmap or data info as simple return type
     suspend fun getLargeJson(): Result<String>
+    suspend fun postLargeJson(body: JsonObject): Result<String>
     suspend fun slowRequest(): Result<String>
     suspend fun multipartUpload(imagePart: MultipartBody.Part, titlePart: RequestBody): Result<String>
     suspend fun authenticatedRequest(auth: String): Result<String>

@@ -3,17 +3,45 @@ import SwiftUI
 struct DataDetailView: View {
     @ObservedObject var viewModel: DataViewModel
     @Environment(\.colorScheme) var colorScheme
-    @State private var dataRepresentation: DataRepresentation?
     @State private var isRaw: Bool = false
     
     var body: some View {
         VStack(spacing: 0) {
-            if let data = dataRepresentation {
+            if viewModel.isLoading {
+                Spacer()
+                ProgressView()
+                    .controlSize(.small)
+                Spacer()
+            } else if let data = viewModel.dataRepresentation {
                 if data.type == .image {
                     // Image display
                     ImageContentView(data: data.originalData)
                 } else if data.type == .json && !isRaw {
-                    JSONWebView(jsonString: data.rawString ?? "")
+                    let size = data.originalData?.count ?? 0
+                    if size > 500 * 1024 { // 500KB threshold for pretty viewer
+                        VStack(spacing: 0) {
+                            HStack {
+                                Image(systemName: "info.circle")
+                                    .foregroundColor(.blue)
+                                Text("JSON is large (\(formatBytes(size))). Pretty tree-view is disabled for performance.")
+                                    .font(.system(size: 11))
+                                    .foregroundColor(.secondary)
+                                Spacer()
+                                Button("Try Anyway") {
+                                    // Maybe add a force override later
+                                }.buttonStyle(.link)
+                                .font(.system(size: 11))
+                                .hidden()
+                            }
+                            .padding(.horizontal, 10)
+                            .padding(.vertical, 8)
+                            .background(Color.blue.opacity(0.1))
+                            
+                            CodeTextView(text: data.rawString ?? "")
+                        }
+                    } else {
+                        JSONWebView(jsonString: data.rawString ?? "")
+                    }
                 } else {
                     CodeTextView(text: data.rawString ?? "")
                 }
@@ -25,7 +53,7 @@ struct DataDetailView: View {
             
             HStack(spacing: 8) {
                 // Show image info for image type
-                if dataRepresentation?.type == .image, let imageData = dataRepresentation?.originalData {
+                if viewModel.dataRepresentation?.type == .image, let imageData = viewModel.dataRepresentation?.originalData {
                     if let image = NSImage(data: imageData) {
                         Text("\(Int(image.size.width))×\(Int(image.size.height)) • \(formatBytes(imageData.count))")
                             .font(.system(size: 10, weight: .regular))
@@ -35,7 +63,7 @@ struct DataDetailView: View {
                 
                 Spacer()
                 
-                if dataRepresentation?.type == .json {
+                if viewModel.dataRepresentation?.type == .json {
                     DetailActionButton(title: "Raw", iconName: "text.quote.rtl", isSelected: isRaw) {
                         isRaw.toggle()
                     }
@@ -52,13 +80,7 @@ struct DataDetailView: View {
         .onAppear {
             viewModel.register()
             viewModel.didSelectPacket()
-            update()
-            viewModel.onChange = { update() }
         }
-    }
-    
-    private func update() {
-        dataRepresentation = viewModel.dataRepresentation
     }
     
     private func formatBytes(_ bytes: Int) -> String {

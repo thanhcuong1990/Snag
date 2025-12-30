@@ -23,14 +23,7 @@ class MainActivity : ComponentActivity() {
         enableEdgeToEdge()
         setContent {
             SnagAndroidTheme {
-                Scaffold(
-                    modifier = Modifier.fillMaxSize()
-                ) { innerPadding ->
-                    MainApp(
-                        modifier = Modifier
-                            .padding(innerPadding),
-                    )
-                }
+                MainApp(modifier = Modifier.fillMaxSize())
             }
         }
     }

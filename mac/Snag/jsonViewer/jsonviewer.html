@@ -1,599 +1,730 @@
 <!DOCTYPE html>
 <html>
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="color-scheme" content="light dark">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="color-scheme" content="light dark" />
     <style id="theme-styles">
+      :root {
+        --bg-color: #ffffff;
+        --line-number-color: #999999;
+        --line-number-bg: #ffffff;
+        --gutter-border: #e8e8e8;
+        --key-color: #0451a5;
+        --string-color: #c41a16;
+        --number-color: #1c00cf;
+        --boolean-color: #0451a5;
+        --null-color: #0451a5;
+        --bracket-color: #333333;
+        --comma-color: #333333;
+        --fold-icon-color: #999999;
+        --fold-icon-hover: #666666;
+        --hover-line-bg: rgba(0, 0, 0, 0.03);
+        --indent-guide-color: #e0e0e0;
+      }
+
+      @media (prefers-color-scheme: dark) {
         :root {
-            --bg-color: #ffffff;
-            --line-number-color: #999999;
-            --line-number-bg: #ffffff;
-            --gutter-border: #e8e8e8;
-            --key-color: #0451a5;
-            --string-color: #c41a16;
-            --number-color: #1c00cf;
-            --boolean-color: #0451a5;
-            --null-color: #0451a5;
-            --bracket-color: #333333;
-            --comma-color: #333333;
-            --fold-icon-color: #999999;
-            --fold-icon-hover: #666666;
-            --hover-line-bg: rgba(0, 0, 0, 0.03);
-            --indent-guide-color: #e0e0e0;
+          --bg-color: #282828;
+          --line-number-color: #858585;
+          --line-number-bg: #282828;
+          --gutter-border: #2d2d2d;
+          --key-color: #9cdcfe;
+          --string-color: #ce9178;
+          --number-color: #b5cea8;
+          --boolean-color: #569cd6;
+          --null-color: #569cd6;
+          --bracket-color: #d4d4d4;
+          --comma-color: #d4d4d4;
+          --fold-icon-color: #c5c5c5;
+          --fold-icon-hover: #ffffff;
+          --hover-line-bg: rgba(255, 255, 255, 0.04);
+          --indent-guide-color: #404040;
         }
+      }
 
-        @media (prefers-color-scheme: dark) {
-            :root {
-                --bg-color: #282828;
-                --line-number-color: #858585;
-                --line-number-bg: #282828;
-                --gutter-border: #2d2d2d;
-                --key-color: #9cdcfe;
-                --string-color: #ce9178;
-                --number-color: #b5cea8;
-                --boolean-color: #569cd6;
-                --null-color: #569cd6;
-                --bracket-color: #d4d4d4;
-                --comma-color: #d4d4d4;
-                --fold-icon-color: #c5c5c5;
-                --fold-icon-hover: #ffffff;
-                --hover-line-bg: rgba(255, 255, 255, 0.04);
-                --indent-guide-color: #404040;
-            }
-        }
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
 
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
+      body {
+        font-family: "SF Mono", "Monaco", "Menlo", "Consolas", monospace;
+        font-size: 11px;
+        line-height: 18px;
+        background: var(--bg-color);
+        color: var(--bracket-color);
+        overflow: hidden;
+      }
 
-        body {
-            font-family: 'SF Mono', 'Monaco', 'Menlo', 'Consolas', monospace;
-            font-size: 11px;
-            line-height: 18px;
-            background: var(--bg-color);
-            color: var(--bracket-color);
-            overflow: hidden;
-        }
+      .json-viewer {
+        display: flex;
+        height: 100vh;
+        overflow: auto;
+        background: var(--bg-color);
+      }
 
-        .json-viewer {
-            display: flex;
-            height: 100vh;
-            overflow: auto;
-            background: var(--bg-color);
-        }
+      .gutter {
+        position: sticky;
+        left: 0;
+        display: flex;
+        background: var(--bg-color);
+        border-right: 1px solid var(--gutter-border);
+        user-select: none;
+        z-index: 10;
+      }
 
-        .gutter {
-            position: sticky;
-            left: 0;
-            display: flex;
-            background: var(--bg-color);
-            border-right: 1px solid var(--gutter-border);
-            user-select: none;
-            z-index: 10;
-        }
+      .gutter-view {
+        display: flex;
+        background: var(--bg-color);
+      }
 
-        .gutter-view {
-            display: flex;
-            background: var(--bg-color);
-        }
+      .fold-column {
+        width: 18px;
+        padding: 8px 0;
+      }
 
-        .fold-column {
-            width: 18px;
-            padding: 8px 0;
-        }
+      .fold-row {
+        height: 18px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
 
-        .fold-row {
-            height: 18px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
+      .fold-icon {
+        width: 12px;
+        height: 12px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        color: var(--fold-icon-color);
+        transition: transform 0.12s ease, color 0.1s ease;
+      }
 
-        .fold-icon {
-            width: 12px;
-            height: 12px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            cursor: pointer;
-            color: var(--fold-icon-color);
-            transition: transform 0.12s ease, color 0.1s ease;
-        }
+      .fold-icon::before {
+        content: "";
+        display: inline-block;
+        width: 0;
+        height: 0;
+        border-top: 4px solid transparent;
+        border-bottom: 4px solid transparent;
+        border-left: 5px solid currentColor;
+        transform-origin: 2px 50%;
+        transform: rotate(90deg);
+      }
 
-        .fold-icon::before {
-            content: '';
-            display: inline-block;
-            width: 0;
-            height: 0;
-            border-top: 4px solid transparent;
-            border-bottom: 4px solid transparent;
-            border-left: 5px solid currentColor;
-            transform-origin: 2px 50%;
-            transform: rotate(90deg);
-        }
+      .fold-icon.collapsed::before {
+        transform: rotate(0deg);
+      }
 
-        .fold-icon.collapsed::before {
-            transform: rotate(0deg);
-        }
+      .fold-icon:hover {
+        color: var(--fold-icon-hover);
+      }
 
-        .fold-icon:hover {
-            color: var(--fold-icon-hover);
-        }
+      .line-numbers {
+        width: 32px;
+        padding: 8px 4px 8px 8px;
+        text-align: right;
+        color: var(--line-number-color);
+      }
 
-        .line-numbers {
-            width: 32px;
-            padding: 8px 4px 8px 8px;
-            text-align: right;
-            color: var(--line-number-color);
-        }
+      .line-number {
+        height: 18px;
+      }
 
-        .line-number {
-            height: 18px;
-        }
+      .json-content {
+        flex: 1;
+        padding: 8px 0 8px 0;
+        overflow: visible;
+        background: var(--bg-color);
+      }
 
-        .json-content {
-            flex: 1;
-            padding: 8px 0 8px 0;
-            overflow: visible;
-            background: var(--bg-color);
-        }
+      .json-line {
+        height: 18px;
+        white-space: nowrap;
+        position: relative;
+        padding-left: 8px;
+      }
 
-        .json-line {
-            height: 18px;
-            white-space: nowrap;
-            position: relative;
-            padding-left: 8px;
-        }
+      .json-line:hover {
+        background: var(--hover-line-bg);
+      }
 
-        .json-line:hover {
-            background: var(--hover-line-bg);
-        }
+      .json-key {
+        color: var(--key-color);
+      }
 
-        .json-key {
-            color: var(--key-color);
-        }
+      .json-string {
+        color: var(--string-color);
+      }
 
-        .json-string {
-            color: var(--string-color);
-        }
+      .json-number {
+        color: var(--number-color);
+      }
 
-        .json-number {
-            color: var(--number-color);
-        }
+      .json-boolean {
+        color: var(--boolean-color);
+      }
 
-        .json-boolean {
-            color: var(--boolean-color);
-        }
+      .json-null {
+        color: var(--null-color);
+      }
 
-        .json-null {
-            color: var(--null-color);
-        }
+      .json-bracket {
+        color: var(--bracket-color);
+      }
 
-        .json-bracket {
-            color: var(--bracket-color);
-        }
+      .json-comma {
+        color: var(--comma-color);
+      }
 
-        .json-comma {
-            color: var(--comma-color);
-        }
+      .collapsible-content {
+        overflow: hidden;
+      }
 
-        .collapsible-content {
-            overflow: hidden;
-        }
+      .collapsible-content.collapsed {
+        display: none;
+      }
 
-        .collapsible-content.collapsed {
-            display: none;
-        }
+      .collapsed-indicator {
+        color: var(--line-number-color);
+        font-style: normal;
+      }
 
-        .collapsed-indicator {
-            color: var(--line-number-color);
-            font-style: normal;
-        }
+      .collapsed-indicator.hidden {
+        display: none;
+      }
 
-        .collapsed-indicator.hidden {
-            display: none;
-        }
+      .indent-wrapper {
+        display: inline-block;
+        position: relative;
+      }
 
-        .indent-wrapper {
-            display: inline-block;
-            position: relative;
-        }
+      .indent-guide {
+        position: absolute;
+        top: 0;
+        bottom: 0;
+        width: 1px;
+        background: var(--indent-guide-color);
+      }
 
-        .indent-guide {
-            position: absolute;
-            top: 0;
-            bottom: 0;
-            width: 1px;
-            background: var(--indent-guide-color);
-        }
+      .indent {
+        display: inline-block;
+        white-space: pre;
+      }
 
-        .indent {
-            display: inline-block;
-            white-space: pre;
-        }
+      .json-error {
+        color: #d32f2f;
+        padding: 20px;
+        white-space: pre-wrap;
+        font-family: inherit;
+      }
 
-        .json-error {
-            color: #d32f2f;
-            padding: 20px;
-            white-space: pre-wrap;
-            font-family: inherit;
-        }
+      ::-webkit-scrollbar {
+        width: 10px;
+        height: 10px;
+      }
 
-        ::-webkit-scrollbar {
-            width: 10px;
-            height: 10px;
-        }
+      ::-webkit-scrollbar-track {
+        background: var(--bg-color);
+      }
 
-        ::-webkit-scrollbar-track {
-            background: var(--bg-color);
-        }
+      ::-webkit-scrollbar-thumb {
+        background: #c1c1c1;
+        border-radius: 5px;
+      }
 
-        ::-webkit-scrollbar-thumb {
-            background: #c1c1c1;
-            border-radius: 5px;
-        }
+      ::-webkit-scrollbar-thumb:hover {
+        background: #a8a8a8;
+      }
 
-        ::-webkit-scrollbar-thumb:hover {
-            background: #a8a8a8;
-        }
-
-        ::-webkit-scrollbar-corner {
-            background: var(--bg-color);
-        }
+      ::-webkit-scrollbar-corner {
+        background: var(--bg-color);
+      }
     </style>
-</head>
-<body>
+  </head>
+  <body>
     <div id="json-viewer" class="json-viewer">
-        <div class="gutter">
-            <div class="gutter-view">
-                <div class="line-numbers" id="line-numbers"></div>
-                <div class="fold-column" id="fold-column"></div>
-            </div>
+      <div class="gutter">
+        <div class="gutter-view">
+          <div class="line-numbers" id="line-numbers"></div>
+          <div class="fold-column" id="fold-column"></div>
         </div>
-        <div class="json-content" id="json-content"></div>
+      </div>
+      <div class="json-content" id="json-content"></div>
     </div>
 
     <script>
-        class ProxymanJsonViewer {
-            constructor() {
-                this.lineCount = 0;
-                this.indentSize = 2;
-                this.lines = [];
-            }
-
-            render(json) {
-                this.lineCount = 0;
-                this.lines = [];
-                const content = document.getElementById('json-content');
-                const lineNumbers = document.getElementById('line-numbers');
-                const foldColumn = document.getElementById('fold-column');
-
-                try {
-                    const parsed = typeof json === 'string' ? JSON.parse(json) : json;
-                    this.buildLines(parsed, 0, true, '');
-                    content.innerHTML = this.lines.map(l => l.html).join('');
-                    this.updateGutter();
-                    this.attachEventListeners();
-                } catch (e) {
-                    content.innerHTML = '<div class="json-error">Failed to parse JSON:\n' + this.escapeHtml(e.message) + '</div>';
-                    lineNumbers.innerHTML = '<div class="line-number">1</div>';
-                    foldColumn.innerHTML = '<div class="fold-row"></div>';
-                }
-            }
-
-            buildLines(value, depth, isLast, keyPrefix) {
-                if (value === null) {
-                    this.addLine(depth, keyPrefix + '<span class="json-null">null</span>' + (isLast ? '' : '<span class="json-comma">,</span>'));
-                    return;
-                }
-
-                var type = typeof value;
-
-                if (type === 'string') {
-                    this.addLine(depth, keyPrefix + '<span class="json-string">"' + this.escapeHtml(value) + '"</span>' + (isLast ? '' : '<span class="json-comma">,</span>'));
-                    return;
-                }
-
-                if (type === 'number') {
-                    this.addLine(depth, keyPrefix + '<span class="json-number">' + value + '</span>' + (isLast ? '' : '<span class="json-comma">,</span>'));
-                    return;
-                }
-
-                if (type === 'boolean') {
-                    this.addLine(depth, keyPrefix + '<span class="json-boolean">' + value + '</span>' + (isLast ? '' : '<span class="json-comma">,</span>'));
-                    return;
-                }
-
-                if (Array.isArray(value)) {
-                    this.buildArray(value, depth, isLast, keyPrefix);
-                    return;
-                }
-
-                if (type === 'object') {
-                    this.buildObject(value, depth, isLast, keyPrefix);
-                    return;
-                }
-
-                this.addLine(depth, keyPrefix + '<span class="json-string">"' + this.escapeHtml(String(value)) + '"</span>' + (isLast ? '' : '<span class="json-comma">,</span>'));
-            }
-
-            buildObject(obj, depth, isLast, keyPrefix) {
-                var keys = Object.keys(obj);
-                
-                if (keys.length === 0) {
-                    this.addLine(depth, keyPrefix + '<span class="json-bracket">{}</span>' + (isLast ? '' : '<span class="json-comma">,</span>'));
-                    return;
-                }
-
-                var sectionId = 'section-' + (++this.lineCount);
-                var itemCount = keys.length;
-
-                this.addLine(depth, keyPrefix + '<span class="json-bracket">{</span><span class="collapsed-indicator hidden" data-indicator="' + sectionId + '"> ' + itemCount + (itemCount === 1 ? ' item' : ' items') + ' }</span>', sectionId);
-
-                this.lines.push({
-                    html: '<div class="collapsible-content" data-content="' + sectionId + '">',
-                    depth: depth + 1,
-                    sectionId: null
-                });
-
-                for (var i = 0; i < keys.length; i++) {
-                    var key = keys[i];
-                    var isLastItem = i === keys.length - 1;
-                    var val = obj[key];
-                    var prefix = '<span class="json-key">"' + this.escapeHtml(key) + '"</span>: ';
-                    
-                    this.buildLines(val, depth + 1, isLastItem, prefix);
-                }
-
-                this.addLine(depth, '<span class="json-bracket">}</span>' + (isLast ? '' : '<span class="json-comma">,</span>'));
-
-                this.lines.push({
-                    html: '</div>',
-                    depth: depth + 1,
-                    sectionId: null
-                });
-            }
-
-            buildArray(arr, depth, isLast, keyPrefix) {
-                if (arr.length === 0) {
-                    this.addLine(depth, keyPrefix + '<span class="json-bracket">[]</span>' + (isLast ? '' : '<span class="json-comma">,</span>'));
-                    return;
-                }
-
-                var sectionId = 'section-' + (++this.lineCount);
-                var itemCount = arr.length;
-
-                this.addLine(depth, keyPrefix + '<span class="json-bracket">[</span><span class="collapsed-indicator hidden" data-indicator="' + sectionId + '"> ' + itemCount + (itemCount === 1 ? ' item' : ' items') + ' ]</span>', sectionId);
-
-                this.lines.push({
-                    html: '<div class="collapsible-content" data-content="' + sectionId + '">',
-                    depth: depth + 1,
-                    sectionId: null
-                });
-
-                for (var i = 0; i < arr.length; i++) {
-                    var isLastItem = i === arr.length - 1;
-                    this.buildLines(arr[i], depth + 1, isLastItem, '');
-                }
-
-                this.addLine(depth, '<span class="json-bracket">]</span>' + (isLast ? '' : '<span class="json-comma">,</span>'));
-
-                this.lines.push({
-                    html: '</div>',
-                    depth: depth + 1,
-                    sectionId: null
-                });
-            }
-
-            addLine(depth, content, sectionId) {
-                var indentHtml = this.buildIndent(depth);
-                var html = '<div class="json-line">' + indentHtml + content + '</div>';
-                this.lines.push({
-                    html: html,
-                    depth: depth,
-                    sectionId: sectionId || null
-                });
-            }
-
-            buildIndent(depth) {
-                if (depth === 0) return '';
-                
-                var html = '<span class="indent-wrapper">';
-                
-                // Add indent guides
-                for (var i = 0; i < depth; i++) {
-                    var left = (i * this.indentSize * 6.6) + 4; // 6.6px per character for 11px font
-                    html += '<span class="indent-guide" style="left: ' + left + 'px;"></span>';
-                }
-                
-                // Add the actual indent spacing
-                var spaces = '';
-                for (var j = 0; j < depth * this.indentSize; j++) {
-                    spaces += ' ';
-                }
-                html += '<span class="indent">' + spaces + '</span></span>';
-                
-                return html;
-            }
-
-            updateGutter() {
-                var visibleLines = [];
-                var allLines = document.querySelectorAll('.json-line');
-                
-                allLines.forEach(function(line, idx) {
-                    if (!this.isLineHidden(line)) {
-                        visibleLines.push({
-                            element: line,
-                            originalIndex: idx
-                        });
-                    }
-                }.bind(this));
-                
-                // Build line numbers
-                var lineNumbersHtml = '';
-                for (var i = 0; i < visibleLines.length; i++) {
-                    lineNumbersHtml += '<div class="line-number">' + (visibleLines[i].originalIndex + 1) + '</div>';
-                }
-                document.getElementById('line-numbers').innerHTML = lineNumbersHtml;
-                
-                // Build fold icons
-                var foldHtml = '';
-                var lineIndex = 0;
-                
-                allLines.forEach(function(line, idx) {
-                    if (this.isLineHidden(line)) return;
-                    
-                    lineIndex++;
-                    var foldIcon = line.querySelector('[data-indicator]');
-                    var sectionId = foldIcon ? foldIcon.getAttribute('data-indicator') : null;
-                    
-                    if (sectionId) {
-                        var content = document.querySelector('[data-content="' + sectionId + '"]');
-                        var isCollapsed = content && content.classList.contains('collapsed');
-                        foldHtml += '<div class="fold-row"><span class="fold-icon' + (isCollapsed ? ' collapsed' : '') + '" data-section="' + sectionId + '"></span></div>';
-                    } else {
-                        foldHtml += '<div class="fold-row"></div>';
-                    }
-                }.bind(this));
-                
-                document.getElementById('fold-column').innerHTML = foldHtml;
-                
-                // Re-attach event listeners for fold icons
-                this.attachFoldListeners();
-            }
-
-            isLineHidden(element) {
-                var parent = element.parentElement;
-                while (parent && parent.id !== 'json-content') {
-                    if (parent.classList.contains('collapsible-content') && parent.classList.contains('collapsed')) {
-                        return true;
-                    }
-                    parent = parent.parentElement;
-                }
-                return false;
-            }
-
-            escapeHtml(str) {
-                var div = document.createElement('div');
-                div.textContent = str;
-                return div.innerHTML;
-            }
-
-            attachEventListeners() {
-                this.attachFoldListeners();
-            }
-
-            attachFoldListeners() {
-                var self = this;
-                document.querySelectorAll('.fold-column .fold-icon').forEach(function(icon) {
-                    icon.addEventListener('click', function(e) {
-                        e.stopPropagation();
-                        var sectionId = icon.dataset.section;
-                        var content = document.querySelector('[data-content="' + sectionId + '"]');
-                        var indicators = document.querySelectorAll('[data-indicator="' + sectionId + '"]');
-
-                        if (content) {
-                            var isCollapsed = content.classList.contains('collapsed');
-                            
-                            if (isCollapsed) {
-                                content.classList.remove('collapsed');
-                                icon.classList.remove('collapsed');
-                                indicators.forEach(function(indicator) {
-                                    indicator.classList.add('hidden');
-                                });
-                            } else {
-                                content.classList.add('collapsed');
-                                icon.classList.add('collapsed');
-                                indicators.forEach(function(indicator) {
-                                    indicator.classList.remove('hidden');
-                                });
-                            }
-
-                            self.updateGutter();
-                        }
-                    });
-                });
-            }
-        }
-
-        var viewer = new ProxymanJsonViewer();
-
-        function renderJSONString(jsonString) {
-            viewer.render(jsonString);
-        }
-
-        function renderJSONBase64(base64) {
-            try {
-                var jsonString = decodeURIComponent(escape(window.atob(base64)));
-                viewer.render(jsonString);
-            } catch (e) {
-                document.getElementById('json-content').innerHTML = 
-                    '<div class="json-error">Failed to decode Base64:\n' + e.message + '</div>';
-                document.getElementById('line-numbers').innerHTML = '<div class="line-number">1</div>';
-                document.getElementById('fold-column').innerHTML = '<div class="fold-row"></div>';
-            }
-        }
-
-        function changeThemeToLight() {
-            var root = document.documentElement;
-            root.style.setProperty('--bg-color', '#ffffff');
-            root.style.setProperty('--line-number-color', '#999999');
-            root.style.setProperty('--line-number-bg', '#ffffff');
-            root.style.setProperty('--gutter-border', '#e8e8e8');
-            root.style.setProperty('--key-color', '#0451a5');
-            root.style.setProperty('--string-color', '#c41a16');
-            root.style.setProperty('--number-color', '#1c00cf');
-            root.style.setProperty('--boolean-color', '#0451a5');
-            root.style.setProperty('--null-color', '#0451a5');
-            root.style.setProperty('--bracket-color', '#333333');
-            root.style.setProperty('--comma-color', '#333333');
-            root.style.setProperty('--fold-icon-color', '#999999');
-            root.style.setProperty('--fold-icon-hover', '#666666');
-            root.style.setProperty('--hover-line-bg', 'rgba(0, 0, 0, 0.03)');
-            root.style.setProperty('--indent-guide-color', '#e0e0e0');
-        }
-
-        function changeThemeToDark() {
-            var root = document.documentElement;
-            root.style.setProperty('--bg-color', '#282828');
-            root.style.setProperty('--line-number-color', '#858585');
-            root.style.setProperty('--line-number-bg', '#282828');
-            root.style.setProperty('--gutter-border', '#2d2d2d');
-            root.style.setProperty('--key-color', '#9cdcfe');
-            root.style.setProperty('--string-color', '#ce9178');
-            root.style.setProperty('--number-color', '#b5cea8');
-            root.style.setProperty('--boolean-color', '#569cd6');
-            root.style.setProperty('--null-color', '#569cd6');
-            root.style.setProperty('--bracket-color', '#d4d4d4');
-            root.style.setProperty('--comma-color', '#d4d4d4');
-            root.style.setProperty('--fold-icon-color', '#c5c5c5');
-            root.style.setProperty('--fold-icon-hover', '#ffffff');
-            root.style.setProperty('--hover-line-bg', 'rgba(255, 255, 255, 0.04)');
-            root.style.setProperty('--indent-guide-color', '#404040');
-        }
-
-        function expandAll() {
-            document.querySelectorAll('.collapsible-content').forEach(function(content) {
-                content.classList.remove('collapsed');
-            });
-            document.querySelectorAll('[data-indicator]').forEach(function(indicator) {
-                indicator.classList.add('hidden');
-            });
-            viewer.updateGutter();
-        }
-
-        function collapseAll() {
-            document.querySelectorAll('.collapsible-content').forEach(function(content) {
-                content.classList.add('collapsed');
-            });
-            document.querySelectorAll('[data-indicator]').forEach(function(indicator) {
-                indicator.classList.remove('hidden');
-            });
-            viewer.updateGutter();
-        }
+      /* INJECTED_SCRIPT */
     </script>
-</body>
+    <script>
+      class ProxymanJsonViewer {
+        constructor() {
+          this.lineCount = 0;
+          this.indentSize = 2;
+          this.lines = [];
+        }
+
+        render(json) {
+          this.lineCount = 0;
+          this.lines = [];
+          const content = document.getElementById("json-content");
+          const lineNumbers = document.getElementById("line-numbers");
+          const foldColumn = document.getElementById("fold-column");
+
+          try {
+            const parsed = typeof json === "string" ? JSON.parse(json) : json;
+            this.buildLines(parsed, 0, true, "");
+            content.innerHTML = this.lines.map((l) => l.html).join("");
+            this.updateGutter();
+            this.attachEventListeners();
+          } catch (e) {
+            content.innerHTML =
+              '<div class="json-error">Failed to parse JSON:\n' +
+              this.escapeHtml(e.message) +
+              "</div>";
+            lineNumbers.innerHTML = '<div class="line-number">1</div>';
+            foldColumn.innerHTML = '<div class="fold-row"></div>';
+          }
+        }
+
+        buildLines(value, depth, isLast, keyPrefix) {
+          if (value === null) {
+            this.addLine(
+              depth,
+              keyPrefix +
+                '<span class="json-null">null</span>' +
+                (isLast ? "" : '<span class="json-comma">,</span>')
+            );
+            return;
+          }
+
+          var type = typeof value;
+
+          if (type === "string") {
+            this.addLine(
+              depth,
+              keyPrefix +
+                '<span class="json-string">"' +
+                this.escapeHtml(value) +
+                '"</span>' +
+                (isLast ? "" : '<span class="json-comma">,</span>')
+            );
+            return;
+          }
+
+          if (type === "number") {
+            this.addLine(
+              depth,
+              keyPrefix +
+                '<span class="json-number">' +
+                value +
+                "</span>" +
+                (isLast ? "" : '<span class="json-comma">,</span>')
+            );
+            return;
+          }
+
+          if (type === "boolean") {
+            this.addLine(
+              depth,
+              keyPrefix +
+                '<span class="json-boolean">' +
+                value +
+                "</span>" +
+                (isLast ? "" : '<span class="json-comma">,</span>')
+            );
+            return;
+          }
+
+          if (Array.isArray(value)) {
+            this.buildArray(value, depth, isLast, keyPrefix);
+            return;
+          }
+
+          if (type === "object") {
+            this.buildObject(value, depth, isLast, keyPrefix);
+            return;
+          }
+
+          this.addLine(
+            depth,
+            keyPrefix +
+              '<span class="json-string">"' +
+              this.escapeHtml(String(value)) +
+              '"</span>' +
+              (isLast ? "" : '<span class="json-comma">,</span>')
+          );
+        }
+
+        buildObject(obj, depth, isLast, keyPrefix) {
+          var keys = Object.keys(obj);
+
+          if (keys.length === 0) {
+            this.addLine(
+              depth,
+              keyPrefix +
+                '<span class="json-bracket">{}</span>' +
+                (isLast ? "" : '<span class="json-comma">,</span>')
+            );
+            return;
+          }
+
+          var sectionId = "section-" + ++this.lineCount;
+          var itemCount = keys.length;
+
+          this.addLine(
+            depth,
+            keyPrefix +
+              '<span class="json-bracket">{</span><span class="collapsed-indicator hidden" data-indicator="' +
+              sectionId +
+              '"> ' +
+              itemCount +
+              (itemCount === 1 ? " item" : " items") +
+              " }</span>",
+            sectionId
+          );
+
+          this.lines.push({
+            html:
+              '<div class="collapsible-content" data-content="' +
+              sectionId +
+              '">',
+            depth: depth + 1,
+            sectionId: null,
+          });
+
+          for (var i = 0; i < keys.length; i++) {
+            var key = keys[i];
+            var isLastItem = i === keys.length - 1;
+            var val = obj[key];
+            var prefix =
+              '<span class="json-key">"' + this.escapeHtml(key) + '"</span>: ';
+
+            this.buildLines(val, depth + 1, isLastItem, prefix);
+          }
+
+          this.addLine(
+            depth,
+            '<span class="json-bracket">}</span>' +
+              (isLast ? "" : '<span class="json-comma">,</span>')
+          );
+
+          this.lines.push({
+            html: "</div>",
+            depth: depth + 1,
+            sectionId: null,
+          });
+        }
+
+        buildArray(arr, depth, isLast, keyPrefix) {
+          if (arr.length === 0) {
+            this.addLine(
+              depth,
+              keyPrefix +
+                '<span class="json-bracket">[]</span>' +
+                (isLast ? "" : '<span class="json-comma">,</span>')
+            );
+            return;
+          }
+
+          var sectionId = "section-" + ++this.lineCount;
+          var itemCount = arr.length;
+
+          this.addLine(
+            depth,
+            keyPrefix +
+              '<span class="json-bracket">[</span><span class="collapsed-indicator hidden" data-indicator="' +
+              sectionId +
+              '"> ' +
+              itemCount +
+              (itemCount === 1 ? " item" : " items") +
+              " ]</span>",
+            sectionId
+          );
+
+          this.lines.push({
+            html:
+              '<div class="collapsible-content" data-content="' +
+              sectionId +
+              '">',
+            depth: depth + 1,
+            sectionId: null,
+          });
+
+          for (var i = 0; i < arr.length; i++) {
+            var isLastItem = i === arr.length - 1;
+            this.buildLines(arr[i], depth + 1, isLastItem, "");
+          }
+
+          this.addLine(
+            depth,
+            '<span class="json-bracket">]</span>' +
+              (isLast ? "" : '<span class="json-comma">,</span>')
+          );
+
+          this.lines.push({
+            html: "</div>",
+            depth: depth + 1,
+            sectionId: null,
+          });
+        }
+
+        addLine(depth, content, sectionId) {
+          var indentHtml = this.buildIndent(depth);
+          var html =
+            '<div class="json-line">' + indentHtml + content + "</div>";
+          this.lines.push({
+            html: html,
+            depth: depth,
+            sectionId: sectionId || null,
+          });
+        }
+
+        buildIndent(depth) {
+          if (depth === 0) return "";
+
+          var html = '<span class="indent-wrapper">';
+
+          // Add indent guides
+          for (var i = 0; i < depth; i++) {
+            var left = i * this.indentSize * 6.6 + 4; // 6.6px per character for 11px font
+            html +=
+              '<span class="indent-guide" style="left: ' +
+              left +
+              'px;"></span>';
+          }
+
+          // Add the actual indent spacing
+          var spaces = "";
+          for (var j = 0; j < depth * this.indentSize; j++) {
+            spaces += " ";
+          }
+          html += '<span class="indent">' + spaces + "</span></span>";
+
+          return html;
+        }
+
+        updateGutter() {
+          var visibleLines = [];
+          var allLines = document.querySelectorAll(".json-line");
+
+          allLines.forEach(
+            function (line, idx) {
+              if (!this.isLineHidden(line)) {
+                visibleLines.push({
+                  element: line,
+                  originalIndex: idx,
+                });
+              }
+            }.bind(this)
+          );
+
+          // Build line numbers
+          var lineNumbersHtml = "";
+          for (var i = 0; i < visibleLines.length; i++) {
+            lineNumbersHtml +=
+              '<div class="line-number">' +
+              (visibleLines[i].originalIndex + 1) +
+              "</div>";
+          }
+          document.getElementById("line-numbers").innerHTML = lineNumbersHtml;
+
+          // Build fold icons
+          var foldHtml = "";
+          var lineIndex = 0;
+
+          allLines.forEach(
+            function (line, idx) {
+              if (this.isLineHidden(line)) return;
+
+              lineIndex++;
+              var foldIcon = line.querySelector("[data-indicator]");
+              var sectionId = foldIcon
+                ? foldIcon.getAttribute("data-indicator")
+                : null;
+
+              if (sectionId) {
+                var content = document.querySelector(
+                  '[data-content="' + sectionId + '"]'
+                );
+                var isCollapsed =
+                  content && content.classList.contains("collapsed");
+                foldHtml +=
+                  '<div class="fold-row"><span class="fold-icon' +
+                  (isCollapsed ? " collapsed" : "") +
+                  '" data-section="' +
+                  sectionId +
+                  '"></span></div>';
+              } else {
+                foldHtml += '<div class="fold-row"></div>';
+              }
+            }.bind(this)
+          );
+
+          document.getElementById("fold-column").innerHTML = foldHtml;
+
+          // Re-attach event listeners for fold icons
+          this.attachFoldListeners();
+        }
+
+        isLineHidden(element) {
+          var parent = element.parentElement;
+          while (parent && parent.id !== "json-content") {
+            if (
+              parent.classList.contains("collapsible-content") &&
+              parent.classList.contains("collapsed")
+            ) {
+              return true;
+            }
+            parent = parent.parentElement;
+          }
+          return false;
+        }
+
+        escapeHtml(str) {
+          var div = document.createElement("div");
+          div.textContent = str;
+          return div.innerHTML;
+        }
+
+        attachEventListeners() {
+          this.attachFoldListeners();
+        }
+
+        attachFoldListeners() {
+          var self = this;
+          document
+            .querySelectorAll(".fold-column .fold-icon")
+            .forEach(function (icon) {
+              icon.addEventListener("click", function (e) {
+                e.stopPropagation();
+                var sectionId = icon.dataset.section;
+                var content = document.querySelector(
+                  '[data-content="' + sectionId + '"]'
+                );
+                var indicators = document.querySelectorAll(
+                  '[data-indicator="' + sectionId + '"]'
+                );
+
+                if (content) {
+                  var isCollapsed = content.classList.contains("collapsed");
+
+                  if (isCollapsed) {
+                    content.classList.remove("collapsed");
+                    icon.classList.remove("collapsed");
+                    indicators.forEach(function (indicator) {
+                      indicator.classList.add("hidden");
+                    });
+                  } else {
+                    content.classList.add("collapsed");
+                    icon.classList.add("collapsed");
+                    indicators.forEach(function (indicator) {
+                      indicator.classList.remove("hidden");
+                    });
+                  }
+
+                  self.updateGutter();
+                }
+              });
+            });
+        }
+      }
+
+      var viewer = new ProxymanJsonViewer();
+
+      function renderJSONString(jsonString) {
+        viewer.render(jsonString);
+      }
+
+      function renderJSONBase64(base64) {
+        try {
+          const binaryString = window.atob(base64);
+          const bytes = new Uint8Array(binaryString.length);
+          for (let i = 0; i < binaryString.length; i++) {
+            bytes[i] = binaryString.charCodeAt(i);
+          }
+          const jsonString = new TextDecoder().decode(bytes);
+          viewer.render(jsonString);
+        } catch (e) {
+          document.getElementById("json-content").innerHTML =
+            '<div class="json-error">Failed to decode Base64:\n' +
+            e.message +
+            "</div>";
+          document.getElementById("line-numbers").innerHTML =
+            '<div class="line-number">1</div>';
+          document.getElementById("fold-column").innerHTML =
+            '<div class="fold-row"></div>';
+        }
+      }
+
+      function changeThemeToLight() {
+        var root = document.documentElement;
+        root.style.setProperty("--bg-color", "#ffffff");
+        root.style.setProperty("--line-number-color", "#999999");
+        root.style.setProperty("--line-number-bg", "#ffffff");
+        root.style.setProperty("--gutter-border", "#e8e8e8");
+        root.style.setProperty("--key-color", "#0451a5");
+        root.style.setProperty("--string-color", "#c41a16");
+        root.style.setProperty("--number-color", "#1c00cf");
+        root.style.setProperty("--boolean-color", "#0451a5");
+        root.style.setProperty("--null-color", "#0451a5");
+        root.style.setProperty("--bracket-color", "#333333");
+        root.style.setProperty("--comma-color", "#333333");
+        root.style.setProperty("--fold-icon-color", "#999999");
+        root.style.setProperty("--fold-icon-hover", "#666666");
+        root.style.setProperty("--hover-line-bg", "rgba(0, 0, 0, 0.03)");
+        root.style.setProperty("--indent-guide-color", "#e0e0e0");
+      }
+
+      function changeThemeToDark() {
+        var root = document.documentElement;
+        root.style.setProperty("--bg-color", "#282828");
+        root.style.setProperty("--line-number-color", "#858585");
+        root.style.setProperty("--line-number-bg", "#282828");
+        root.style.setProperty("--gutter-border", "#2d2d2d");
+        root.style.setProperty("--key-color", "#9cdcfe");
+        root.style.setProperty("--string-color", "#ce9178");
+        root.style.setProperty("--number-color", "#b5cea8");
+        root.style.setProperty("--boolean-color", "#569cd6");
+        root.style.setProperty("--null-color", "#569cd6");
+        root.style.setProperty("--bracket-color", "#d4d4d4");
+        root.style.setProperty("--comma-color", "#d4d4d4");
+        root.style.setProperty("--fold-icon-color", "#c5c5c5");
+        root.style.setProperty("--fold-icon-hover", "#ffffff");
+        root.style.setProperty("--hover-line-bg", "rgba(255, 255, 255, 0.04)");
+        root.style.setProperty("--indent-guide-color", "#404040");
+      }
+
+      function expandAll() {
+        document
+          .querySelectorAll(".collapsible-content")
+          .forEach(function (content) {
+            content.classList.remove("collapsed");
+          });
+        document
+          .querySelectorAll("[data-indicator]")
+          .forEach(function (indicator) {
+            indicator.classList.add("hidden");
+          });
+        viewer.updateGutter();
+      }
+
+      function collapseAll() {
+        document
+          .querySelectorAll(".collapsible-content")
+          .forEach(function (content) {
+            content.classList.add("collapsed");
+          });
+        document
+          .querySelectorAll("[data-indicator]")
+          .forEach(function (indicator) {
+            indicator.classList.remove("hidden");
+          });
+        viewer.updateGutter();
+      }
+    </script>
+  </body>
 </html>

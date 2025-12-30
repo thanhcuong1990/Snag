@@ -74,6 +74,8 @@ class NetworkRepositoryImpl @Inject constructor(
     }
 
     override suspend fun getLargeJson(): Result<String> = safeApiCall { networkService.getLargeJson() }
+    
+    override suspend fun postLargeJson(body: JsonObject): Result<String> = safeApiCall { networkService.postLargeJson(body) }
 
     override suspend fun slowRequest(): Result<String> = safeApiCall { networkService.slowRequest() }
 

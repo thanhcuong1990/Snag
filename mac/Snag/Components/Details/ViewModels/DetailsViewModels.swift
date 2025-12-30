@@ -124,6 +124,47 @@ class ResponseHeadersViewModel: KeyValueViewModel {
 
 class DataViewModel: BaseViewModel {
     @Published var dataRepresentation: DataRepresentation?
+    @Published var isLoading: Bool = false
+    private var parseTask: Task<Void, Never>?
+    
+    func performUpdate(with data: Data?) {
+        if !Thread.isMainThread {
+            DispatchQueue.main.async {
+                self.performUpdate(with: data)
+            }
+            return
+        }
+
+        // Cancel any existing task
+        parseTask?.cancel()
+        
+        guard let data = data else {
+            self.dataRepresentation = nil
+            self.isLoading = false
+            return
+        }
+        
+        // Start loading
+        self.isLoading = true
+        self.dataRepresentation = nil
+        
+        parseTask = Task {
+            // Check if task was cancelled before starting work
+            if Task.isCancelled { return }
+            
+            let result = await ContentRepresentationParser.dataRepresentationAsync(data: data)
+            
+            if !Task.isCancelled {
+                await MainActor.run {
+                    self.dataRepresentation = result
+                    self.isLoading = false
+                    // Force UI refresh if needed
+                    self.objectWillChange.send()
+                    self.onChange?()
+                }
+            }
+        }
+    }
     
     func register() {
         NotificationCenter.default.addObserver(self, selector: #selector(self.didSelectPacket), name: SnagNotifications.didSelectPacket, object: nil)
@@ -155,9 +196,9 @@ class RequestBodyViewModel: DataViewModel {
     override func update() {
         if let packet = SnagController.shared.selectedProjectController?.selectedDeviceController?.selectedPacket,
            let data = packet.requestInfo?.requestBody?.base64Data {
-            self.dataRepresentation = ContentRepresentationParser.dataRepresentation(data: data)
+            self.performUpdate(with: data)
         } else {
-            self.dataRepresentation = nil
+            self.performUpdate(with: nil)
         }
     }
 }
@@ -166,9 +207,9 @@ class ResponseDataViewModel: DataViewModel {
     override func update() {
         if let packet = SnagController.shared.selectedProjectController?.selectedDeviceController?.selectedPacket,
            let data = packet.requestInfo?.responseData?.base64Data {
-            self.dataRepresentation = ContentRepresentationParser.dataRepresentation(data: data)
+            self.performUpdate(with: data)
         } else {
-            self.dataRepresentation = nil
+            self.performUpdate(with: nil)
         }
     }
 }

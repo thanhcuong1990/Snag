@@ -23,23 +23,30 @@ struct JSONWebView: NSViewRepresentable {
         context.coordinator.parent = self
         
         // Update layer background color for theme changes
-        nsView.effectiveAppearance.performAsCurrentDrawingAppearance {
-            nsView.layer?.backgroundColor = DetailsTheme.jsonViewerBackgroundNSColor().cgColor
+        nsView.layer?.backgroundColor = DetailsTheme.jsonViewerBackgroundNSColor().cgColor
+        
+        loadContent(nsView)
+    }
+    
+    private func loadContent(_ webView: WKWebView) {
+        let htmlPath = Bundle.main.path(forResource: "jsonviewer", ofType: "html", inDirectory: "jsonViewer") ??
+                       Bundle.main.path(forResource: "jsonviewer", ofType: "html")
+        
+        guard let path = htmlPath, let htmlTemplate = try? String(contentsOfFile: path) else {
+            return
         }
         
-        if nsView.url == nil {
-            let htmlPath = Bundle.main.path(forResource: "jsonviewer", ofType: "html", inDirectory: "jsonViewer") ??
-                           Bundle.main.path(forResource: "jsonviewer", ofType: "html")
-            
-            guard let path = htmlPath else {
-                return
-            }
-            
-            let fileURL = URL(fileURLWithPath: path)
-            nsView.loadFileURL(fileURL, allowingReadAccessTo: fileURL.deletingLastPathComponent())
-        } else {
-            context.coordinator.renderJSON(nsView)
-        }
+        let base64 = jsonString.data(using: .utf8)?.base64EncodedString() ?? ""
+        let themeScript = colorScheme == .dark ? "changeThemeToDark()" : "changeThemeToLight()"
+        
+        let finalHtml = htmlTemplate.replacingOccurrences(of: "/* INJECTED_SCRIPT */", with: """
+            \(themeScript);
+            renderJSONBase64('\(base64)');
+        """)
+        
+        // Use loadHTMLString with a baseURL that allows reading other files in the same directory if needed
+        let baseURL = URL(fileURLWithPath: path).deletingLastPathComponent()
+        webView.loadHTMLString(finalHtml, baseURL: baseURL)
     }
     
     class Coordinator: NSObject, WKNavigationDelegate {

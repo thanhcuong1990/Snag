@@ -9,7 +9,7 @@ struct ContentView: View {
     // Categorized test cases
     private let testCategories: [String: [String]] = [
         "CRUD": ["GET Post", "POST Create", "PUT Update", "PATCH Partial", "DELETE"],
-        "Image & JSON": ["GET Image", "GET Large JSON", "Slow Request (Timeout Test)"],
+        "Image & JSON": ["GET Image", "GET Large JSON", "POST Large JSON", "Slow Request (Timeout Test)"],
         "Auth & Status": ["Auth Bearer", "Auth Fail (401)", "401 Unauthorized", "403 Forbidden", "404 Not Found", "500 Internal Server Error", "503 Service Unavailable"],
         "Upload": ["Multipart Upload"],
         "Other": ["Query Params", "Multiple Requests Test"] // <- added
@@ -18,51 +18,62 @@ struct ContentView: View {
     // MARK: - Body
     var body: some View {
         NavigationStack {
-            VStack {
-                
-                // Header
-                HStack(spacing: 12) {
-                    Image(systemName: "network")
-                        .font(.system(size: 44))
-                        .foregroundStyle(.blue)
-                    Text("API Tester")
-                        .font(.title2.bold())
-                }
-                .padding()
-                
-                // Test list
-                List {
-                    ForEach(testCategories.keys.sorted(), id: \.self) { category in
-                        Section(header: Text(category)) {
-                            ForEach(testCategories[category]!, id: \.self) { test in
-                                Button(action: {
-                                    Task { await runTest(named: test) }
-                                }) {
-                                    Label(test, systemImage: iconForTest(test))
-                                        .foregroundColor(.primary)
-                                        .padding(.vertical, 6)
+            GeometryReader { geometry in
+                VStack(spacing: 0) {
+                    
+                    // Header
+                    HStack(spacing: 12) {
+                        Image(systemName: "network")
+                            .font(.system(size: 44))
+                            .foregroundStyle(.blue)
+                        Text("API Tester")
+                            .font(.title2.bold())
+                    }
+                    .padding()
+                    
+                    // Test list (Top half)
+                    List {
+                        ForEach(testCategories.keys.sorted(), id: \.self) { category in
+                            Section(header: Text(category)) {
+                                ForEach(testCategories[category]!, id: \.self) { test in
+                                    Button(action: {
+                                        Task { await runTest(named: test) }
+                                    }) {
+                                        Label(test, systemImage: iconForTest(test))
+                                            .foregroundColor(.primary)
+                                            .padding(.vertical, 6)
+                                    }
+                                    .disabled(isLoading)
                                 }
-                                .disabled(isLoading)
                             }
                         }
                     }
+                    .listStyle(.insetGrouped)
+                    .frame(height: geometry.size.height * 0.5)
+                    
+                    Divider()
+                    
+                    // Preview & Response (Bottom half)
+                    ScrollView {
+                        VStack(spacing: 16) {
+                            // Image preview
+                            if let image = loadedImage {
+                                Image(uiImage: image)
+                                    .resizable()
+                                    .scaledToFit()
+                                    .frame(maxHeight: 200)
+                                    .clipShape(RoundedRectangle(cornerRadius: 12))
+                                    .padding(.horizontal)
+                            }
+                            
+                            // Response area
+                            ResponseView(responseText: $responseText, isLoading: $isLoading)
+                                .padding(.horizontal)
+                                .padding(.bottom)
+                        }
+                    }
+                    .frame(height: geometry.size.height * 0.5)
                 }
-                .listStyle(.insetGrouped)
-                
-                // Image preview
-                if let image = loadedImage {
-                    Image(uiImage: image)
-                        .resizable()
-                        .scaledToFit()
-                        .frame(maxHeight: 200)
-                        .clipShape(RoundedRectangle(cornerRadius: 12))
-                        .padding(.horizontal)
-                }
-                
-                // Response area
-                ResponseView(responseText: $responseText, isLoading: $isLoading)
-                    .frame(maxHeight: 300)
-                    .padding(.horizontal)
             }
             .navigationBarTitleDisplayMode(.inline)
             .background(Color(.systemGroupedBackground))
@@ -72,7 +83,7 @@ struct ContentView: View {
     // MARK: - Helpers
     private func iconForTest(_ test: String) -> String {
         switch test {
-        case "GET Post", "GET Image", "GET Large JSON", "Query Params": return "arrow.down.circle"
+        case "GET Post", "GET Image", "GET Large JSON", "POST Large JSON", "Query Params": return "arrow.down.circle"
         case "POST Create", "Multipart Upload": return "arrow.up.circle"
         case "PUT Update", "PATCH Partial": return "square.and.pencil"
         case "DELETE": return "trash"
@@ -100,6 +111,7 @@ struct ContentView: View {
         case "DELETE": await deletePost()
         case "GET Image": await loadImage()
         case "GET Large JSON": await loadLargeJSON()
+        case "POST Large JSON": await postLargeJSON()
         case "Slow Request (Timeout Test)": await slowRequest()
         case "Multipart Upload": await multipartUpload()
         case "Auth Bearer": await authenticatedRequest(valid: true)
@@ -173,7 +185,16 @@ struct ContentView: View {
     private func createPost() async { await performJSONRequest(urlString: "https://jsonplaceholder.typicode.com/posts", method: "POST", body: ["title":"New Post","body":"Hello","userId":1]) }
     private func updatePost(method: String) async { await performJSONRequest(urlString: "https://jsonplaceholder.typicode.com/posts/1", method: method, body: ["id":1,"title":"Updated","body":"Updated","userId":1]) }
     private func deletePost() async { await performJSONRequest(urlString: "https://jsonplaceholder.typicode.com/posts/1", method: "DELETE") }
-    private func loadLargeJSON() async { await performJSONRequest(urlString: "https://jsonplaceholder.typicode.com/posts", method: "GET") }
+    private func loadLargeJSON() async { await performJSONRequest(urlString: "https://raw.githubusercontent.com/miloyip/nativejson-benchmark/master/data/citm_catalog.json", method: "GET") }
+    
+    private func postLargeJSON() async {
+        var body: [String: Any] = [:]
+        for i in 1...100 {
+            body["item_\(i)"] = "This is a large piece of data for item \(i) to test large JSON request and response payloads."
+            body["nested_\(i)"] = ["id": i, "value": Double.random(in: 0...1000), "active": true]
+        }
+        await performJSONRequest(urlString: "https://httpbin.org/post", method: "POST", body: body)
+    }
     
     private func loadImage() async {
         guard let url = URL(string: "https://picsum.photos/800/600") else { responseText = "Invalid image URL"; return }

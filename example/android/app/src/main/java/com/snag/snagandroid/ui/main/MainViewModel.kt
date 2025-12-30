@@ -77,6 +77,18 @@ class MainViewModel @Inject constructor(
                     it[1] as String
                 }
                 "GET Large JSON" -> repository.getLargeJson()
+                "POST Large JSON" -> repository.postLargeJson(
+                    buildJsonObject {
+                        for (i in 1..100) {
+                            put("item_$i", JsonPrimitive("This is a large piece of data for item $i to test large JSON request and response payloads."))
+                            put("nested_$i", buildJsonObject {
+                                put("id", JsonPrimitive(i))
+                                put("value", JsonPrimitive(Math.random() * 1000))
+                                put("active", JsonPrimitive(true))
+                            })
+                        }
+                    }
+                )
                 "Slow Request (Timeout Test)" -> repository.slowRequest()
                 "Multipart Upload" -> {
                     val fileBody = "Fake image data".toRequestBody("image/jpeg".toMediaTypeOrNull())

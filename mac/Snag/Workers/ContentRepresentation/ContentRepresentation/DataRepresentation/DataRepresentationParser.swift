@@ -62,4 +62,24 @@ class DataRepresentationParser {
         
         return nil
     }
+
+    @MainActor
+    static func parseAsync(data: Data) async -> DataRepresentation? {
+        let jsonString = await Task.detached { () -> String? in
+            if let jsonObject = try? JSONSerialization.jsonObject(with: data, options: .mutableContainers),
+               let jsonData = try? JSONSerialization.data(withJSONObject: jsonObject, options: .prettyPrinted),
+               let str = String(data: jsonData, encoding: .utf8) {
+                return str.replacingOccurrences(of: "\\/", with: "/")
+            }
+            return nil
+        }.value
+        
+        if let jsonString = jsonString {
+            let representation = DataJSONRepresentation(data: data)
+            representation.rawString = jsonString
+            return representation
+        }
+        
+        return parse(data: data)
+    }
 }

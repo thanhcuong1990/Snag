@@ -97,7 +97,7 @@ fun MainScreen(
                 .background(Color(0xFFF2F2F7)) // System grouped background
         ) {
             LazyColumn(
-                modifier = Modifier.weight(1f),
+                modifier = Modifier.weight(0.5f),
                 contentPadding = PaddingValues(16.dp)
             ) {
                 testCategories.keys.sorted().forEach { category ->
@@ -122,7 +122,6 @@ fun MainScreen(
                                 modifier = Modifier.fillMaxWidth(),
                                 verticalAlignment = Alignment.CenterVertically
                             ) {
-                                // Simple icon logic placeholder, ideally map proper icons
                                 Icon(imageVector = getIconForTest(test), contentDescription = null)
                                 Spacer(modifier = Modifier.width(12.dp))
                                 Text(test)
@@ -131,29 +130,35 @@ fun MainScreen(
                     }
                 }
             }
+
+            Box(modifier = Modifier.height(1.dp).fillMaxWidth().background(Color.LightGray))
             
-            // Image Preview
-            if (state.loadedImage != null) {
-                Image(
-                    bitmap = state.loadedImage.asImageBitmap(),
-                    contentDescription = "Loaded Image",
-                    modifier = Modifier
-                        .height(200.dp)
-                        .padding(16.dp)
-                        .clip(RoundedCornerShape(12.dp))
-                        .align(Alignment.CenterHorizontally)
+            Column(
+                modifier = Modifier
+                    .weight(0.5f)
+                    .verticalScroll(rememberScrollState())
+                    .padding(16.dp)
+            ) {
+                // Image Preview
+                if (state.loadedImage != null) {
+                    Image(
+                        bitmap = state.loadedImage.asImageBitmap(),
+                        contentDescription = "Loaded Image",
+                        modifier = Modifier
+                            .height(200.dp)
+                            .clip(RoundedCornerShape(12.dp))
+                            .align(Alignment.CenterHorizontally)
+                    )
+                    Spacer(modifier = Modifier.height(16.dp))
+                }
+
+                // Response View
+                ResponseView(
+                    responseText = state.responseText,
+                    isLoading = state.isLoading,
+                    modifier = Modifier.fillMaxWidth()
                 )
             }
-
-            // Response View
-            ResponseView(
-                responseText = state.responseText,
-                isLoading = state.isLoading,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .heightIn(max = 300.dp)
-                    .padding(16.dp)
-            )
         }
     }
 }
@@ -178,16 +183,14 @@ fun ResponseView(
         Spacer(modifier = Modifier.height(8.dp))
         Box(
             modifier = Modifier
-                .fillMaxSize()
+                .fillMaxWidth()
                 .background(Color(0xFFE5E5EA), RoundedCornerShape(10.dp))
                 .padding(12.dp)
         ) {
-            Column(modifier = Modifier.verticalScroll(rememberScrollState())) {
-                Text(
-                    text = responseText,
-                    style = MaterialTheme.typography.bodySmall.copy(fontFamily = androidx.compose.ui.text.font.FontFamily.Monospace)
-                )
-            }
+            Text(
+                text = responseText,
+                style = MaterialTheme.typography.bodySmall.copy(fontFamily = androidx.compose.ui.text.font.FontFamily.Monospace)
+            )
         }
     }
 }
@@ -195,7 +198,7 @@ fun ResponseView(
 // Helper to map tests to categories
 val testCategories = mapOf(
     "CRUD" to listOf("GET Post", "POST Create", "PUT Update", "PATCH Partial", "DELETE"),
-    "Image & JSON" to listOf("GET Image", "GET Large JSON", "Slow Request (Timeout Test)"),
+    "Image & JSON" to listOf("GET Image", "GET Large JSON", "POST Large JSON", "Slow Request (Timeout Test)"),
     "Auth & Status" to listOf("Auth Bearer", "Auth Fail (401)", "401 Unauthorized", "403 Forbidden", "404 Not Found", "500 Internal Server Error", "503 Service Unavailable"),
     "Upload" to listOf("Multipart Upload"),
     "Other" to listOf("Query Params", "Multiple Requests Test")
@@ -203,7 +206,7 @@ val testCategories = mapOf(
 
 fun getIconForTest(test: String): ImageVector {
     return when (test) {
-        "GET Post", "GET Image", "GET Large JSON", "Query Params" -> Icons.Default.Warning // Placeholder for arrow down
+        "GET Post", "GET Image", "GET Large JSON", "POST Large JSON", "Query Params" -> Icons.Default.Warning // Placeholder for arrow down
         "POST Create", "Multipart Upload" -> Icons.Default.Warning // Placeholder for arrow up
         "Auth Bearer", "Auth Fail (401)" -> Icons.Default.Lock
         else -> Icons.Default.Warning // Default generic icon

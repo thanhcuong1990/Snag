@@ -37,7 +37,7 @@ interface NetworkService {
     @GET("https://picsum.photos/800/600")
     suspend fun getImage(): Response<ResponseBody>
 
-    @GET("https://jsonplaceholder.typicode.com/posts")
+    @GET("https://raw.githubusercontent.com/miloyip/nativejson-benchmark/master/data/citm_catalog.json")
     suspend fun getLargeJson(): Response<ResponseBody>
 
     @GET("https://httpbin.org/delay/8")
@@ -46,6 +46,9 @@ interface NetworkService {
     @POST("https://httpbin.org/post")
     @Multipart
     suspend fun multipartUpload(@Part image: MultipartBody.Part, @Part("title") title: RequestBody): Response<ResponseBody>
+
+    @POST("https://httpbin.org/post")
+    suspend fun postLargeJson(@Body body: JsonObject): Response<ResponseBody>
 
     @GET("https://httpbin.org/bearer")
     suspend fun authenticatedRequest(@Header("Authorization") auth: String): Response<ResponseBody>

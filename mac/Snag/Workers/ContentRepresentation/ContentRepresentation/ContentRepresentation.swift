@@ -30,6 +30,11 @@ class ContentRepresentationParser {
         return DataRepresentationParser.parse(data: data)
     }
     
+    @MainActor
+    static func dataRepresentationAsync(data: Data) async -> DataRepresentation? {
+        return await DataRepresentationParser.parseAsync(data: data)
+    }
+    
     static func keyValueRepresentation(dictionary: Dictionary<String,String>) -> KeyValueRepresentation {
         
         let keyValueRepresentation = KeyValueRepresentation(keyValues: dictionary.toKeyValueArray())
