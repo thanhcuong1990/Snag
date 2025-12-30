@@ -1,13 +1,11 @@
 import SwiftUI
 
 struct PacketRowView: View {
-    let packet: SnagPacket
+    @ObservedObject var packet: SnagPacket
     let isSelected: Bool
     let isAlternate: Bool
     
-    @State private var rotationAngle: Double = 0
-    @State private var timer: Timer?
-    @State private var currentTime: Date = Date()
+    @State private var isSpinning: Bool = false
     
     private var isLoading: Bool {
         let code = packet.requestInfo?.statusCode ?? ""
@@ -49,10 +47,21 @@ struct PacketRowView: View {
         }
     }
     
-    private var duration: String {
-        guard let start = packet.requestInfo?.startDate else { return "-" }
-        let end = packet.requestInfo?.endDate ?? currentTime
-        let ms = end.timeIntervalSince(start) * 1000
+    private func formatDuration(from start: Date?, end: Date?, now: Date) -> String {
+        // Use device end date if available, otherwise use Mac's local relative time
+        if let start = start, let end = end {
+            let ms = end.timeIntervalSince(start) * 1000
+            return formatMS(ms)
+        } else {
+            // Live counting: Use time since the Mac discovered the packet
+            // This prevents clock-skew jumps from different device clocks.
+            let ms = now.timeIntervalSince(packet.discoveryDate) * 1000
+            return formatMS(ms)
+        }
+    }
+    
+    private func formatMS(_ ms: Double) -> String {
+        if ms < 0 { return "0.0 ms" }
         if ms < 1 {
             return String(format: "%.2f ms", ms)
         } else if ms < 1000 {
@@ -88,48 +97,24 @@ struct PacketRowView: View {
         HStack(spacing: 0) {
             // Status Icon & Code
             HStack(spacing: 6) {
-                Group {
-                    if isLoading {
-                        Image(systemName: statusIcon)
-                            .font(.system(size: 11))
-                            .rotationEffect(.degrees(rotationAngle))
-                            .animation(.linear(duration: 1).repeatForever(autoreverses: false), value: rotationAngle)
-                    } else {
-                        Image(systemName: statusIcon)
-                            .font(.system(size: 11))
+                Image(systemName: statusIcon)
+                    .font(.system(size: 11))
+                    .id(statusIcon) // Force a new view when icon changes
+                    .rotationEffect(.degrees(isLoading && isSpinning ? 360 : 0))
+                    .onAppear {
+                        if isLoading {
+                            withAnimation(.linear(duration: 1).repeatForever(autoreverses: false)) {
+                                isSpinning = true
+                            }
+                        }
                     }
-                }
+                
                 Text(packet.requestInfo?.statusCode ?? "---")
                     .font(.system(size: 11, weight: .regular))
             }
             .padding(.leading, 8)
             .foregroundColor(statusColor)
             .frame(width: 75, alignment: .leading)
-            .onAppear {
-                if isLoading {
-                    rotationAngle = 360
-                    timer = Timer.scheduledTimer(withTimeInterval: 0.1, repeats: true) { _ in
-                        rotationAngle += 36
-                        currentTime = Date()
-                    }
-                }
-            }
-            .onDisappear {
-                timer?.invalidate()
-                timer = nil
-            }
-            .onChange(of: isLoading) { newValue in
-                if newValue {
-                    rotationAngle = 360
-                    timer = Timer.scheduledTimer(withTimeInterval: 0.1, repeats: true) { _ in
-                        rotationAngle += 36
-                        currentTime = Date()
-                    }
-                } else {
-                    timer?.invalidate()
-                    timer = nil
-                }
-            }
             
             // Method
             Text(packet.requestInfo?.requestMethod?.rawValue ?? "")
@@ -147,29 +132,35 @@ struct PacketRowView: View {
                 .frame(maxWidth: .infinity, alignment: .leading)
             
             // Duration
-            Text(duration)
-                .font(.system(size: 11))
-                .padding(.leading, 8)
-                .foregroundColor(isSelected ? .white.opacity(0.8) : .secondaryLabelColor)
-                .frame(width: 70, alignment: .leading)
+            TimelineView(.periodic(from: .now, by: isLoading ? 0.1 : 1.0)) { context in
+                Text(formatDuration(from: packet.requestInfo?.startDate, 
+                                    end: packet.requestInfo?.endDate, 
+                                    now: context.date))
+                    .transaction { $0.animation = nil }
+            }
+            .font(.system(size: 11).monospacedDigit())
+            .padding(.leading, 8)
+            .foregroundColor(isSelected ? .white.opacity(0.8) : .secondaryLabelColor)
+            .frame(width: 70, alignment: .leading)
+            .transaction { $0.animation = nil }
             
             // Req. Size
             Text(requestSize)
-                .font(.system(size: 11))
+                .font(.system(size: 11).monospacedDigit())
                 .padding(.leading, 8)
                 .foregroundColor(isSelected ? .white.opacity(0.8) : .secondaryLabelColor)
                 .frame(width: 70, alignment: .leading)
             
             // Size
             Text(responseSize)
-                .font(.system(size: 11))
+                .font(.system(size: 11).monospacedDigit())
                 .padding(.leading, 8)
                 .foregroundColor(isSelected ? .white.opacity(0.8) : .secondaryLabelColor)
                 .frame(width: 70, alignment: .leading)
             
             // Time
             Text(timeString)
-                .font(.system(size: 11))
+                .font(.system(size: 11).monospacedDigit())
                 .padding(.leading, 8)
                 .foregroundColor(isSelected ? .white.opacity(0.8) : .secondaryLabelColor)
                 .frame(width: 100, alignment: .leading)

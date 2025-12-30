@@ -32,7 +32,7 @@ struct PacketsView: View {
                         Divider()
                     }
                 ) {
-                    ForEach(Array(viewModelWrapper.items.enumerated()), id: \.element.packetId) { index, item in
+                    ForEach(Array(viewModelWrapper.items.enumerated()), id: \.element.id) { index, item in
                         PacketRowView(packet: item, isSelected: viewModelWrapper.selectedPacket === item, isAlternate: index % 2 != 0)
                             .contentShape(Rectangle())
                             .onTapGesture {
@@ -42,6 +42,7 @@ struct PacketsView: View {
                 }
             }
             .padding(.vertical, 4)
+            .animation(.easeOut(duration: 0.2), value: viewModelWrapper.items)
         }
         .background(Color(nsColor: ThemeColor.packetListAndDetailBackgroundColor))
     }
