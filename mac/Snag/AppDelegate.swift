@@ -23,7 +23,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     }
     
     private func applyPersistedAppearance() {
-        let appearanceValue = UserDefaults.standard.string(forKey: SnagConstants.appearanceModeKey) ?? SnagConstants.appearanceAuto
+        let appearanceValue = SettingsManager.shared.appearanceMode
         
         switch appearanceValue {
         case SnagConstants.appearanceLight:

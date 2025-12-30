@@ -80,8 +80,9 @@ struct PacketsToolBar: View {
         var counts: [String: Int] = [:]
         let sourceItems = SnagController.shared.selectedProjectController?.selectedDeviceController?.packets ?? []
         for item in sourceItems {
-            guard let s = item.requestInfo?.url, let domain = extractDomain(s) else { continue }
-            let main = mainDomain(domain)
+            guard let urlString = item.requestInfo?.url, 
+                  let domain = urlString.extractDomain() else { continue }
+            let main = domain.mainDomain()
             counts[main, default: 0] += 1
         }
         return counts.keys.sorted { a, b in
@@ -92,24 +93,6 @@ struct PacketsToolBar: View {
         }
     }
     
-    private func extractDomain(_ urlString: String) -> String? {
-        let s = urlString.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard !s.isEmpty else { return nil }
-        if let host = URL(string: s)?.host, !host.isEmpty { return host }
-        if !s.contains("://"), let host = URL(string: "https://" + s)?.host, !host.isEmpty { return host }
-        return nil
-    }
-
-    private func mainDomain(_ host: String) -> String {
-        let h = host.lowercased().trimmingCharacters(in: CharacterSet(charactersIn: "."))
-        if h.isEmpty { return host }
-        if h == "localhost" { return h }
-        if h.contains(":") { return h }
-        let parts = h.split(separator: ".").map { String($0) }
-        if parts.count < 2 { return h }
-        if parts.allSatisfy({ $0.allSatisfy(\.isNumber) }) { return h }
-        return parts.suffix(2).joined(separator: ".")
-    }
     
     private var filterInputs: some View {
         HStack(spacing: 8) {

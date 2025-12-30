@@ -53,6 +53,7 @@
 		A556F1142EF3BE1D004B8A98 /* MainView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A556F1132EF3BE1D004B8A98 /* MainView.swift */; };
 		A556F1162EF3C171004B8A98 /* main.swift in Sources */ = {isa = PBXBuildFile; fileRef = A556F1152EF3C171004B8A98 /* main.swift */; };
 		A556F1192EF3E3DB004B8A98 /* SidebarView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A556F1172EF3E3DB004B8A98 /* SidebarView.swift */; };
+		A5D0BC942F04303A00C05E93 /* SettingsManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5D0BC922F04303A00C05E93 /* SettingsManager.swift */; };
 		BC1F5B37216746D30045C871 /* FontManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = BC1F5B36216746D30045C871 /* FontManager.swift */; };
 		BC32643621738AF0006452FE /* KeyValueRepresentation.swift in Sources */ = {isa = PBXBuildFile; fileRef = BC32643521738AF0006452FE /* KeyValueRepresentation.swift */; };
 		BC5E76C9216A64DB000F658D /* Theme.swift in Sources */ = {isa = PBXBuildFile; fileRef = BC5E76C8216A64DB000F658D /* Theme.swift */; };
@@ -154,6 +155,7 @@
 		A556F1132EF3BE1D004B8A98 /* MainView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MainView.swift; sourceTree = "<group>"; };
 		A556F1152EF3C171004B8A98 /* main.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = main.swift; sourceTree = "<group>"; };
 		A556F1172EF3E3DB004B8A98 /* SidebarView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SidebarView.swift; sourceTree = "<group>"; };
+		A5D0BC922F04303A00C05E93 /* SettingsManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsManager.swift; sourceTree = "<group>"; };
 		BC1F5B36216746D30045C871 /* FontManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FontManager.swift; sourceTree = "<group>"; };
 		BC32643521738AF0006452FE /* KeyValueRepresentation.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KeyValueRepresentation.swift; sourceTree = "<group>"; };
 		BC5E76C8216A64DB000F658D /* Theme.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Theme.swift; sourceTree = "<group>"; };
@@ -351,6 +353,14 @@
 			path = Sidebar;
 			sourceTree = "<group>";
 		};
+		A5D0BC932F04303A00C05E93 /* Managers */ = {
+			isa = PBXGroup;
+			children = (
+				A5D0BC922F04303A00C05E93 /* SettingsManager.swift */,
+			);
+			path = Managers;
+			sourceTree = "<group>";
+		};
 		BC1F5B35216746CA0045C871 /* Fonts */ = {
 			isa = PBXGroup;
 			children = (
@@ -427,6 +437,7 @@
 		BCD0E025210F5E0D00CE5C7B /* Snag */ = {
 			isa = PBXGroup;
 			children = (
+				A5D0BC932F04303A00C05E93 /* Managers */,
 				BC911A3F2168BC7F00B755D4 /* Themes */,
 				BC1F5B35216746CA0045C871 /* Fonts */,
 				BC75A80921737A7300A2A5B3 /* jsonViewer */,
@@ -737,6 +748,7 @@
 				BCFC854321384685001EC6D7 /* BaseViewModel.swift in Sources */,
 				A556F1162EF3C171004B8A98 /* main.swift in Sources */,
 				A54C27DF2EF71557000C8FD2 /* SnagController.swift in Sources */,
+				A5D0BC942F04303A00C05E93 /* SettingsManager.swift in Sources */,
 				A54C27E02EF71557000C8FD2 /* KeyValue.swift in Sources */,
 				A54C27E12EF71557000C8FD2 /* SnagPublisher.swift in Sources */,
 				A54C27E22EF71557000C8FD2 /* SnagConfiguration.swift in Sources */,

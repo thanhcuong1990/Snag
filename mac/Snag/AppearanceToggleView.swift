@@ -31,7 +31,7 @@ enum AppearanceMode: String, CaseIterable {
 }
 
 struct AppearanceToggleView: View {
-    @AppStorage("appearanceMode") private var appearanceMode: AppearanceMode = .auto
+    @AppStorage(SnagConstants.appearanceModeKey) private var appearanceMode: AppearanceMode = .auto
     @State private var isHovering = false
     
     var body: some View {

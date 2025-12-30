@@ -6,33 +6,33 @@ class SearchViewModel: ObservableObject {
     
     @Published var searchText: String = "" {
         didSet {
-            UserDefaults.standard.set(searchText, forKey: addressFilterPersistenceKey)
+            SettingsManager.shared.addressFilter = searchText
         }
     }
-    @Published var recentSearches: [String] = []
+    @Published var recentSearches: [String] = [] {
+        didSet {
+            SettingsManager.shared.recentSearches = recentSearches
+        }
+    }
     
     // Indicates if we should show the suggestions/recent list
     @Published var showSuggestions: Bool = false
     
-    // Mock list results (if meaningful to show)
-    @Published var mockResults: [String] = []
+    // List of suggested domains from traffic
+    @Published var suggestions: [String] = []
 
     private var cancellables = Set<AnyCancellable>()
-    private let recentSearchesKey = "RecentSearches"
-    private let addressFilterPersistenceKey = "AddressFilterPersistence"
-    
-    private let mockData = ["api.hipvan.com", "cdn.hipvan.com", "auth.hipvan.com"]
     
     var onApplyFilter: ((String) -> Void)?
     
     init() {
-        self.searchText = UserDefaults.standard.string(forKey: addressFilterPersistenceKey) ?? ""
-        self.recentSearches = UserDefaults.standard.stringArray(forKey: recentSearchesKey) ?? []
+        self.searchText = SettingsManager.shared.addressFilter
+        self.recentSearches = SettingsManager.shared.recentSearches
         
         // Debounce logic
         $searchText
             .removeDuplicates()
-            .debounce(for: .seconds(7), scheduler: RunLoop.main)
+            .debounce(for: .seconds(0.3), scheduler: RunLoop.main)
             .sink { [weak self] text in
                 self?.performDebouncedSearch(text)
             }
@@ -40,11 +40,12 @@ class SearchViewModel: ObservableObject {
     }
     
     func performDebouncedSearch(_ text: String) {
-        // Filter mock list
+        // Filter traffic domains for suggestions
         if text.isEmpty {
-            mockResults = []
+            suggestions = []
         } else {
-            mockResults = mockData.filter { $0.localizedCaseInsensitiveContains(text) }
+            let activeDomains = getActiveDomains()
+            suggestions = activeDomains.filter { $0.localizedCaseInsensitiveContains(text) }
         }
         
         // Apply to main app
@@ -68,31 +69,31 @@ class SearchViewModel: ObservableObject {
     }
     
     private func addToRecents(_ text: String) {
-        var current = recentSearches
-        // Deduplicate
-        current.removeAll { $0 == text }
-        current.insert(text, at: 0)
-        
-        // Keep last 10
-        if current.count > 10 {
-            current = Array(current.prefix(10))
-        }
-        
-        recentSearches = current
-        saveRecents()
+        SettingsManager.shared.addRecentSearch(text)
+        self.recentSearches = SettingsManager.shared.recentSearches
     }
     
     func deleteRecent(_ text: String) {
-        recentSearches.removeAll { $0 == text }
-        saveRecents()
+        SettingsManager.shared.removeRecentSearch(text)
+        self.recentSearches = SettingsManager.shared.recentSearches
     }
     
     func clearAllRecents() {
-        recentSearches.removeAll()
-        saveRecents()
+        SettingsManager.shared.clearRecentSearches()
+        self.recentSearches = SettingsManager.shared.recentSearches
     }
     
-    private func saveRecents() {
-        UserDefaults.standard.set(recentSearches, forKey: recentSearchesKey)
+    private func getActiveDomains() -> [String] {
+        var counts: [String: Int] = [:]
+        let packets = SnagController.shared.selectedProjectController?.selectedDeviceController?.packets ?? []
+        
+        for packet in packets {
+            guard let urlString = packet.requestInfo?.url,
+                  let domain = urlString.extractDomain() else { continue }
+            let main = domain.mainDomain()
+            counts[main, default: 0] += 1
+        }
+        
+        return counts.keys.sorted { (counts[$0] ?? 0) > (counts[$1] ?? 0) }
     }
 }
