@@ -11,6 +11,7 @@ class SnagPacket: Codable, Identifiable, Equatable, ObservableObject {
     
     var project: SnagProjectModel?
     var device: SnagDeviceModel?
+    var log: SnagLog?
     
     /// The time when this packet was first discovered/received by the Mac app.
     /// Initialized to Date() when the object is created (decoded).
@@ -21,6 +22,7 @@ class SnagPacket: Codable, Identifiable, Equatable, ObservableObject {
         case requestInfo
         case project
         case device
+        case log
     }
     
     init() {
@@ -33,6 +35,7 @@ class SnagPacket: Codable, Identifiable, Equatable, ObservableObject {
         self.requestInfo = try container.decodeIfPresent(SnagRequestInfo.self, forKey: .requestInfo)
         self.project = try container.decodeIfPresent(SnagProjectModel.self, forKey: .project)
         self.device = try container.decodeIfPresent(SnagDeviceModel.self, forKey: .device)
+        self.log = try container.decodeIfPresent(SnagLog.self, forKey: .log)
         self.discoveryDate = Date()
     }
     
@@ -42,6 +45,7 @@ class SnagPacket: Codable, Identifiable, Equatable, ObservableObject {
         try container.encode(requestInfo, forKey: .requestInfo)
         try container.encode(project, forKey: .project)
         try container.encode(device, forKey: .device)
+        try container.encode(log, forKey: .log)
     }
     
     static func == (lhs: SnagPacket, rhs: SnagPacket) -> Bool {

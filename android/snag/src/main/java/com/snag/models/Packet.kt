@@ -13,5 +13,7 @@ data class Packet(
     @SerialName("device")
     val device: Device,
     @SerialName("project")
-    val project: Project
+    val project: Project,
+    @SerialName("log")
+    val log: SnagLog? = null
 )

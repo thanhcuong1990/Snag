@@ -5,12 +5,14 @@ public struct SnagPacket: Sendable {
     public var requestInfo: SnagRequestInfo?
     public var project: SnagProject?
     public var device: SnagDevice?
+    public var log: SnagLog? = nil
     
     enum CodingKeys: String, CodingKey {
         case id = "packetId"
         case requestInfo
         case project
         case device
+        case log
     }
 }
 
@@ -21,6 +23,7 @@ extension SnagPacket: Codable {
         self.requestInfo = try container.decodeIfPresent(SnagRequestInfo.self, forKey: .requestInfo)
         self.project = try container.decodeIfPresent(SnagProject.self, forKey: .project)
         self.device = try container.decodeIfPresent(SnagDevice.self, forKey: .device)
+        self.log = try container.decodeIfPresent(SnagLog.self, forKey: .log)
     }
 
     public nonisolated func encode(to encoder: Encoder) throws {
@@ -29,6 +32,7 @@ extension SnagPacket: Codable {
         try container.encodeIfPresent(requestInfo, forKey: .requestInfo)
         try container.encodeIfPresent(project, forKey: .project)
         try container.encodeIfPresent(device, forKey: .device)
+        try container.encodeIfPresent(log, forKey: .log)
     }
 }
 

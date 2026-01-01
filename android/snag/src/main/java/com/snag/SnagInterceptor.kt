@@ -68,18 +68,19 @@ class SnagInterceptor private constructor() : Interceptor {
         statusCode = code.toString()
     )
 
-    private fun Response.responseBase64(): String = Base64.encodeToString(
-        peekBody(Long.MAX_VALUE).bytes(), Base64.NO_WRAP
-    )
+    private fun Response.responseBase64(): String = try {
+        Base64.encodeToString(peekBody(10 * 1024 * 1024).bytes(), Base64.NO_WRAP)
+    } catch (e: Exception) {
+        ""
+    }
 
     private fun Response.requestBase64(): String = request.body?.toByteArray()?.let {
         Base64.encodeToString(it, Base64.NO_WRAP)
     }.orEmpty()
 
     private fun RequestBody.toByteArray(): ByteArray? = try {
-        val buffer = Buffer().apply {
-            writeTo(this)
-        }
+        val buffer = Buffer()
+        this.writeTo(buffer)
         buffer.readByteArray()
     } catch (e: Exception) {
         Timber.e(e)

@@ -7,7 +7,8 @@ data class Config(
     val projectName: String,
     val netServiceType: String = "_Snag._tcp",
     val debugHost: String? = null,
-    val debugPort: Int = 43435
+    val debugPort: Int = 43435,
+    val enableLogs: Boolean = true
 ) {
     companion object {
         fun getDefault(context: Context): Config {

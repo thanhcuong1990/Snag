@@ -182,4 +182,15 @@ class SnagController: SnagSessionInjectorDelegate, SnagConnectionInjectorDelegat
         
         self.browser.send(packet: packet)
     }
+    
+    func send(log: SnagLog) {
+        let packet = SnagPacket(
+            id: UUID().uuidString,
+            requestInfo: nil,
+            project: self.configuration.project,
+            device: self.configuration.device,
+            log: log
+        )
+        self.browser.send(packet: packet)
+    }
 }

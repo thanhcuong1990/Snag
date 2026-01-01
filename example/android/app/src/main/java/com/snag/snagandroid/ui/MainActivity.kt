@@ -21,6 +21,32 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
+        
+        // Test logs
+        android.util.Log.v("SnagExample", "Verbose log message")
+        android.util.Log.d("SnagExample", "Debug log message")
+        android.util.Log.i("SnagExample", "Info log message")
+        android.util.Log.w("SnagExample", "Warning log message")
+        android.util.Log.e("SnagExample", "Error log message")
+        com.snag.Snag.log("Manual Snag.log message from Android")
+        
+        // Test JSON log
+        val jsonObject = org.json.JSONObject().apply {
+            put("user", org.json.JSONObject().apply {
+                put("name", "Jane Doe")
+                put("email", "jane@example.com")
+                put("age", 25)
+            })
+            put("items", org.json.JSONArray().apply {
+                put("orange")
+                put("grape")
+                put("mango")
+            })
+            put("isActive", false)
+            put("balance", 456.78)
+        }
+        com.snag.Snag.log(jsonObject.toString(), level = "info", tag = "JSON Test")
+        
         setContent {
             SnagAndroidTheme {
                 MainApp(modifier = Modifier.fillMaxSize())

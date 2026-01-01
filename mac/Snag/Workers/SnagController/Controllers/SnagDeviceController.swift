@@ -7,6 +7,10 @@ class SnagDeviceController: NSObject, ObservableObject {
     var deviceDescription: String?
     
     @Published var packets: [SnagPacket] = []
+    @Published var logs: [SnagLog] = []
+    
+    @Published var isLogsPaused: Bool = true
+    
     @Published private(set) var selectedPacket: SnagPacket?
     
     func select(packet: SnagPacket?) {
@@ -20,6 +24,11 @@ class SnagDeviceController: NSObject, ObservableObject {
     
     @discardableResult
     func addPacket(newPacket: SnagPacket) -> Bool {
+        
+        if let log = newPacket.log {
+            self.logs.append(log)
+            return true
+        }
         
         if newPacket.requestInfo == nil {
             return true
@@ -49,6 +58,7 @@ class SnagDeviceController: NSObject, ObservableObject {
     func clear() {
         
         self.packets.removeAll()
+        self.logs.removeAll()
         self.select(packet: nil)
     }
 }

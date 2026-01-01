@@ -7,37 +7,41 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
-		A57FAA0D2EFCF0D3002F6D15 /* Browser.swift in Sources */ = {isa = PBXBuildFile; fileRef = A57FA9FE2EFCF0D3002F6D15 /* Browser.swift */; };
-		A57FAA0E2EFCF0D3002F6D15 /* ConnectionInjector.swift in Sources */ = {isa = PBXBuildFile; fileRef = A57FA9FB2EFCF0D3002F6D15 /* ConnectionInjector.swift */; };
-		A57FAA0F2EFCF0D3002F6D15 /* Controller.swift in Sources */ = {isa = PBXBuildFile; fileRef = A57FAA012EFCF0D3002F6D15 /* Controller.swift */; };
-		A57FAA102EFCF0D3002F6D15 /* Snag.swift in Sources */ = {isa = PBXBuildFile; fileRef = A57FAA0B2EFCF0D3002F6D15 /* Snag.swift */; };
-		A57FAA112EFCF0D3002F6D15 /* Carrier.swift in Sources */ = {isa = PBXBuildFile; fileRef = A57FA9FF2EFCF0D3002F6D15 /* Carrier.swift */; };
-		A57FAA122EFCF0D3002F6D15 /* Project.swift in Sources */ = {isa = PBXBuildFile; fileRef = A57FAA052EFCF0D3002F6D15 /* Project.swift */; };
-		A57FAA132EFCF0D3002F6D15 /* Device.swift in Sources */ = {isa = PBXBuildFile; fileRef = A57FAA032EFCF0D3002F6D15 /* Device.swift */; };
-		A57FAA142EFCF0D3002F6D15 /* CarrierDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = A57FAA082EFCF0D3002F6D15 /* CarrierDelegate.swift */; };
-		A57FAA152EFCF0D3002F6D15 /* Configuration.swift in Sources */ = {isa = PBXBuildFile; fileRef = A57FAA002EFCF0D3002F6D15 /* Configuration.swift */; };
-		A57FAA162EFCF0D3002F6D15 /* Utility.swift in Sources */ = {isa = PBXBuildFile; fileRef = A57FAA092EFCF0D3002F6D15 /* Utility.swift */; };
-		A57FAA172EFCF0D3002F6D15 /* Packet.swift in Sources */ = {isa = PBXBuildFile; fileRef = A57FAA042EFCF0D3002F6D15 /* Packet.swift */; };
-		A57FAA182EFCF0D3002F6D15 /* SessionInjector.swift in Sources */ = {isa = PBXBuildFile; fileRef = A57FA9FC2EFCF0D3002F6D15 /* SessionInjector.swift */; };
-		A57FAA192EFCF0D3002F6D15 /* RequestInfo.swift in Sources */ = {isa = PBXBuildFile; fileRef = A57FAA062EFCF0D3002F6D15 /* RequestInfo.swift */; };
+		A5D0BCCC2F04F38800C05E93 /* Log.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5D0BCC22F04F38800C05E93 /* Log.swift */; };
+		A5D0BCCD2F04F38800C05E93 /* ConnectionInjector.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5D0BCB82F04F38800C05E93 /* ConnectionInjector.swift */; };
+		A5D0BCCE2F04F38800C05E93 /* Project.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5D0BCC42F04F38800C05E93 /* Project.swift */; };
+		A5D0BCCF2F04F38800C05E93 /* CarrierDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5D0BCC72F04F38800C05E93 /* CarrierDelegate.swift */; };
+		A5D0BCD02F04F38800C05E93 /* Configuration.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5D0BCBD2F04F38800C05E93 /* Configuration.swift */; };
+		A5D0BCD12F04F38800C05E93 /* RequestInfo.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5D0BCC52F04F38800C05E93 /* RequestInfo.swift */; };
+		A5D0BCD22F04F38800C05E93 /* SessionInjector.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5D0BCB92F04F38800C05E93 /* SessionInjector.swift */; };
+		A5D0BCD32F04F38800C05E93 /* Carrier.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5D0BCBC2F04F38800C05E93 /* Carrier.swift */; };
+		A5D0BCD42F04F38800C05E93 /* Snag.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5D0BCCA2F04F38800C05E93 /* Snag.swift */; };
+		A5D0BCD52F04F38800C05E93 /* Utility.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5D0BCC82F04F38800C05E93 /* Utility.swift */; };
+		A5D0BCD62F04F38800C05E93 /* Browser.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5D0BCBB2F04F38800C05E93 /* Browser.swift */; };
+		A5D0BCD72F04F38800C05E93 /* Packet.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5D0BCC32F04F38800C05E93 /* Packet.swift */; };
+		A5D0BCD82F04F38800C05E93 /* LogInterceptor.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5D0BCBF2F04F38800C05E93 /* LogInterceptor.swift */; };
+		A5D0BCD92F04F38800C05E93 /* Controller.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5D0BCBE2F04F38800C05E93 /* Controller.swift */; };
+		A5D0BCDA2F04F38800C05E93 /* Device.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5D0BCC12F04F38800C05E93 /* Device.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
-		A54C280A2EF71818000C8FD2 /* example.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; name = example.app; path = "Snag Example.app"; sourceTree = BUILT_PRODUCTS_DIR; };
-		A57FA9FB2EFCF0D3002F6D15 /* ConnectionInjector.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ConnectionInjector.swift; sourceTree = "<group>"; };
-		A57FA9FC2EFCF0D3002F6D15 /* SessionInjector.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SessionInjector.swift; sourceTree = "<group>"; };
-		A57FA9FE2EFCF0D3002F6D15 /* Browser.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Browser.swift; sourceTree = "<group>"; };
-		A57FA9FF2EFCF0D3002F6D15 /* Carrier.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Carrier.swift; sourceTree = "<group>"; };
-		A57FAA002EFCF0D3002F6D15 /* Configuration.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Configuration.swift; sourceTree = "<group>"; };
-		A57FAA012EFCF0D3002F6D15 /* Controller.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Controller.swift; sourceTree = "<group>"; };
-		A57FAA032EFCF0D3002F6D15 /* Device.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Device.swift; sourceTree = "<group>"; };
-		A57FAA042EFCF0D3002F6D15 /* Packet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Packet.swift; sourceTree = "<group>"; };
-		A57FAA052EFCF0D3002F6D15 /* Project.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Project.swift; sourceTree = "<group>"; };
-		A57FAA062EFCF0D3002F6D15 /* RequestInfo.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RequestInfo.swift; sourceTree = "<group>"; };
-		A57FAA082EFCF0D3002F6D15 /* CarrierDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CarrierDelegate.swift; sourceTree = "<group>"; };
-		A57FAA092EFCF0D3002F6D15 /* Utility.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Utility.swift; sourceTree = "<group>"; };
-		A57FAA0B2EFCF0D3002F6D15 /* Snag.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Snag.swift; sourceTree = "<group>"; };
 		A51234562EF71818000C8FD2 /* Info-iOS.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = "Info-iOS.plist"; sourceTree = "<group>"; };
+		A54C280A2EF71818000C8FD2 /* example.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; name = example.app; path = "Snag Example.app"; sourceTree = BUILT_PRODUCTS_DIR; };
+		A5D0BCB82F04F38800C05E93 /* ConnectionInjector.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ConnectionInjector.swift; sourceTree = "<group>"; };
+		A5D0BCB92F04F38800C05E93 /* SessionInjector.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SessionInjector.swift; sourceTree = "<group>"; };
+		A5D0BCBB2F04F38800C05E93 /* Browser.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Browser.swift; sourceTree = "<group>"; };
+		A5D0BCBC2F04F38800C05E93 /* Carrier.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Carrier.swift; sourceTree = "<group>"; };
+		A5D0BCBD2F04F38800C05E93 /* Configuration.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Configuration.swift; sourceTree = "<group>"; };
+		A5D0BCBE2F04F38800C05E93 /* Controller.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Controller.swift; sourceTree = "<group>"; };
+		A5D0BCBF2F04F38800C05E93 /* LogInterceptor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LogInterceptor.swift; sourceTree = "<group>"; };
+		A5D0BCC12F04F38800C05E93 /* Device.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Device.swift; sourceTree = "<group>"; };
+		A5D0BCC22F04F38800C05E93 /* Log.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Log.swift; sourceTree = "<group>"; };
+		A5D0BCC32F04F38800C05E93 /* Packet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Packet.swift; sourceTree = "<group>"; };
+		A5D0BCC42F04F38800C05E93 /* Project.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Project.swift; sourceTree = "<group>"; };
+		A5D0BCC52F04F38800C05E93 /* RequestInfo.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RequestInfo.swift; sourceTree = "<group>"; };
+		A5D0BCC72F04F38800C05E93 /* CarrierDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CarrierDelegate.swift; sourceTree = "<group>"; };
+		A5D0BCC82F04F38800C05E93 /* Utility.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Utility.swift; sourceTree = "<group>"; };
+		A5D0BCCA2F04F38800C05E93 /* Snag.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Snag.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
@@ -69,7 +73,7 @@
 		A54C28012EF71818000C8FD2 = {
 			isa = PBXGroup;
 			children = (
-				A57FAA0C2EFCF0D3002F6D15 /* Snag */,
+				A5D0BCCB2F04F38800C05E93 /* Snag */,
 				A54C280C2EF71818000C8FD2 /* example */,
 				A51234562EF71818000C8FD2 /* Info-iOS.plist */,
 				A5410B5C2EF7EB9D0074BE89 /* Frameworks */,
@@ -85,57 +89,59 @@
 			name = Products;
 			sourceTree = "<group>";
 		};
-		A57FA9FD2EFCF0D3002F6D15 /* Injectors */ = {
+		A5D0BCBA2F04F38800C05E93 /* Injectors */ = {
 			isa = PBXGroup;
 			children = (
-				A57FA9FB2EFCF0D3002F6D15 /* ConnectionInjector.swift */,
-				A57FA9FC2EFCF0D3002F6D15 /* SessionInjector.swift */,
+				A5D0BCB82F04F38800C05E93 /* ConnectionInjector.swift */,
+				A5D0BCB92F04F38800C05E93 /* SessionInjector.swift */,
 			);
 			path = Injectors;
 			sourceTree = "<group>";
 		};
-		A57FAA022EFCF0D3002F6D15 /* Core */ = {
+		A5D0BCC02F04F38800C05E93 /* Core */ = {
 			isa = PBXGroup;
 			children = (
-				A57FA9FD2EFCF0D3002F6D15 /* Injectors */,
-				A57FA9FE2EFCF0D3002F6D15 /* Browser.swift */,
-				A57FA9FF2EFCF0D3002F6D15 /* Carrier.swift */,
-				A57FAA002EFCF0D3002F6D15 /* Configuration.swift */,
-				A57FAA012EFCF0D3002F6D15 /* Controller.swift */,
+				A5D0BCBA2F04F38800C05E93 /* Injectors */,
+				A5D0BCBB2F04F38800C05E93 /* Browser.swift */,
+				A5D0BCBC2F04F38800C05E93 /* Carrier.swift */,
+				A5D0BCBD2F04F38800C05E93 /* Configuration.swift */,
+				A5D0BCBE2F04F38800C05E93 /* Controller.swift */,
+				A5D0BCBF2F04F38800C05E93 /* LogInterceptor.swift */,
 			);
 			path = Core;
 			sourceTree = "<group>";
 		};
-		A57FAA072EFCF0D3002F6D15 /* Models */ = {
+		A5D0BCC62F04F38800C05E93 /* Models */ = {
 			isa = PBXGroup;
 			children = (
-				A57FAA032EFCF0D3002F6D15 /* Device.swift */,
-				A57FAA042EFCF0D3002F6D15 /* Packet.swift */,
-				A57FAA052EFCF0D3002F6D15 /* Project.swift */,
-				A57FAA062EFCF0D3002F6D15 /* RequestInfo.swift */,
+				A5D0BCC12F04F38800C05E93 /* Device.swift */,
+				A5D0BCC22F04F38800C05E93 /* Log.swift */,
+				A5D0BCC32F04F38800C05E93 /* Packet.swift */,
+				A5D0BCC42F04F38800C05E93 /* Project.swift */,
+				A5D0BCC52F04F38800C05E93 /* RequestInfo.swift */,
 			);
 			path = Models;
 			sourceTree = "<group>";
 		};
-		A57FAA0A2EFCF0D3002F6D15 /* Support */ = {
+		A5D0BCC92F04F38800C05E93 /* Support */ = {
 			isa = PBXGroup;
 			children = (
-				A57FAA082EFCF0D3002F6D15 /* CarrierDelegate.swift */,
-				A57FAA092EFCF0D3002F6D15 /* Utility.swift */,
+				A5D0BCC72F04F38800C05E93 /* CarrierDelegate.swift */,
+				A5D0BCC82F04F38800C05E93 /* Utility.swift */,
 			);
 			path = Support;
 			sourceTree = "<group>";
 		};
-		A57FAA0C2EFCF0D3002F6D15 /* Snag */ = {
+		A5D0BCCB2F04F38800C05E93 /* Snag */ = {
 			isa = PBXGroup;
 			children = (
-				A57FAA022EFCF0D3002F6D15 /* Core */,
-				A57FAA072EFCF0D3002F6D15 /* Models */,
-				A57FAA0A2EFCF0D3002F6D15 /* Support */,
-				A57FAA0B2EFCF0D3002F6D15 /* Snag.swift */,
+				A5D0BCC02F04F38800C05E93 /* Core */,
+				A5D0BCC62F04F38800C05E93 /* Models */,
+				A5D0BCC92F04F38800C05E93 /* Support */,
+				A5D0BCCA2F04F38800C05E93 /* Snag.swift */,
 			);
 			name = Snag;
-			path = /Users/hv/workspace/app/snag/ios/Snag;
+			path = /Users/hv/workspace/app/Snag/ios/Snag;
 			sourceTree = "<absolute>";
 		};
 /* End PBXGroup section */
@@ -214,19 +220,21 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				A57FAA0D2EFCF0D3002F6D15 /* Browser.swift in Sources */,
-				A57FAA0E2EFCF0D3002F6D15 /* ConnectionInjector.swift in Sources */,
-				A57FAA0F2EFCF0D3002F6D15 /* Controller.swift in Sources */,
-				A57FAA102EFCF0D3002F6D15 /* Snag.swift in Sources */,
-				A57FAA112EFCF0D3002F6D15 /* Carrier.swift in Sources */,
-				A57FAA122EFCF0D3002F6D15 /* Project.swift in Sources */,
-				A57FAA132EFCF0D3002F6D15 /* Device.swift in Sources */,
-				A57FAA142EFCF0D3002F6D15 /* CarrierDelegate.swift in Sources */,
-				A57FAA152EFCF0D3002F6D15 /* Configuration.swift in Sources */,
-				A57FAA162EFCF0D3002F6D15 /* Utility.swift in Sources */,
-				A57FAA172EFCF0D3002F6D15 /* Packet.swift in Sources */,
-				A57FAA182EFCF0D3002F6D15 /* SessionInjector.swift in Sources */,
-				A57FAA192EFCF0D3002F6D15 /* RequestInfo.swift in Sources */,
+				A5D0BCCC2F04F38800C05E93 /* Log.swift in Sources */,
+				A5D0BCCD2F04F38800C05E93 /* ConnectionInjector.swift in Sources */,
+				A5D0BCCE2F04F38800C05E93 /* Project.swift in Sources */,
+				A5D0BCCF2F04F38800C05E93 /* CarrierDelegate.swift in Sources */,
+				A5D0BCD02F04F38800C05E93 /* Configuration.swift in Sources */,
+				A5D0BCD12F04F38800C05E93 /* RequestInfo.swift in Sources */,
+				A5D0BCD22F04F38800C05E93 /* SessionInjector.swift in Sources */,
+				A5D0BCD32F04F38800C05E93 /* Carrier.swift in Sources */,
+				A5D0BCD42F04F38800C05E93 /* Snag.swift in Sources */,
+				A5D0BCD52F04F38800C05E93 /* Utility.swift in Sources */,
+				A5D0BCD62F04F38800C05E93 /* Browser.swift in Sources */,
+				A5D0BCD72F04F38800C05E93 /* Packet.swift in Sources */,
+				A5D0BCD82F04F38800C05E93 /* LogInterceptor.swift in Sources */,
+				A5D0BCD92F04F38800C05E93 /* Controller.swift in Sources */,
+				A5D0BCDA2F04F38800C05E93 /* Device.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

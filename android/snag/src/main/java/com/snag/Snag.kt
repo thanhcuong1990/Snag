@@ -37,6 +37,77 @@ object Snag {
             device = device
         )
         Browser.initialize(browser)
+        
+        if (config.enableLogs) {
+            enableAutoLogCapture()
+        }
+    }
+
+    @JvmStatic
+    @JvmOverloads
+    fun log(
+        message: String,
+        level: String = "info",
+        tag: String? = null,
+        details: Map<String, String>? = null
+    ) {
+        try {
+            Browser.getInstance().sendLog(
+                com.snag.models.SnagLog(
+                    level = level,
+                    message = message,
+                    tag = tag,
+                    details = details
+                )
+            )
+        } catch (_: Exception) {
+            // Snag not initialized or failed
+        }
+    }
+
+    @JvmStatic
+    fun enableAutoLogCapture() {
+        Thread {
+            var process: Process? = null
+            try {
+                process = Runtime.getRuntime().exec("logcat -v threadtime -v year -v zone")
+                val reader = java.io.BufferedReader(java.io.InputStreamReader(process.inputStream))
+                
+                val pid = android.os.Process.myPid().toString()
+                
+                reader.use { bufferedReader ->
+                    var line: String?
+                    while (bufferedReader.readLine().also { line = it } != null) {
+                        val currentLine = line ?: continue
+                        if (currentLine.contains(pid)) {
+                            // Prevent infinite loop by filtering out Snag's own network/log activity
+                            // and OkHttp's logging which can cause feedback loops
+                            if (currentLine.contains("BrowserImpl") || 
+                                currentLine.contains("SnagLog") ||
+                                currentLine.contains("Snag: Connecting") || 
+                                currentLine.contains("Snag: Connected") ||
+                                currentLine.contains("Redefining intrinsic method") ||
+                                currentLine.contains("OkHttpClient") ||
+                                currentLine.contains("okhttp3") ||
+                                currentLine.contains("resource failed to call close") ||
+                                currentLine.contains("Choreographer") ||
+                                currentLine.contains("Skipped") && currentLine.contains("frames")) {
+                                continue
+                            }
+
+                            // Simple parsing or just send raw line
+                            // Logcat format: date time pid tid level tag: message
+                            // We can parse it or just send as message
+                            log(currentLine, level = "verbose", tag = "logcat")
+                        }
+                    }
+                }
+            } catch (e: Exception) {
+                e.printStackTrace()
+            } finally {
+                process?.destroy()
+            }
+        }.start()
     }
 
     private fun getAppIconBase64(context: Context): String? {

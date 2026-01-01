@@ -159,7 +159,9 @@ internal class BrowserImpl(
                 async {
                     try {
                         if (!socket.isClosed) {
-                            socket.getOutputStream().write(data)
+                            synchronized(socket) {
+                                socket.getOutputStream().write(data)
+                            }
                             true
                         } else {
                             false
@@ -184,6 +186,16 @@ internal class BrowserImpl(
 
     override fun sendPacket(requestInfo: RequestInfo) {
         sendPacket(requestInfo = requestInfo, packetId = java.util.UUID.randomUUID().toString())
+    }
+
+    override fun sendLog(log: com.snag.models.SnagLog) {
+        send(
+            Packet(
+                project = project,
+                device = device,
+                log = log
+            )
+        )
     }
 
     init {
@@ -286,7 +298,9 @@ internal class BrowserImpl(
                     async {
                         try {
                             if (!socket.isClosed) {
-                                socket.getOutputStream().write(payload)
+                                synchronized(socket) {
+                                    socket.getOutputStream().write(payload)
+                                }
                                 true
                             } else {
                                 false

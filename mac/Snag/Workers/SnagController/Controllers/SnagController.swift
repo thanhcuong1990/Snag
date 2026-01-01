@@ -14,6 +14,12 @@ class SnagController: NSObject, SnagPublisherDelegate, ObservableObject {
     
     static let shared = SnagController()
     
+    enum MainTab {
+        case network
+        case logs
+    }
+    
+    @Published var selectedTab: MainTab = .network
     @Published var projectControllers: [SnagProjectController] = []
     @Published var selectedProjectController: SnagProjectController? {
         didSet {

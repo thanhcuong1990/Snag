@@ -14,12 +14,18 @@ struct MainView: View {
             Divider()
             
             // Content Area (Packets and Details)
-            VSplitView {
-                PacketsViewControllerWrapper()
-                    .frame(minHeight: 200)
-                
-                DetailViewControllerWrapper()
-                    .frame(minHeight: 200)
+            Group {
+                if snagController.selectedTab == .network {
+                    VSplitView {
+                        PacketsViewControllerWrapper()
+                            .frame(minHeight: 200)
+                        
+                        DetailViewControllerWrapper()
+                            .frame(minHeight: 200)
+                    }
+                } else {
+                    LogsViewControllerWrapper()
+                }
             }
             .background(Color(nsColor: ThemeColor.packetListAndDetailBackgroundColor))
         }
@@ -77,4 +83,14 @@ struct DetailViewControllerWrapper: NSViewControllerRepresentable {
         return vc
     }
     func updateNSViewController(_ nsViewController: DetailViewController, context: Context) {}
+}
+
+struct LogsViewControllerWrapper: NSViewControllerRepresentable {
+    func makeNSViewController(context: Context) -> LogsViewController {
+        let vc = LogsViewController()
+        vc.viewModel = LogsViewModel()
+        vc.viewModel.register()
+        return vc
+    }
+    func updateNSViewController(_ nsViewController: LogsViewController, context: Context) {}
 }

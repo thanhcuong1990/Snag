@@ -99,6 +99,21 @@ config.device?.name = "Developer iPhone"
 Snag.start(configuration: config)
 ```
 
+### Logging
+
+Snag automatically captures logs from your application and displays them in the desktop viewer.
+
+- **Automatic Capture**: Intercepts `print`, `NSLog`, and `OSLog` (iOS 15+) messages.
+- **Manual Logging**: Send custom logs using `Snag.log("message")`.
+
+To disable automatic log capture:
+
+```swift
+let config = SnagConfiguration()
+config.enableLogs = false
+Snag.start(configuration: config)
+```
+
 ---
 
 ## 🤖 Android Integration
@@ -228,6 +243,21 @@ override fun onCreate() {
   super.onCreate()
   NetworkDebugInitializer.initForReactNative(applicationContext)
 }
+```
+
+### Logging
+
+Snag automatically captures `Logcat` output and displays it in the desktop viewer.
+
+- **Automatic Capture**: Intercepts standard Android logs (`Log.v`, `Log.d`, etc.).
+- **Manual Logging**: Send custom logs using `Snag.log("message")`.
+
+To disable automatic log capture:
+
+```kotlin
+// In your initialization logic
+val config = Config.getDefault(context).copy(enableLogs = false)
+Snag.start(context, config)
 ```
 
 ---
