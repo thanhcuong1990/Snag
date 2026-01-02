@@ -125,21 +125,11 @@ struct PacketsToolBar: View {
             
             Divider().frame(height: 14)
             
-            TextField("Status", text: $viewModelWrapper.statusFilter)
-                .textFieldStyle(PlainTextFieldStyle())
-                .frame(width: 45)
+            (Text("\(viewModelWrapper.items.count)")
+                .foregroundColor(.white) +
+            Text(" requests")
+                .foregroundColor(.secondary))
                 .font(.system(size: 11))
-                .onChange(of: viewModelWrapper.statusFilter) { _ in viewModelWrapper.updateFilters() }
-            
-            Divider().frame(height: 14)
-            
-            TextField("Method", text: $viewModelWrapper.methodFilter)
-                .textFieldStyle(PlainTextFieldStyle())
-                .frame(width: 45)
-                .font(.system(size: 11))
-                .onChange(of: viewModelWrapper.methodFilter) { _ in viewModelWrapper.updateFilters() }
-            
-            Divider().frame(height: 14)
         }
     }
     

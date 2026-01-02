@@ -14,12 +14,13 @@ import com.snag.models.Device
 import com.snag.models.Packet
 import com.snag.models.Project
 import com.snag.models.RequestInfo
-import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.MainScope
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.channels.BufferOverflow
+import kotlinx.coroutines.channels.Channel
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 import timber.log.Timber
@@ -28,8 +29,8 @@ import java.net.Socket
 import java.nio.ByteBuffer
 import java.nio.ByteOrder
 import java.util.concurrent.ConcurrentHashMap
-import java.util.concurrent.ConcurrentLinkedQueue
 import java.util.concurrent.Executors
+import java.util.concurrent.LinkedBlockingQueue
 
 internal class BrowserImpl(
     private val context: Context,
@@ -56,7 +57,13 @@ internal class BrowserImpl(
 
     private val nsdServices = ConcurrentHashMap<String, NsdServiceInfo>()
     private val socketConnections = ConcurrentHashMap<String, MutableMap<String, Socket>>()
-    private val pendingBuffers = ConcurrentLinkedQueue<ByteArray>()
+    
+    // Memory-safe buffers
+    private val packetChannel = Channel<Packet>(
+        capacity = MAX_PACKET_BUFFER,
+        onBufferOverflow = BufferOverflow.DROP_OLDEST
+    )
+    private val pendingBuffers = LinkedBlockingQueue<ByteArray>(MAX_OFFLINE_BUFFER)
 
     private var multicastLock: WifiManager.MulticastLock? = null
 
@@ -132,7 +139,17 @@ internal class BrowserImpl(
     }
 
     private fun send(packet: Packet) {
-        val payload = packet.let { json.encodeToString(it) }.toByteArray()
+        // Instant, non-blocking send to background processing channel
+        packetChannel.trySend(packet)
+    }
+
+    private fun processPacket(packet: Packet) {
+        val payload = try {
+            json.encodeToString(packet).toByteArray()
+        } catch (e: Exception) {
+            Timber.e(e, "Failed to encode packet")
+            return
+        }
 
         val buffer = ByteBuffer.allocate(8 + payload.size)
             .order(ByteOrder.LITTLE_ENDIAN)
@@ -149,7 +166,7 @@ internal class BrowserImpl(
         }
 
         if (targets.isEmpty()) {
-            pendingBuffers.add(data)
+            pendingBuffers.offer(data)
             attemptReconnect()
             return
         }
@@ -178,7 +195,7 @@ internal class BrowserImpl(
             }.awaitAll().any { it }
 
             if (!succeeded) {
-                pendingBuffers.add(data)
+                pendingBuffers.offer(data)
                 attemptReconnect()
             }
         }
@@ -200,6 +217,15 @@ internal class BrowserImpl(
 
     init {
         start()
+        startPacketConsumer()
+    }
+
+    private fun startPacketConsumer() {
+        snagScope.launch(Dispatchers.IO) {
+            for (packet in packetChannel) {
+                processPacket(packet)
+            }
+        }
     }
 
     private fun start() {
@@ -317,7 +343,7 @@ internal class BrowserImpl(
                 }.awaitAll().any { it }
 
                 if (!succeeded) {
-                    pendingBuffers.add(payload)
+                    pendingBuffers.offer(payload)
                     attemptReconnect()
                     break
                 }
@@ -359,5 +385,10 @@ internal class BrowserImpl(
             if (socket.isConnected) socket.close()
         }
         nsdServices.remove(serviceName)
+    }
+
+    companion object {
+        private const val MAX_PACKET_BUFFER = 500
+        private const val MAX_OFFLINE_BUFFER = 50
     }
 }

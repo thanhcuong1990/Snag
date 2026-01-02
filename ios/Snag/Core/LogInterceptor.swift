@@ -58,28 +58,30 @@ class LogInterceptor {
                 let store = try OSLogStore(scope: .currentProcessIdentifier)
                 var lastDate = Date()
                 
-                while self.isCapturing {
-                    let position = store.position(date: lastDate)
-                    let entries = try store.getEntries(at: position)
-                    
-                    for entry in entries {
-                        // Skip if entry is older or same as lastDate (simple dedupe attempts)
-                        if entry.date <= lastDate { continue }
-                        
-                        if let logEntry = entry as? OSLogEntryLog {
-                            // Filter consistent with process? scope .currentProcessIdentifier guarantees it.
-                            Snag.log(logEntry.composedMessage, 
-                                     level: self.levelString(for: logEntry.level), 
-                                     tag: logEntry.subsystem.isEmpty ? logEntry.category : "\(logEntry.subsystem)/\(logEntry.category)")
+                Task {
+                    while !Task.isCancelled && self.isCapturing {
+                        do {
+                            let position = store.position(date: lastDate)
+                            let entries = try store.getEntries(at: position)
+                            
+                            for entry in entries {
+                                if entry.date <= lastDate { continue }
+                                
+                                if let logEntry = entry as? OSLogEntryLog {
+                                    Snag.log(logEntry.composedMessage,
+                                             level: self.levelString(for: logEntry.level),
+                                             tag: logEntry.subsystem.isEmpty ? logEntry.category : "\(logEntry.subsystem)/\(logEntry.category)")
+                                }
+                                
+                                lastDate = entry.date
+                            }
+                        } catch {
+                            print("Snag: Log stream error: \(error)")
                         }
                         
-                        lastDate = entry.date
+                        try? await Task.sleep(nanoseconds: 1 * 1_000_000_000) // 1 second
                     }
-                    Thread.sleep(forTimeInterval: 1.0) 
-                    // Polling 1s might be slow but safe.
-                    // To do better we'd need OSLogEntrySource but it's complex.
                 }
-                
             } catch {
                 print("Snag: Failed to setup OSLogStore: \(error)")
             }

@@ -75,17 +75,6 @@ class PacketsViewModel: BaseListViewModel<SnagPacket>  {
         }
     }
     
-    var methodFilterTerm = "" {
-        didSet {
-            self.refreshItems()
-        }
-    }
-    
-    var statusFilterTerm = "" {
-        didSet {
-            self.refreshItems()
-        }
-    }
     
     private var allPackets: [SnagPacket] {
         return SnagController.shared.selectedProjectController?.selectedDeviceController?.packets ?? []
@@ -122,9 +111,7 @@ class PacketsViewModel: BaseListViewModel<SnagPacket>  {
     }
     
     func filter(items: [SnagPacket]) -> [SnagPacket] {
-        var filteredItems = performAddressFiltration(items)
-        filteredItems = performMethodFiltration(filteredItems)
-        filteredItems = performStatusFiltration(filteredItems)
+        let filteredItems = performAddressFiltration(items)
         return performCategoryFiltration(filteredItems)
     }
     
@@ -166,29 +153,6 @@ class PacketsViewModel: BaseListViewModel<SnagPacket>  {
         }
     }
     
-    func performMethodFiltration(_ items: [SnagPacket])  -> [SnagPacket] {
-        guard methodFilterTerm.count > 0 else {
-            return items
-        }
-        
-        return items.filter
-            { $0.requestInfo?.requestMethod?.rawValue.lowercased()
-                .contains(self.methodFilterTerm.lowercased()) ?? true }
-    }
-    
-    func performStatusFiltration(_ items: [SnagPacket])  -> [SnagPacket] {
-        guard statusFilterTerm.count > 0 else {
-            return items
-        }
-        
-        guard !statusFilterTerm.trimmingCharacters(in: .whitespaces).isEmpty else {
-            return items.filter { $0.requestInfo?.statusCode?.trimmingCharacters(in: .whitespaces).isEmpty ?? true}
-        }
-        
-        return items.filter
-            { $0.requestInfo?.statusCode?.contains(self.statusFilterTerm) ?? false
-        }
-    }
     
     func clearPackets() {
         SnagController.shared.selectedProjectController?.selectedDeviceController?.clear()

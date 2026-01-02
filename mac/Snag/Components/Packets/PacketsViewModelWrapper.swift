@@ -9,8 +9,6 @@ class PacketsViewModelWrapper: ObservableObject {
     @Published var items: [SnagPacket] = []
     @Published var selectedPacket: SnagPacket? = nil
     @Published var addressFilter: String = ""
-    @Published var statusFilter: String = ""
-    @Published var methodFilter: String = ""
     @Published var selectedCategory: PacketFilterCategory = .all
     @Published var sortOrder: SortOrder = .descending  // Default: newest first
 
@@ -19,8 +17,6 @@ class PacketsViewModelWrapper: ObservableObject {
     init(viewModel: PacketsViewModel?) {
         self.viewModel = viewModel
         self.addressFilter = viewModel?.addressFilterTerm ?? ""
-        self.statusFilter = viewModel?.statusFilterTerm ?? ""
-        self.methodFilter = viewModel?.methodFilterTerm ?? ""
         self.selectedCategory = viewModel?.categoryFilter ?? .all
         self.update()
 
@@ -37,8 +33,6 @@ class PacketsViewModelWrapper: ObservableObject {
     
     func updateFilters() {
         viewModel?.addressFilterTerm = addressFilter
-        viewModel?.statusFilterTerm = statusFilter
-        viewModel?.methodFilterTerm = methodFilter
         viewModel?.categoryFilter = selectedCategory
     }
     

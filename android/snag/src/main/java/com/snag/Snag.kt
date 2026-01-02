@@ -11,6 +11,9 @@ import com.snag.core.browser.BrowserImpl
 import com.snag.core.config.Config
 import com.snag.models.Device
 import com.snag.models.Project
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.MainScope
+import kotlinx.coroutines.launch
 import java.io.ByteArrayOutputStream
 
 object Snag {
@@ -67,7 +70,7 @@ object Snag {
 
     @JvmStatic
     fun enableAutoLogCapture() {
-        Thread {
+        MainScope().launch(Dispatchers.IO) {
             var process: Process? = null
             try {
                 process = Runtime.getRuntime().exec("logcat -v threadtime -v year -v zone")
@@ -103,11 +106,11 @@ object Snag {
                     }
                 }
             } catch (e: Exception) {
-                e.printStackTrace()
+                // Ignore
             } finally {
                 process?.destroy()
             }
-        }.start()
+        }
     }
 
     private fun getAppIconBase64(context: Context): String? {

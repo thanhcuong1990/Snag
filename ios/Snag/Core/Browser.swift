@@ -12,6 +12,14 @@ class SnagBrowser: NSObject {
     private var connectingEndpoints: Set<NWEndpoint> = []
     private let queue = DispatchQueue(label: "com.snag.browser.queue")
     
+    private let encoder: JSONEncoder = {
+        let encoder = JSONEncoder()
+        encoder.dateEncodingStrategy = .secondsSince1970
+        return encoder
+    }()
+    
+    private let MAX_OFFLINE_BUFFER = 50
+    
     init(configuration: SnagConfiguration) {
         super.init()
         self.configuration = configuration
@@ -144,9 +152,7 @@ class SnagBrowser: NSObject {
     func send(packet: SnagPacket) {
         queue.async {
             do {
-                let encoder = JSONEncoder()
-                encoder.dateEncodingStrategy = .secondsSince1970
-                let packetData = try encoder.encode(packet)
+                let packetData = try self.encoder.encode(packet)
                 
                 var headerLength = UInt64(packetData.count)
                 let headerData = Data(bytes: &headerLength, count: MemoryLayout<UInt64>.size)
@@ -157,6 +163,9 @@ class SnagBrowser: NSObject {
                 
                 let readyConnections = self.connections.filter({ $0.state == .ready })
                 if readyConnections.isEmpty {
+                    if self.pendingBuffers.count >= self.MAX_OFFLINE_BUFFER {
+                        self.pendingBuffers.removeFirst()
+                    }
                     self.pendingBuffers.append(buffer)
                 } else {
                     for connection in readyConnections {
