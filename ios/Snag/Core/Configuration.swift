@@ -14,7 +14,7 @@ public class SnagConfiguration {
     var deepLinkStarterURL: String?
     var publicKeyName: String?
     
-    public var enableLogs: Bool = true
+    public var enableLogs: Bool = false
     
     public static let defaultConfiguration: SnagConfiguration = {
         let config = SnagConfiguration()

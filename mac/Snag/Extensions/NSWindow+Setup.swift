@@ -18,9 +18,9 @@ extension NSWindow {
         window.minSize = NSSize(width: 800, height: 600)
         
         // Add Tab Toggle to titlebar
-        let tabToggle = TabToggleViewController()
-        tabToggle.layoutAttribute = .trailing
-        window.addTitlebarAccessoryViewController(tabToggle)
+        // let tabToggle = TabToggleViewController()
+        // tabToggle.layoutAttribute = .trailing
+        // window.addTitlebarAccessoryViewController(tabToggle)
         
         // Add Appearance Toggle to titlebar
         let appearanceToggle = AppearanceToggleViewController()

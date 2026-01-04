@@ -126,7 +126,7 @@ struct PacketsToolBar: View {
             Divider().frame(height: 14)
             
             (Text("\(viewModelWrapper.items.count)")
-                .foregroundColor(.white) +
+                .foregroundColor(.primary) +
             Text(" requests")
                 .foregroundColor(.secondary))
                 .font(.system(size: 11))
