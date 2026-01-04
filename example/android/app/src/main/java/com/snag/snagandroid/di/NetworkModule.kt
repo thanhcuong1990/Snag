@@ -39,8 +39,8 @@ object NetworkModule {
     @Provides
     @Singleton
     fun provideLoggerInterceptor(): HttpLoggingInterceptor = HttpLoggingInterceptor().apply {
-        // Use BASIC to avoid flooding logs - Snag already captures full request/response body
-        level = HttpLoggingInterceptor.Level.BASIC
+        // Use BODY level to log full request/response details for debugging
+        level = HttpLoggingInterceptor.Level.BODY
     }
 
     @Provides

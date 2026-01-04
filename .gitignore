@@ -87,3 +87,4 @@ Carthage/Build/
 # *.xcworkspace
 .build/
 dist/
+android/.kotlin/sessions/.*

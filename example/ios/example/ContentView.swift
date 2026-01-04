@@ -156,12 +156,36 @@ struct ContentView: View {
     }
     
     private func executeRequest(_ request: URLRequest) async {
+        // MARK: - Request Logging
+        print("\n" + String(repeating: "=", count: 60))
+        print("🚀 [REQUEST] \(request.httpMethod ?? "GET") \(request.url?.absoluteString ?? "")")
+        if let headers = request.allHTTPHeaderFields, !headers.isEmpty {
+            print("📋 [HEADERS]")
+            headers.forEach { print("   \($0.key): \($0.value)") }
+        }
+        if let body = request.httpBody, let bodyString = String(data: body, encoding: .utf8) {
+            print("📦 [BODY] \(bodyString)")
+        }
+        print(String(repeating: "-", count: 60))
+        
         do {
             let (data, response) = try await URLSession.shared.data(for: request)
-            guard let http = response as? HTTPURLResponse else { responseText = "Invalid response"; return }
+            guard let http = response as? HTTPURLResponse else {
+                print("❌ [ERROR] Invalid response")
+                responseText = "Invalid response"
+                return
+            }
             
             let bodyText = String(data: data, encoding: .utf8) ?? "(binary data)"
             let truncated = bodyText.count > 2000 ? String(bodyText.prefix(2000)) + "\n... (truncated)" : bodyText
+            
+            // MARK: - Response Logging
+            print("✅ [RESPONSE] Status: \(http.statusCode) \(HTTPURLResponse.localizedString(forStatusCode: http.statusCode))")
+            print("📋 [RESPONSE HEADERS]")
+            http.allHeaderFields.forEach { print("   \($0.key): \($0.value)") }
+            print("📦 [RESPONSE BODY]")
+            print(bodyText) // Full body for console debugging
+            print(String(repeating: "=", count: 60) + "\n")
             
             responseText = """
             \(request.httpMethod ?? "UNKNOWN") \(request.url?.absoluteString ?? "")
@@ -174,8 +198,12 @@ struct ContentView: View {
             \(truncated)
             """
         } catch let urlError as URLError {
+            print("❌ [ERROR] \(urlError.code == .timedOut ? "Request timed out" : urlError.localizedDescription)")
+            print(String(repeating: "=", count: 60) + "\n")
             responseText = urlError.code == .timedOut ? "Request timed out" : "Network error: \(urlError.localizedDescription)"
         } catch {
+            print("❌ [ERROR] \(error.localizedDescription)")
+            print(String(repeating: "=", count: 60) + "\n")
             responseText = "Request failed: \(error.localizedDescription)"
         }
     }
