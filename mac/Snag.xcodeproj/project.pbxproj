@@ -60,7 +60,6 @@
 		A5D0BCE52F04F4F100C05E93 /* TabToggleView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5D0BCE22F04F4F100C05E93 /* TabToggleView.swift */; };
 		A5D0BCE62F04F4F100C05E93 /* TabToggleViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5D0BCE32F04F4F100C05E93 /* TabToggleViewController.swift */; };
 		A5D0BCE82F04F54700C05E93 /* SnagLog.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5D0BCE72F04F54700C05E93 /* SnagLog.swift */; };
-		A5D0BCEA2F06229C00C05E93 /* CollapsibleJSONView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5D0BCE92F06229C00C05E93 /* CollapsibleJSONView.swift */; };
 		BC1F5B37216746D30045C871 /* FontManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = BC1F5B36216746D30045C871 /* FontManager.swift */; };
 		BC32643621738AF0006452FE /* KeyValueRepresentation.swift in Sources */ = {isa = PBXBuildFile; fileRef = BC32643521738AF0006452FE /* KeyValueRepresentation.swift */; };
 		BC5E76C9216A64DB000F658D /* Theme.swift in Sources */ = {isa = PBXBuildFile; fileRef = BC5E76C8216A64DB000F658D /* Theme.swift */; };
@@ -169,7 +168,6 @@
 		A5D0BCE22F04F4F100C05E93 /* TabToggleView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TabToggleView.swift; sourceTree = "<group>"; };
 		A5D0BCE32F04F4F100C05E93 /* TabToggleViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TabToggleViewController.swift; sourceTree = "<group>"; };
 		A5D0BCE72F04F54700C05E93 /* SnagLog.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SnagLog.swift; sourceTree = "<group>"; };
-		A5D0BCE92F06229C00C05E93 /* CollapsibleJSONView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CollapsibleJSONView.swift; sourceTree = "<group>"; };
 		BC1F5B36216746D30045C871 /* FontManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FontManager.swift; sourceTree = "<group>"; };
 		BC32643521738AF0006452FE /* KeyValueRepresentation.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KeyValueRepresentation.swift; sourceTree = "<group>"; };
 		BC5E76C8216A64DB000F658D /* Theme.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Theme.swift; sourceTree = "<group>"; };
@@ -379,7 +377,6 @@
 		A5D0BCDE2F04F4AF00C05E93 /* Logs */ = {
 			isa = PBXGroup;
 			children = (
-				A5D0BCE92F06229C00C05E93 /* CollapsibleJSONView.swift */,
 				A5D0BCDB2F04F4AF00C05E93 /* LogsView.swift */,
 				A5D0BCDC2F04F4AF00C05E93 /* LogsViewController.swift */,
 				A5D0BCDD2F04F4AF00C05E93 /* LogsViewModel.swift */,
@@ -821,7 +818,6 @@
 				A556F10E2EF3BDE8004B8A98 /* DetailsView.swift in Sources */,
 				BC911A422168C00500B755D4 /* NSColor.swift in Sources */,
 				BCD0E029210F5E0D00CE5C7B /* ViewController.swift in Sources */,
-				A5D0BCEA2F06229C00C05E93 /* CollapsibleJSONView.swift in Sources */,
 				A530145C2EFC5AB7008A8420 /* JSONWebView.swift in Sources */,
 				A530145D2EFC5AB7008A8420 /* DetailsTheme.swift in Sources */,
 				A50374D52EFD485300FA0067 /* AppearanceToggleView.swift in Sources */,

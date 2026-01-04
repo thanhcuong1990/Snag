@@ -2,13 +2,12 @@ import Foundation
 import OSLog
 
 @available(iOS 15.0, *)
-class LogInterceptor {
+actor LogInterceptor {
     
     static let shared = LogInterceptor()
     
     private let pipe = Pipe()
     private var isCapturing = false
-    private let queue = DispatchQueue(label: "com.snag.logInterceptor")
     
     func startCapturing() {
         guard !isCapturing else { return }
@@ -25,25 +24,17 @@ class LogInterceptor {
         dup2(pipeFileDescriptor, STDOUT_FILENO)
         dup2(pipeFileDescriptor, STDERR_FILENO)
         
-        // Restore them immediately? No, we want to capture. 
-        // But dup2 replaces the file descriptor. 
-        // We probably want to tee? 
-        // For simplicity, we just capture and re-print to original if needed.
-        // Swift print() goes to stdout.
-        
         pipeReadHandle.readabilityHandler = { handle in
             let data = handle.availableData
             if data.isEmpty { return }
             
-            // Re-print to original stdout to keep Xcode console working? 
-            // Writing to originalStdout file descriptor.
-            // write(originalStdout, ...)
-            
             if let string = String(data: data, encoding: .utf8) {
-                // Split by newlines
-                let lines = string.components(separatedBy: .newlines)
-                for line in lines where !line.isEmpty {
-                    Snag.log(line, level: "info", tag: "stdout")
+                // Limit message length to prevent excessive packet size
+                let maxLength = 10_000
+                let message = string.count > maxLength ? String(string.prefix(maxLength)) + "... (truncated in interceptor)" : string
+                
+                Task { @MainActor in
+                    Snag.log(message, level: "info", tag: "stdout")
                 }
             }
         }
@@ -53,34 +44,41 @@ class LogInterceptor {
     }
     
     private func startOSLogStream() {
-        queue.async {
+        // Use a detached task to avoid blocking the actor's executor with OSLogStore setup
+        Task.detached(priority: .background) {
             do {
                 let store = try OSLogStore(scope: .currentProcessIdentifier)
                 var lastDate = Date()
                 
-                Task {
-                    while !Task.isCancelled && self.isCapturing {
-                        do {
-                            let position = store.position(date: lastDate)
-                            let entries = try store.getEntries(at: position)
-                            
-                            for entry in entries {
-                                if entry.date <= lastDate { continue }
-                                
-                                if let logEntry = entry as? OSLogEntryLog {
-                                    Snag.log(logEntry.composedMessage,
-                                             level: self.levelString(for: logEntry.level),
-                                             tag: logEntry.subsystem.isEmpty ? logEntry.category : "\(logEntry.subsystem)/\(logEntry.category)")
-                                }
-                                
-                                lastDate = entry.date
-                            }
-                        } catch {
-                            print("Snag: Log stream error: \(error)")
-                        }
+                while !Task.isCancelled {
+                    // Check capturing state from the actor
+                    let active = await LogInterceptor.shared.getIsCapturing()
+                    if !active { break }
+                    
+                    do {
+                        let position = store.position(date: lastDate)
+                        let entries = try store.getEntries(at: position)
                         
-                        try? await Task.sleep(nanoseconds: 1 * 1_000_000_000) // 1 second
+                        for entry in entries {
+                            if entry.date <= lastDate { continue }
+                            
+                            if let logEntry = entry as? OSLogEntryLog {
+                                let message = logEntry.composedMessage
+                                let level = LogInterceptor.levelString(for: logEntry.level)
+                                let tag = logEntry.subsystem.isEmpty ? logEntry.category : "\(logEntry.subsystem)/\(logEntry.category)"
+                                
+                                Task { @MainActor in
+                                    Snag.log(message, level: level, tag: tag)
+                                }
+                            }
+                            
+                            lastDate = entry.date
+                        }
+                    } catch {
+                        print("Snag: Log stream error: \(error)")
                     }
+                    
+                    try? await Task.sleep(nanoseconds: 1 * 1_000_000_000) // 1 second
                 }
             } catch {
                 print("Snag: Failed to setup OSLogStore: \(error)")
@@ -88,7 +86,12 @@ class LogInterceptor {
         }
     }
     
-    private func levelString(for level: OSLogEntryLog.Level) -> String {
+    // Helper to allow external/detached access to capturing state
+    func getIsCapturing() -> Bool {
+        return isCapturing
+    }
+    
+    private static func levelString(for level: OSLogEntryLog.Level) -> String {
         switch level {
         case .debug: return "debug"
         case .info: return "info"

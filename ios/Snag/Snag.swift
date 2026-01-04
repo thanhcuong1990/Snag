@@ -25,6 +25,8 @@ public class Snag {
     
     @available(iOS 15.0, *)
     public static func enableAutoLogCapture() {
-        LogInterceptor.shared.startCapturing()
+        Task {
+            await LogInterceptor.shared.startCapturing()
+        }
     }
 }

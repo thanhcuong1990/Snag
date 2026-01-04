@@ -5,12 +5,12 @@ class LogsViewModel: ObservableObject {
     @Published var items: [SnagLog] = []
     @Published var filterTerm: String = "" {
         didSet {
-            self.refreshItems()
+            self.reloadLogs()
         }
     }
     
-    // Simple enum for log level filtering if needed later
-    // var levelFilter: String? 
+    private var isUpdatePending = false
+    private let updateRateLimit: TimeInterval = 0.2 // 200ms throttle
     
     var isPaused: Bool {
         get {
@@ -42,61 +42,49 @@ class LogsViewModel: ObservableObject {
         self.reloadLogs()
     }
     
+    deinit {
+        NotificationCenter.default.removeObserver(self)
+    }
+    
     @objc func onPacketReceived() {
         if isPaused { return }
         self.reloadLogs()
     }
     
     @objc func onDeviceChanged() {
-        // Force reload when device changes to show the selected device's logs
-        // but respect pause state - show current snapshot, no future updates
-        self.forceReloadLogs()
-    }
-    
-    // Formerly refreshItems
-    func refreshItems() {
         self.reloadLogs()
     }
-    
-    /// Force reload logs regardless of pause state (used for device switching)
-    private func forceReloadLogs() {
-        let logs = self.allLogs
+    func reloadLogs() {
+        if isPaused { return }
+        if isUpdatePending { return }
         
-        guard !filterTerm.isEmpty else {
-            self.items = logs
-            return
-        }
+        isUpdatePending = true
         
-        let term = filterTerm.lowercased()
-        self.items = logs.filter { log in
-            log.message.lowercased().contains(term) ||
-            log.tag?.lowercased().contains(term) ?? false ||
-            log.level.lowercased().contains(term)
+        DispatchQueue.main.asyncAfter(deadline: .now() + updateRateLimit) { [weak self] in
+            guard let self = self else { return }
+            self.isUpdatePending = false
+            self.performUpdate()
         }
     }
     
-    func reloadLogs() {
-        // Don't reload if paused
-        if isPaused { return }
-        
+    private func performUpdate() {
         let logs = self.allLogs
+        let term = self.filterTerm.lowercased()
         
-        guard !filterTerm.isEmpty else {
-            self.items = logs
-            return
-        }
-        
-        let term = filterTerm.lowercased()
-        self.items = logs.filter { log in
-            log.message.lowercased().contains(term) ||
+        let filtered = logs.filter { log in
+            if term.isEmpty { return true }
+            return log.message.lowercased().contains(term) ||
             log.tag?.lowercased().contains(term) ?? false ||
             log.level.lowercased().contains(term)
+        }
+        
+        DispatchQueue.main.async {
+            self.items = filtered
         }
     }
     
     func clearLogs() {
         SnagController.shared.selectedProjectController?.selectedDeviceController?.clear()
-        // Force clear items even if paused
         self.items = []
     }
 }

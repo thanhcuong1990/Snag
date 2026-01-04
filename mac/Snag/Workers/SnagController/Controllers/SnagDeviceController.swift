@@ -22,11 +22,19 @@ class SnagDeviceController: NSObject, ObservableObject {
         NotificationCenter.default.post(name: SnagNotifications.didSelectPacket, object: nil)
     }
     
+    private let maxItems = 2_000
+    
     @discardableResult
     func addPacket(newPacket: SnagPacket) -> Bool {
         
         if let log = newPacket.log {
+            if isLogsPaused {
+                return true // Discard log when paused
+            }
             self.logs.append(log)
+            if self.logs.count > maxItems {
+                self.logs.removeFirst()
+            }
             return true
         }
         
@@ -44,8 +52,9 @@ class SnagDeviceController: NSObject, ObservableObject {
         }
         
         self.packets.append(newPacket)
-        
-        
+        if self.packets.count > maxItems {
+            self.packets.removeFirst()
+        }
         
         if self.packets.count == 1 {
             

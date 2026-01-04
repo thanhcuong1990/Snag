@@ -184,7 +184,7 @@ struct ContentView: View {
             print("📋 [RESPONSE HEADERS]")
             http.allHeaderFields.forEach { print("   \($0.key): \($0.value)") }
             print("📦 [RESPONSE BODY]")
-            print(bodyText) // Full body for console debugging
+            print(truncated) // Truncated body for console debugging
             print(String(repeating: "=", count: 60) + "\n")
             
             responseText = """

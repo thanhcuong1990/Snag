@@ -52,12 +52,6 @@ struct LogRowView: View {
         }
     }
     
-    /// Parsed JSON object if the message is valid JSON
-    private var parsedJSON: Any? {
-        guard log.message.looksLikeJSON else { return nil }
-        return log.message.parseAsJSON()
-    }
-    
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
             // Header row with timestamp, level, tag
@@ -80,14 +74,10 @@ struct LogRowView: View {
                 }
                 
                 // Message content
-                if let json = parsedJSON {
-                    CollapsibleJSONView(json: json)
-                } else {
-                    Text(log.message)
-                        .font(.system(.body, design: .monospaced))
-                        .foregroundColor(colorForLevel)
-                        .textSelection(.enabled)
-                }
+                Text(log.message)
+                    .font(.system(.body, design: .monospaced))
+                    .foregroundColor(colorForLevel)
+                    .textSelection(.enabled)
                 
                 Spacer()
             }
