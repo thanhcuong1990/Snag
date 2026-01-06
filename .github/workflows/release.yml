@@ -61,10 +61,15 @@ jobs:
           # Download Sparkle tools
           curl -L -o sparkle.tar.xz https://github.com/sparkle-project/Sparkle/releases/download/2.6.4/Sparkle-2.6.4.tar.xz
 
-          # Find and extract sign_update
-          SIGN_UPDATE_IN_ARCHIVE=$(tar -tf sparkle.tar.xz | grep "sign_update" | head -n 1)
+          # Find and extract sign_update (avoiding .dSYM files)
+          SIGN_UPDATE_IN_ARCHIVE=$(tar -tf sparkle.tar.xz | grep -v "\.dSYM" | grep "/sign_update$" | head -n 1)
           if [ -z "$SIGN_UPDATE_IN_ARCHIVE" ]; then
-            echo "::error::Could not find sign_update in sparkle.tar.xz"
+            # Try without leading slash just in case
+            SIGN_UPDATE_IN_ARCHIVE=$(tar -tf sparkle.tar.xz | grep -v "\.dSYM" | grep "^sign_update$" | head -n 1)
+          fi
+
+          if [ -z "$SIGN_UPDATE_IN_ARCHIVE" ]; then
+            echo "::error::Could not find sign_update binary in sparkle.tar.xz"
             exit 1
           fi
 
