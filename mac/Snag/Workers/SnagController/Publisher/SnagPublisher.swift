@@ -78,12 +78,12 @@ class SnagPublisher: NSObject {
         connection.receive(minimumIncompleteLength: 8, maximumLength: 8) { [weak self] data, context, isComplete, error in
             if let error = error {
                 print("SnagPublisher: Receive header error: \(error)")
-                self?.removeConnection(connection)
+                connection.cancel()
                 return
             }
             
             guard let data = data, data.count == 8 else {
-                if isComplete { self?.removeConnection(connection) }
+                if isComplete { connection.cancel() }
                 return
             }
             
@@ -97,7 +97,7 @@ class SnagPublisher: NSObject {
             connection.receive(minimumIncompleteLength: length, maximumLength: length) { data, context, isComplete, error in
                 if let error = error {
                     print("SnagPublisher: Receive body error: \(error)")
-                    self?.removeConnection(connection)
+                    connection.cancel()
                     return
                 }
                 
@@ -109,7 +109,7 @@ class SnagPublisher: NSObject {
                 if !isComplete {
                     self?.receiveData(on: connection)
                 } else {
-                    self?.removeConnection(connection)
+                    connection.cancel()
                 }
             }
         }

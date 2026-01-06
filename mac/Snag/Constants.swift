@@ -8,4 +8,5 @@ enum SnagConstants {
     static let appearanceDark = "dark"
     static let addressFilterPersistenceKey = "addressFilterPersistence"
     static let recentSearchesKey = "recentSearches"
+    static let detailsSplitRatioKey = "detailsSplitRatio"
 }
