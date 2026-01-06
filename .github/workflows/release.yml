@@ -29,7 +29,7 @@ jobs:
           plutil -replace CFBundleShortVersionString -string "$VERSION" "$PLIST"
           plutil -replace CFBundleVersion -string "$VERSION" "$PLIST"
 
-          # Build a universal binary (Apple Silicon + Intel)
+          # Now build the app
           xcodebuild -project mac/Snag.xcodeproj \
                      -scheme Snag \
                      -configuration Release \
@@ -41,6 +41,9 @@ jobs:
                      CODE_SIGNING_ALLOWED=NO \
                      CODE_SIGNING_REQUIRED=NO \
                      CODE_SIGN_IDENTITY=""
+
+          # Ad-hoc sign the app (crucial for Sparkle/Gatekeeper on modern macOS)
+          codesign --force --deep --sign - Build/Build/Products/Release/Snag.app
 
       - name: Package App
         run: |
@@ -96,7 +99,7 @@ jobs:
           files: |
             dist/publish/Snag.zip
             AppCast.xml
-          body: "New release v${{ github.ref_name }}"
+          body: "New release ${{ github.ref_name }}"
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
