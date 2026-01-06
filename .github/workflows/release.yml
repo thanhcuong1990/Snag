@@ -49,17 +49,29 @@ jobs:
         run: |
           VERSION=${GITHUB_REF#refs/tags/v}
 
+          if [ -z "$SPARKLE_PRIVATE_KEY" ]; then
+            echo "::error::SPARKLE_PRIVATE_KEY secret is not set or empty!"
+            exit 1
+          fi
+
           # Use mktemp for private key
           KEY_FILE=$(mktemp)
-          echo "$SPARKLE_PRIVATE_KEY" > "$KEY_FILE"
+          # Clean and write the key, ensuring no trailing newlines or spaces
+          printf "%s" "$SPARKLE_PRIVATE_KEY" | tr -d '\n\r ' > "$KEY_FILE"
           chmod 600 "$KEY_FILE"
+
+          # Diagnostic: Check key length (Ed25519 base64 should be ~88 chars)
+          KEY_LEN=$(wc -c < "$KEY_FILE")
+          echo "Private key file created. Length: $KEY_LEN bytes"
 
           # Download and extract Sparkle tools
           curl -sL -o sparkle.tar.xz https://github.com/sparkle-project/Sparkle/releases/download/2.8.1/Sparkle-2.8.1.tar.xz
           tar -xf sparkle.tar.xz bin/generate_appcast
 
           # Use generate_appcast to create/update AppCast.xml based on the publish folder
+          # Adding --verbose to see more details if it fails
           ./bin/generate_appcast \
+            --verbose \
             --ed-key-file "$KEY_FILE" \
             --download-url-prefix "https://github.com/thanhcuong1990/Snag/releases/download/v${VERSION}/" \
             --link "https://github.com/thanhcuong1990/Snag/releases/tag/v${VERSION}" \
