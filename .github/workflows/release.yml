@@ -98,6 +98,17 @@ jobs:
         run: |
           git config --global user.name "github-actions[bot]"
           git config --global user.email "github-actions[bot]@users.noreply.github.com"
-          git add AppCast.xml || true
-          git commit -m "chore: update AppCast.xml for ${{ github.ref_name }}" || echo "No changes to commit"
-          git push origin main || echo "Failed to push AppCast change"
+
+          # Save the generated AppCast.xml before switching branches
+          cp AppCast.xml /tmp/AppCast.xml
+
+          # Fetch and checkout main branch (workflow runs on tag, not main)
+          git fetch origin main
+          git checkout main
+
+          # Restore the generated AppCast.xml
+          cp /tmp/AppCast.xml AppCast.xml
+
+          git add AppCast.xml
+          git commit -m "chore: update AppCast.xml for ${{ github.ref_name }}"
+          git push origin main
