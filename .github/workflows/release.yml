@@ -48,9 +48,9 @@ jobs:
         env:
           SPARKLE_PRIVATE_KEY: ${{ secrets.SPARKLE_PRIVATE_KEY }}
         run: |
-          # Verify the zip exists first
+          # Verify the zip exists
           if [ ! -f "dist/Snag.zip" ]; then
-            echo "Error: dist/Snag.zip not found!"
+            echo "::error::dist/Snag.zip not found!"
             ls -R dist/
             exit 1
           fi
@@ -58,21 +58,31 @@ jobs:
           # Create the private key file safely
           printf "%s" "$SPARKLE_PRIVATE_KEY" > ed25519_private_key.pem
 
-          # Download Sparkle tools to get sign_update
-          # Using version 2.6.4 consistently
-          curl -L -o sparkle-tools.tar.xz https://github.com/sparkle-project/Sparkle/releases/download/2.6.4/Sparkle-2.6.4.tar.xz
-          tar -xf sparkle-tools.tar.xz bin/sign_update
+          # Download Sparkle tools
+          curl -L -o sparkle.tar.xz https://github.com/sparkle-project/Sparkle/releases/download/2.6.4/Sparkle-2.6.4.tar.xz
 
-          # Sign the zip and capture the signature
-          # sign_update outputs the signature string directly
-          SIGNATURE=$(./bin/sign_update dist/Snag.zip -p ed25519_private_key.pem)
+          # Find and extract sign_update
+          SIGN_UPDATE_IN_ARCHIVE=$(tar -tf sparkle.tar.xz | grep "sign_update" | head -n 1)
+          if [ -z "$SIGN_UPDATE_IN_ARCHIVE" ]; then
+            echo "::error::Could not find sign_update in sparkle.tar.xz"
+            exit 1
+          fi
+
+          echo "Extracting $SIGN_UPDATE_IN_ARCHIVE"
+          tar -xf sparkle.tar.xz "$SIGN_UPDATE_IN_ARCHIVE"
+          chmod +x "$SIGN_UPDATE_IN_ARCHIVE"
+
+          # Sign the zip
+          # Capture stdout for signature, stderr goes to runner log
+          SIGNATURE=$("./$SIGN_UPDATE_IN_ARCHIVE" dist/Snag.zip -p ed25519_private_key.pem)
 
           if [ -z "$SIGNATURE" ]; then
-            echo "Error: Failed to generate signature!"
+            echo "::error::Failed to generate signature (Empty output)"
             exit 1
           fi
 
           echo "SIGNATURE=$SIGNATURE" >> $GITHUB_ENV
+          echo "Generated Signature: $SIGNATURE"
 
           # Cleanup
           rm ed25519_private_key.pem
