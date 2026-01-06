@@ -48,16 +48,30 @@ jobs:
         env:
           SPARKLE_PRIVATE_KEY: ${{ secrets.SPARKLE_PRIVATE_KEY }}
         run: |
-          # Create the private key file from secret
-          echo "$SPARKLE_PRIVATE_KEY" > ed25519_private_key.pem
+          # Verify the zip exists first
+          if [ ! -f "dist/Snag.zip" ]; then
+            echo "Error: dist/Snag.zip not found!"
+            ls -R dist/
+            exit 1
+          fi
+
+          # Create the private key file safely
+          printf "%s" "$SPARKLE_PRIVATE_KEY" > ed25519_private_key.pem
 
           # Download Sparkle tools to get sign_update
+          # Using version 2.6.4 consistently
           curl -L -o sparkle-tools.tar.xz https://github.com/sparkle-project/Sparkle/releases/download/2.6.4/Sparkle-2.6.4.tar.xz
           tar -xf sparkle-tools.tar.xz bin/sign_update
 
           # Sign the zip and capture the signature
           # sign_update outputs the signature string directly
           SIGNATURE=$(./bin/sign_update dist/Snag.zip -p ed25519_private_key.pem)
+
+          if [ -z "$SIGNATURE" ]; then
+            echo "Error: Failed to generate signature!"
+            exit 1
+          fi
+
           echo "SIGNATURE=$SIGNATURE" >> $GITHUB_ENV
 
           # Cleanup
