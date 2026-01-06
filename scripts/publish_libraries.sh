@@ -56,6 +56,10 @@ echo "🔄 Pushing changes and tags to origin..."
 git push origin main
 git push origin "v$NEW_VERSION"
 
+# 8. Publish to CocoaPods
+echo "📤 Publishing iOS library to CocoaPods..."
+pod trunk push "$ROOT_DIR/Snag.podspec" --allow-warnings
+
 echo "✅ Successfully published version $NEW_VERSION!"
 echo "Note: Maven Central sync can take up to 30 minutes."
 echo "iOS SPM will automatically pick up the new version from the git tag v$NEW_VERSION."

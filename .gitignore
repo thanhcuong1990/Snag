@@ -88,3 +88,4 @@ Carthage/Build/
 .build/
 dist/
 android/.kotlin/sessions/.*
+scripts/publish_libraries.sh

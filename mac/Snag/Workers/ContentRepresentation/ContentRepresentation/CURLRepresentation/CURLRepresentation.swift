@@ -17,7 +17,7 @@ extension SnagRequestInfo {
     // https://gist.github.com/shaps80/ba6a1e2d477af0383e8f19b87f53661d
     fileprivate var curlString: String {
         guard let url = url else { return "" }
-        var baseCommand = "curl \(url)"
+        var baseCommand = "curl '\(shellEscape(url))'"
 
         if requestMethod == .head {
             baseCommand += " --head"
@@ -31,14 +31,20 @@ extension SnagRequestInfo {
 
         if let headers = requestHeaders {
             for (key, value) in headers where key != "Cookie" {
-                command.append("-H '\(key): \(value)'")
+                command.append("-H '\(shellEscape(key)): \(shellEscape(value))'")
             }
         }
 
         if let data = requestBody {
-            command.append("-d '\(data)'")
+            command.append("-d '\(shellEscape(data))'")
         }
 
         return command.joined(separator: " \\\n\t")
+    }
+    
+    /// Escapes single quotes for safe shell string interpolation.
+    /// Replaces `'` with `'\''` (end quote, escaped quote, start quote).
+    private func shellEscape(_ value: String) -> String {
+        value.replacingOccurrences(of: "'", with: "'\\''")
     }
 }
