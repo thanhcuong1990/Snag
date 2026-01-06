@@ -56,11 +56,11 @@ jobs:
 
           # Use mktemp for private key
           KEY_FILE=$(mktemp)
-          # Clean and write the key, ensuring no trailing newlines or spaces
+          # Ensure no trailing newlines or spaces (robustness for copy-paste)
           printf "%s" "$SPARKLE_PRIVATE_KEY" | tr -d '\n\r ' > "$KEY_FILE"
           chmod 600 "$KEY_FILE"
 
-          # Diagnostic: Check key length (Ed25519 base64 should be ~88 chars)
+          # Diagnostic: Check key length
           KEY_LEN=$(wc -c < "$KEY_FILE")
           echo "Private key file created. Length: $KEY_LEN bytes"
 
