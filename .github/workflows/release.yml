@@ -1,0 +1,91 @@
+name: Release Snag
+
+on:
+  push:
+    tags:
+      - "v*"
+
+jobs:
+  release:
+    runs-on: macos-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Xcode
+        uses: maxim-lobanov/setup-xcode@v1
+        with:
+          xcode-version: "latest"
+
+      - name: Build App
+        run: |
+          # Build a universal binary (Apple Silicon + Intel)
+          xcodebuild -project mac/Snag.xcodeproj \
+                     -scheme Snag \
+                     -configuration Release \
+                     -derivedDataPath Build/ \
+                     ARCHS="arm64 x86_64" \
+                     ONLY_ACTIVE_ARCH=NO \
+                     BUILD_LIBRARY_FOR_DISTRIBUTION=YES \
+                     SUPPORTS_MACCATALYST=NO
+
+      - name: Package App
+        run: |
+          mkdir -p dist
+          # The binary is usually at Build/Build/Products/Release/Snag.app
+          cp -R Build/Build/Products/Release/Snag.app dist/
+          cd dist
+          zip -ry Snag.zip Snag.app
+
+      - name: Sign Update
+        env:
+          SPARKLE_PRIVATE_KEY: ${{ secrets.SPARKLE_PRIVATE_KEY }}
+        run: |
+          # Create the private key file from secret
+          echo "$SPARKLE_PRIVATE_KEY" > ed25519_private_key.pem
+
+          # Download Sparkle tools to get sign_update
+          curl -L -o sparkle-tools.tar.xz https://github.com/sparkle-project/Sparkle/releases/download/2.6.4/Sparkle-2.6.4.tar.xz
+          tar -xf sparkle-tools.tar.xz bin/sign_update
+
+          # Sign the zip and capture the signature
+          # sign_update outputs the signature string directly
+          SIGNATURE=$(./bin/sign_update dist/Snag.zip -p ed25519_private_key.pem)
+          echo "SIGNATURE=$SIGNATURE" >> $GITHUB_ENV
+
+          # Cleanup
+          rm ed25519_private_key.pem
+
+      - name: Update AppCast.xml
+        run: |
+          VERSION=${GITHUB_REF#refs/tags/v}
+          DATE=$(date -u +"%a, %d %b %Y %H:%M:%S +0000")
+
+          # Update AppCast.xml with new version, signature, and date
+          # We use | as a delimiter for sed to avoid issues with / in URLs
+          sed -i '' "s|sparkle:version=\"[^\"]*\"|sparkle:version=\"$VERSION\"|g" AppCast.xml
+          sed -i '' "s|sparkle:shortVersionString=\"[^\"]*\"|sparkle:shortVersionString=\"$VERSION\"|g" AppCast.xml
+          sed -i '' "s|sparkle:edSignature=\"[^\"]*\"|sparkle:edSignature=\"$SIGNATURE\"|g" AppCast.xml
+          sed -i '' "s|<pubDate>[^<]*</pubDate>|<pubDate>$DATE</pubDate>|g" AppCast.xml
+
+      - name: Create Release
+        uses: softprops/action-gh-release@v1
+        with:
+          files: |
+            dist/Snag.zip
+            AppCast.xml
+          body: "New release v${{ github.ref_name }}"
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Commit Updated AppCast
+        run: |
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+          git add AppCast.xml
+          git commit -m "chore: update AppCast.xml for ${{ github.ref_name }}"
+          git push origin main

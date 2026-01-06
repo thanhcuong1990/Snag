@@ -12,6 +12,9 @@ struct SnagMenu {
         appMenuItem.submenu = appMenu
         
         appMenu.addItem(withTitle: "About Snag", action: #selector(NSApplication.orderFrontStandardAboutPanel(_:)), keyEquivalent: "")
+        let updatesItem = NSMenuItem(title: "Check for Updates...", action: #selector(SparkleManager.checkForUpdates), keyEquivalent: "")
+        updatesItem.target = SparkleManager.shared
+        appMenu.addItem(updatesItem)
         appMenu.addItem(NSMenuItem.separator())
         appMenu.addItem(withTitle: "Hide Snag", action: #selector(NSApplication.hide(_:)), keyEquivalent: "h")
         

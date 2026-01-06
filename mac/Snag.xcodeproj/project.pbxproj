@@ -3,7 +3,7 @@
 	archiveVersion = 1;
 	classes = {
 	};
-	objectVersion = 48;
+	objectVersion = 54;
 	objects = {
 
 /* Begin PBXBuildFile section */
@@ -21,6 +21,8 @@
 		A51C9AB52F03AB45009E7B66 /* SidebarDeviceRow.swift in Sources */ = {isa = PBXBuildFile; fileRef = A51C9AB22F03AB45009E7B66 /* SidebarDeviceRow.swift */; };
 		A51C9AB62F03AB45009E7B66 /* EmptySidebarState.swift in Sources */ = {isa = PBXBuildFile; fileRef = A51C9AB02F03AB45009E7B66 /* EmptySidebarState.swift */; };
 		A51C9AB72F03AB45009E7B66 /* SidebarProjectHeader.swift in Sources */ = {isa = PBXBuildFile; fileRef = A51C9AB32F03AB45009E7B66 /* SidebarProjectHeader.swift */; };
+		A51E32242F0D56C100C17718 /* Sparkle in Frameworks */ = {isa = PBXBuildFile; productRef = A51E32232F0D56C100C17718 /* Sparkle */; };
+		A51E32262F0D593F00C17718 /* SparkleManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = A51E32252F0D593F00C17718 /* SparkleManager.swift */; };
 		A530145C2EFC5AB7008A8420 /* JSONWebView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A530144E2EFC5AB7008A8420 /* JSONWebView.swift */; };
 		A530145D2EFC5AB7008A8420 /* DetailsTheme.swift in Sources */ = {isa = PBXBuildFile; fileRef = A53014512EFC5AB7008A8420 /* DetailsTheme.swift */; };
 		A530145E2EFC5AB7008A8420 /* OverviewView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A530145A2EFC5AB7008A8420 /* OverviewView.swift */; };
@@ -129,6 +131,7 @@
 		A51C9AB12F03AB45009E7B66 /* RecentSearchRow.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RecentSearchRow.swift; sourceTree = "<group>"; };
 		A51C9AB22F03AB45009E7B66 /* SidebarDeviceRow.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SidebarDeviceRow.swift; sourceTree = "<group>"; };
 		A51C9AB32F03AB45009E7B66 /* SidebarProjectHeader.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SidebarProjectHeader.swift; sourceTree = "<group>"; };
+		A51E32252F0D593F00C17718 /* SparkleManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SparkleManager.swift; sourceTree = "<group>"; };
 		A530144C2EFC5AB7008A8420 /* CodeTextView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CodeTextView.swift; sourceTree = "<group>"; };
 		A530144D2EFC5AB7008A8420 /* CurlHighlightedTextView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CurlHighlightedTextView.swift; sourceTree = "<group>"; };
 		A530144E2EFC5AB7008A8420 /* JSONWebView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = JSONWebView.swift; sourceTree = "<group>"; };
@@ -217,6 +220,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				A51E32242F0D56C100C17718 /* Sparkle in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -479,6 +483,7 @@
 				BCFC85412138467C001EC6D7 /* Base */,
 				A50374E92EFDAA5300FA0067 /* Extensions */,
 				BCD0E026210F5E0D00CE5C7B /* AppDelegate.swift */,
+				A51E32252F0D593F00C17718 /* SparkleManager.swift */,
 				A50374E42EFDAA3700FA0067 /* Constants.swift */,
 				A50374E52EFDAA3700FA0067 /* SnagMenu.swift */,
 				A50374D32EFD485300FA0067 /* AppearanceToggleView.swift */,
@@ -726,6 +731,9 @@
 				Base,
 			);
 			mainGroup = BCD0E01A210F5E0D00CE5C7B;
+			packageReferences = (
+				A51E32222F0D56C100C17718 /* XCRemoteSwiftPackageReference "Sparkle" */,
+			);
 			productRefGroup = BCD0E024210F5E0D00CE5C7B /* Products */;
 			projectDirPath = "";
 			projectRoot = "";
@@ -773,6 +781,7 @@
 				BCDF0EC421662CA10030710C /* FlatTableRowView.swift in Sources */,
 				BCEB9AA8217CAA23008BBF3C /* OverviewRepresentation.swift in Sources */,
 				A556F1192EF3E3DB004B8A98 /* SidebarView.swift in Sources */,
+				A51E32262F0D593F00C17718 /* SparkleManager.swift in Sources */,
 				BCEB9AB9217DD653008BBF3C /* Date.swift in Sources */,
 				BCF47D04216BA0B400BC144A /* TextStyles.swift in Sources */,
 				A51C9AAF2F03A7D6009E7B66 /* SearchViewModel.swift in Sources */,
@@ -993,7 +1002,8 @@
 				MACOSX_DEPLOYMENT_TARGET = 10.12;
 				MTL_ENABLE_DEBUG_INFO = NO;
 				SDKROOT = macosx;
-				SWIFT_OPTIMIZATION_LEVEL = "-Owholemodule";
+				SWIFT_COMPILATION_MODE = wholemodule;
+				SWIFT_OPTIMIZATION_LEVEL = "-O";
 			};
 			name = Release;
 		};
@@ -1015,7 +1025,10 @@
 				ENABLE_RESOURCE_ACCESS_LOCATION = NO;
 				ENABLE_RESOURCE_ACCESS_PHOTO_LIBRARY = NO;
 				INFOPLIST_FILE = Snag/Info.plist;
-				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/../Frameworks";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+				);
 				MACOSX_DEPLOYMENT_TARGET = 12.4;
 				PRODUCT_BUNDLE_IDENTIFIER = com.snag;
 				PRODUCT_NAME = "$(TARGET_NAME)";
@@ -1048,7 +1061,10 @@
 				ENABLE_RESOURCE_ACCESS_LOCATION = NO;
 				ENABLE_RESOURCE_ACCESS_PHOTO_LIBRARY = NO;
 				INFOPLIST_FILE = Snag/Info.plist;
-				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/../Frameworks";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+				);
 				MACOSX_DEPLOYMENT_TARGET = 12.4;
 				PRODUCT_BUNDLE_IDENTIFIER = com.snag;
 				PRODUCT_NAME = "$(TARGET_NAME)";
@@ -1072,7 +1088,11 @@
 				COMBINE_HIDPI_IMAGES = YES;
 				DEVELOPMENT_TEAM = B76MDLRW26;
 				INFOPLIST_FILE = SnagTests/Info.plist;
-				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/../Frameworks @loader_path/../Frameworks";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+					"@loader_path/../Frameworks",
+				);
 				MACOSX_DEPLOYMENT_TARGET = 12.4;
 				PRODUCT_BUNDLE_IDENTIFIER = com.snag.Tests;
 				PRODUCT_NAME = "$(TARGET_NAME)";
@@ -1090,7 +1110,11 @@
 				COMBINE_HIDPI_IMAGES = YES;
 				DEVELOPMENT_TEAM = B76MDLRW26;
 				INFOPLIST_FILE = SnagTests/Info.plist;
-				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/../Frameworks @loader_path/../Frameworks";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+					"@loader_path/../Frameworks",
+				);
 				MACOSX_DEPLOYMENT_TARGET = 12.4;
 				PRODUCT_BUNDLE_IDENTIFIER = com.snag.Tests;
 				PRODUCT_NAME = "$(TARGET_NAME)";
@@ -1107,7 +1131,11 @@
 				COMBINE_HIDPI_IMAGES = YES;
 				DEVELOPMENT_TEAM = B76MDLRW26;
 				INFOPLIST_FILE = SnagUITests/Info.plist;
-				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/../Frameworks @loader_path/../Frameworks";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+					"@loader_path/../Frameworks",
+				);
 				MACOSX_DEPLOYMENT_TARGET = 12.4;
 				PRODUCT_BUNDLE_IDENTIFIER = com.snag.UITests;
 				PRODUCT_NAME = "$(TARGET_NAME)";
@@ -1124,7 +1152,11 @@
 				COMBINE_HIDPI_IMAGES = YES;
 				DEVELOPMENT_TEAM = B76MDLRW26;
 				INFOPLIST_FILE = SnagUITests/Info.plist;
-				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/../Frameworks @loader_path/../Frameworks";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+					"@loader_path/../Frameworks",
+				);
 				MACOSX_DEPLOYMENT_TARGET = 12.4;
 				PRODUCT_BUNDLE_IDENTIFIER = com.snag.UITests;
 				PRODUCT_NAME = "$(TARGET_NAME)";
@@ -1173,6 +1205,25 @@
 			defaultConfigurationName = Release;
 		};
 /* End XCConfigurationList section */
+
+/* Begin XCRemoteSwiftPackageReference section */
+		A51E32222F0D56C100C17718 /* XCRemoteSwiftPackageReference "Sparkle" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/sparkle-project/Sparkle.git";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 2.8.1;
+			};
+		};
+/* End XCRemoteSwiftPackageReference section */
+
+/* Begin XCSwiftPackageProductDependency section */
+		A51E32232F0D56C100C17718 /* Sparkle */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = A51E32222F0D56C100C17718 /* XCRemoteSwiftPackageReference "Sparkle" */;
+			productName = Sparkle;
+		};
+/* End XCSwiftPackageProductDependency section */
 	};
 	rootObject = BCD0E01B210F5E0D00CE5C7B /* Project object */;
 }

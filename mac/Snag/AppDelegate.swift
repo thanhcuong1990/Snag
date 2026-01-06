@@ -8,6 +8,9 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         // Initialize core controller
         _ = SnagController.shared
         
+        // Initialize Sparkle for auto-updates
+        _ = SparkleManager.shared
+        
         // Setup application menu
         SnagMenu.setup()
         

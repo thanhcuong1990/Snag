@@ -28,5 +28,13 @@
 	<string>Copyright © 2025 Snag. All rights reserved.</string>
 	<key>NSPrincipalClass</key>
 	<string>NSApplication</string>
+	<key>SUFeedURL</key>
+	<string>https://raw.githubusercontent.com/thanhcuong1990/Snag/main/AppCast.xml</string>
+	<key>SUPublicEDKey</key>
+	<string>g0fUcvbU2V19DM0gYySXDvs/eJ9jmnnWuMbDbXzcMK8=</string>
+	<key>SUEnableAutomaticChecks</key>
+	<true/>
+	<key>SUAllowsAutomaticUpdates</key>
+	<true/>
 </dict>
 </plist>
