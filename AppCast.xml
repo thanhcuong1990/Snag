@@ -6,5 +6,14 @@
         <description>Most recent changes with links to updates.</description>
         <language>en</language>
         <!-- The workflow will automatically append new releases here -->
+        <item>
+            <title>1.0.6</title>
+            <pubDate>Tue, 06 Jan 2026 16:35:35 +0000</pubDate>
+            <link>https://github.com/thanhcuong1990/Snag/releases/tag/v1.0.6</link>
+            <sparkle:version>1.0.6</sparkle:version>
+            <sparkle:shortVersionString>1.0.6</sparkle:shortVersionString>
+            <sparkle:minimumSystemVersion>12.4</sparkle:minimumSystemVersion>
+            <enclosure url="https://github.com/thanhcuong1990/Snag/releases/download/v1.0.6/Snag.zip" length="3492783" type="application/octet-stream" sparkle:edSignature="zBBqTVzhAE/Qv6ObhtRQmORkDmvZSl/WBYnzwteG7CyDG0ioMR8FFayh9xqqsGi6PKwfaauFUveAIarUzregAw=="/>
+        </item>
     </channel>
 </rss>
