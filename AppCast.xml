@@ -1,5 +1,5 @@
-<?xml version="1.0" encoding="utf-8"?>
-<rss version="2.0" xmlns:sparkle="http://www.andymatuschak.org/xml-namespaces/sparkle"  xmlns:dc="http://purl.org/dc/elements/1.1/">
+<?xml version="1.0" encoding="utf-8" standalone="yes"?>
+<rss xmlns:sparkle="http://www.andymatuschak.org/xml-namespaces/sparkle" xmlns:dc="http://purl.org/dc/elements/1.1/" version="2.0">
     <channel>
         <title>Snag Changelog</title>
         <link>https://raw.githubusercontent.com/thanhcuong1990/Snag/main/AppCast.xml</link>
@@ -12,14 +12,16 @@
             <sparkle:releaseNotesLink>
                 https://github.com/thanhcuong1990/Snag/releases/tag/v1.0.0
             </sparkle:releaseNotesLink>
-            <enclosure 
-                url="https://github.com/thanhcuong1990/Snag/releases/download/v1.0.0/Snag.zip" 
-                sparkle:version="1.0.0" 
-                sparkle:shortVersionString="1.0.0" 
-                length="0" 
-                type="application/octet-stream" 
-                sparkle:edSignature="PHRWAAGNYn/QIf4aLT6VnKM8oN+6J0fLvsJxk/oJXlc="
-            />
+            <enclosure url="https://github.com/thanhcuong1990/Snag/releases/download/v1.0.0/Snag.zip" sparkle:version="1.0.0" sparkle:shortVersionString="1.0.0" length="0" type="application/octet-stream" sparkle:edSignature="PHRWAAGNYn/QIf4aLT6VnKM8oN+6J0fLvsJxk/oJXlc="/>
+        </item>
+        <item>
+            <title>1.0.0</title>
+            <pubDate>Tue, 06 Jan 2026 16:22:17 +0000</pubDate>
+            <link>https://github.com/thanhcuong1990/Snag/releases/tag/v1.0.1</link>
+            <sparkle:version>1</sparkle:version>
+            <sparkle:shortVersionString>1.0.0</sparkle:shortVersionString>
+            <sparkle:minimumSystemVersion>12.4</sparkle:minimumSystemVersion>
+            <enclosure url="https://github.com/thanhcuong1990/Snag/releases/download/v1.0.1/Snag.zip" length="3470446" type="application/octet-stream" sparkle:edSignature="87cwt33CyFjOdeddZ8SubuDtr/pYbk/69WUgomwSekpEWgNfltz3mM7GeVxTw6MkQghkA5qsFmyeacY91oBNBw=="/>
         </item>
     </channel>
 </rss>
