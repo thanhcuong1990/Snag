@@ -6,7 +6,7 @@ on:
       - "v*"
 
 jobs:
-  release:
+  publish-mac:
     runs-on: macos-latest
     permissions:
       contents: write
