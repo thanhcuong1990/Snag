@@ -11,4 +11,6 @@ enum SnagConstants {
     static let detailsSplitRatioKey = "detailsSplitRatio"
     static let sidebarWidthKey = "sidebarWidth"
     static let packetsSplitRatioKey = "packetsSplitRatio"
+    static let requestTabPersistenceKey = "requestTabPersistence"
+    static let responseTabPersistenceKey = "responseTabPersistence"
 }

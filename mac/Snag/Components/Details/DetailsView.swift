@@ -4,8 +4,8 @@ struct DetailsView: View {
     @ObservedObject var viewModelWrapper: DetailViewModelWrapper
     @Environment(\.colorScheme) var colorScheme
     
-    @State private var requestTab: DetailType = .overview
-    @State private var responseTab: DetailType = .responseHeaders
+    @AppStorage(SnagConstants.requestTabPersistenceKey) private var requestTab: DetailType = .overview
+    @AppStorage(SnagConstants.responseTabPersistenceKey) private var responseTab: DetailType = .responseHeaders
     
     // Resizable split state
     @AppStorage(SnagConstants.detailsSplitRatioKey) private var splitRatio: Double = 0.5
