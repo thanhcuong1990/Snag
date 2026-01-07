@@ -26,7 +26,7 @@ class SnagInterceptor private constructor() : Interceptor {
                 url = request.url.toString(),
                 requestMethod = request.method,
                 requestHeaders = request.headers.toMap(),
-                requestBody = request.body?.toByteArray()?.let { Base64.encodeToString(it, Base64.NO_WRAP) },
+                requestBody = request.body?.safeToBase64(),
                 startDate = startDateSeconds
             ),
             packetId = packetId
@@ -45,7 +45,7 @@ class SnagInterceptor private constructor() : Interceptor {
                     url = request.url.toString(),
                     requestMethod = request.method,
                     requestHeaders = request.headers.toMap(),
-                    requestBody = request.body?.toByteArray()?.let { Base64.encodeToString(it, Base64.NO_WRAP) },
+                    requestBody = request.body?.safeToBase64(),
                     startDate = startDateSeconds,
                     endDate = System.currentTimeMillis() / 1000.0,
                     statusCode = "ERR"
@@ -64,7 +64,7 @@ class SnagInterceptor private constructor() : Interceptor {
         startDate = startDateSeconds,
         endDate = receivedResponseAtMillis / 1000.0,
         responseData = responseBase64(),
-        requestBody = requestBase64(),
+        requestBody = request.body?.safeToBase64(),
         statusCode = code.toString()
     )
 
@@ -74,17 +74,38 @@ class SnagInterceptor private constructor() : Interceptor {
         ""
     }
 
-    private fun Response.requestBase64(): String = request.body?.toByteArray()?.let {
-        Base64.encodeToString(it, Base64.NO_WRAP)
-    }.orEmpty()
+    /**
+     * Safely converts the request body to a Base64-encoded string.
+     * 
+     * Returns null for:
+     * - One-shot bodies (e.g., multipart uploads from streams) - can only be consumed once
+     * - Duplex bodies (e.g., web sockets) - streaming bodies that can't be buffered
+     * 
+     * This prevents consuming the body before OkHttp sends it over the network.
+     */
+    private fun RequestBody.safeToBase64(): String? {
+        // One-shot bodies (like multipart from InputStream) can only be consumed once.
+        // Reading them here would exhaust the stream before OkHttp sends the request.
+        if (isOneShot()) {
+            Timber.d("Snag: Skipping one-shot body (e.g., multipart upload)")
+            return null
+        }
 
-    private fun RequestBody.toByteArray(): ByteArray? = try {
-        val buffer = Buffer()
-        this.writeTo(buffer)
-        buffer.readByteArray()
-    } catch (e: Exception) {
-        Timber.e(e)
-        null
+        // Duplex bodies are used for streaming (e.g., web sockets).
+        // They can't be buffered safely.
+        if (isDuplex()) {
+            Timber.d("Snag: Skipping duplex body (streaming)")
+            return null
+        }
+
+        return try {
+            val buffer = Buffer()
+            this.writeTo(buffer)
+            Base64.encodeToString(buffer.readByteArray(), Base64.NO_WRAP)
+        } catch (e: Exception) {
+            Timber.e(e, "Snag: Failed to read request body")
+            null
+        }
     }
 
     companion object {
