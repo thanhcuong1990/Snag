@@ -31,7 +31,7 @@ struct DetailsView: View {
                         .frame(width: max(150, geometry.size.width * splitRatio - 4))
                     
                     // MARK: - Resizable Divider
-                    ResizableDivider(isDragging: $isDragging)
+                    ResizableDivider(isDragging: $isDragging, orientation: .horizontal)
                         .gesture(
                             DragGesture()
                                 .onChanged { value in
@@ -150,24 +150,4 @@ struct DetailsView: View {
     }
 }
 
-// MARK: - Resizable Divider
 
-private struct ResizableDivider: View {
-    @Binding var isDragging: Bool
-    @State private var isHovering: Bool = false
-    
-    var body: some View {
-        Rectangle()
-            .fill(isDragging || isHovering ? Color.accentColor : Color.gray.opacity(0.3))
-            .frame(width: isDragging || isHovering ? 4 : 1)
-            .contentShape(Rectangle().inset(by: -4))
-            .onHover { hovering in
-                isHovering = hovering
-                if hovering {
-                    NSCursor.resizeLeftRight.push()
-                } else {
-                    NSCursor.pop()
-                }
-            }
-    }
-}

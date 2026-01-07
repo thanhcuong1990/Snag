@@ -62,6 +62,7 @@
 		A5D0BCE52F04F4F100C05E93 /* TabToggleView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5D0BCE22F04F4F100C05E93 /* TabToggleView.swift */; };
 		A5D0BCE62F04F4F100C05E93 /* TabToggleViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5D0BCE32F04F4F100C05E93 /* TabToggleViewController.swift */; };
 		A5D0BCE82F04F54700C05E93 /* SnagLog.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5D0BCE72F04F54700C05E93 /* SnagLog.swift */; };
+		A5D1E37A2F0E1128005F3D3A /* ResizableDivider.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5D1E3782F0E1128005F3D3A /* ResizableDivider.swift */; };
 		BC1F5B37216746D30045C871 /* FontManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = BC1F5B36216746D30045C871 /* FontManager.swift */; };
 		BC32643621738AF0006452FE /* KeyValueRepresentation.swift in Sources */ = {isa = PBXBuildFile; fileRef = BC32643521738AF0006452FE /* KeyValueRepresentation.swift */; };
 		BC5E76C9216A64DB000F658D /* Theme.swift in Sources */ = {isa = PBXBuildFile; fileRef = BC5E76C8216A64DB000F658D /* Theme.swift */; };
@@ -171,6 +172,7 @@
 		A5D0BCE22F04F4F100C05E93 /* TabToggleView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TabToggleView.swift; sourceTree = "<group>"; };
 		A5D0BCE32F04F4F100C05E93 /* TabToggleViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TabToggleViewController.swift; sourceTree = "<group>"; };
 		A5D0BCE72F04F54700C05E93 /* SnagLog.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SnagLog.swift; sourceTree = "<group>"; };
+		A5D1E3782F0E1128005F3D3A /* ResizableDivider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ResizableDivider.swift; sourceTree = "<group>"; };
 		BC1F5B36216746D30045C871 /* FontManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FontManager.swift; sourceTree = "<group>"; };
 		BC32643521738AF0006452FE /* KeyValueRepresentation.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KeyValueRepresentation.swift; sourceTree = "<group>"; };
 		BC5E76C8216A64DB000F658D /* Theme.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Theme.swift; sourceTree = "<group>"; };
@@ -397,6 +399,14 @@
 			path = Views;
 			sourceTree = "<group>";
 		};
+		A5D1E3792F0E1128005F3D3A /* Common */ = {
+			isa = PBXGroup;
+			children = (
+				A5D1E3782F0E1128005F3D3A /* ResizableDivider.swift */,
+			);
+			path = Common;
+			sourceTree = "<group>";
+		};
 		BC1F5B35216746CA0045C871 /* Fonts */ = {
 			isa = PBXGroup;
 			children = (
@@ -540,6 +550,7 @@
 		BCFC852D21383252001EC6D7 /* Components */ = {
 			isa = PBXGroup;
 			children = (
+				A5D1E3792F0E1128005F3D3A /* Common */,
 				A5D0BCDE2F04F4AF00C05E93 /* Logs */,
 				BCFC852E21383257001EC6D7 /* Projects */,
 				BCFC85312138353D001EC6D7 /* Devices */,
@@ -861,6 +872,7 @@
 				BCA60B482162403F00B9DCAD /* PacketsViewModel.swift in Sources */,
 				BCFC853621383650001EC6D7 /* PacketsViewController.swift in Sources */,
 				BCD0E027210F5E0D00CE5C7B /* AppDelegate.swift in Sources */,
+				A5D1E37A2F0E1128005F3D3A /* ResizableDivider.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

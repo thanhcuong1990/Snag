@@ -5,29 +5,69 @@ struct MainView: View {
     @StateObject private var snagController = SnagController.shared
     @Environment(\.colorScheme) var colorScheme
     
+    // Persistent state
+    @AppStorage(SnagConstants.sidebarWidthKey) private var sidebarWidth: Double = 280
+    @AppStorage(SnagConstants.packetsSplitRatioKey) private var packetsSplitRatio: Double = 0.5
+    
+    // Dragging state
+    @State private var isDraggingSidebar: Bool = false
+    @State private var isDraggingPackets: Bool = false
+    
     var body: some View {
-        HStack(spacing: 0) {
-            // Unified Sidebar (Projects + Devices)
-            SidebarView()
-                .frame(width: 280)
-            
-            Divider()
-            
-            // Content Area (Packets and Details)
-            Group {
-                if snagController.selectedTab == .network {
-                    VSplitView {
-                        PacketsViewControllerWrapper()
-                            .frame(minHeight: 200)
-                        
-                        DetailViewControllerWrapper()
-                            .frame(minHeight: 200)
+        GeometryReader { geometry in
+            HStack(spacing: 0) {
+                // Unified Sidebar (Projects + Devices)
+                SidebarView()
+                    .frame(width: max(200, min(sidebarWidth, 500))) // Clamp sidebar width
+                
+                // Resizable Divider for Sidebar
+                ResizableDivider(isDragging: $isDraggingSidebar, orientation: .horizontal)
+                    .gesture(
+                        DragGesture()
+                            .onChanged { value in
+                                isDraggingSidebar = true
+                                let newWidth = sidebarWidth + value.translation.width
+                                // Clamp sidebar width between 200 and 500
+                                sidebarWidth = max(200, min(newWidth, 500))
+                            }
+                            .onEnded { _ in
+                                isDraggingSidebar = false
+                            }
+                    )
+                
+                // Content Area (Packets and Details)
+                Group {
+                    if snagController.selectedTab == .network {
+                        GeometryReader { innerGeometry in
+                            VStack(spacing: 0) {
+                                PacketsViewControllerWrapper()
+                                    .frame(height: max(100, innerGeometry.size.height * packetsSplitRatio))
+                                
+                                ResizableDivider(isDragging: $isDraggingPackets, orientation: .vertical)
+                                    .gesture(
+                                        DragGesture()
+                                            .onChanged { value in
+                                                isDraggingPackets = true
+                                                let newHeight = (innerGeometry.size.height * packetsSplitRatio) + value.translation.height
+                                                let newRatio = newHeight / innerGeometry.size.height
+                                                // Clamp ratio between 0.1 and 0.9
+                                                packetsSplitRatio = min(max(newRatio, 0.1), 0.9)
+                                            }
+                                            .onEnded { _ in
+                                                isDraggingPackets = false
+                                            }
+                                    )
+                                
+                                DetailViewControllerWrapper()
+                                    .frame(maxHeight: .infinity)
+                            }
+                        }
+                    } else {
+                        LogsViewControllerWrapper()
                     }
-                } else {
-                    LogsViewControllerWrapper()
                 }
+                .background(Color(nsColor: ThemeColor.packetListAndDetailBackgroundColor))
             }
-            .background(Color(nsColor: ThemeColor.packetListAndDetailBackgroundColor))
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .edgesIgnoringSafeArea(.all)
