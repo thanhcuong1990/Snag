@@ -27,6 +27,20 @@
 
 ## 🖥️ Desktop Viewer (Mac)
 
+### Download from GitHub Releases (Recommended)
+
+1. Download the latest `Snag_<version>.dmg` from the [Releases](https://github.com/thanhcuong1990/Snag/releases) page.
+2. Open the DMG and drag `Snag.app` to your Applications folder.
+3. **Important**: Since the app is not notarized, macOS will block it by default. Run the following command to remove the quarantine attribute:
+
+```bash
+sudo xattr -rd com.apple.quarantine "/Applications/Snag.app/"
+```
+
+4. Launch Snag from your Applications folder.
+
+### Build from Source
+
 1. Clone the repository.
 2. Open `mac/Snag.xcodeproj` in Xcode.
 3. Build and Run.
@@ -259,6 +273,30 @@ To disable automatic log capture:
 val config = Config.getDefault(context).copy(enableLogs = false)
 Snag.start(context, config)
 ```
+
+---
+
+## 🤝 Contributing
+
+Contributions are welcome! Here's how you can help:
+
+1. **Fork** the repository
+2. **Create** a feature branch (`git checkout -b feature/amazing-feature`)
+3. **Commit** your changes (`git commit -m 'Add some amazing feature'`)
+4. **Push** to the branch (`git push origin feature/amazing-feature`)
+5. **Open** a Pull Request
+
+### Guidelines
+
+- Please ensure your code follows the existing code style
+- Write clear, descriptive commit messages
+- Update documentation as needed
+- Add tests if applicable
+- Make sure all existing tests pass
+
+### Reporting Issues
+
+Found a bug or have a feature request? Please open an [issue](https://github.com/thanhcuong1990/Snag/issues) with a clear description.
 
 ---
 
