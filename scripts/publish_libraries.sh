@@ -47,19 +47,11 @@ git add "$ROOT_DIR/android/snag/build.gradle.kts" \
 git commit -m "chore: bump version to $NEW_VERSION"
 git tag -a "v$NEW_VERSION" -m "Release v$NEW_VERSION"
 
-# 6. Publish Android to Maven Central
-echo "📤 Publishing Android library to Maven Central..."
-(cd "$ROOT_DIR/android" && ./gradlew :snag:publishAllPublicationsToMavenCentralRepository)
-
-# 7. Push to Remote
+# 6. Push to Remote
 echo "🔄 Pushing changes and tags to origin..."
 git push origin main
 git push origin "v$NEW_VERSION"
 
-# 8. Publish to CocoaPods
-echo "📤 Publishing iOS library to CocoaPods..."
-pod trunk push "$ROOT_DIR/Snag.podspec" --allow-warnings
-
-echo "✅ Successfully published version $NEW_VERSION!"
-echo "Note: Maven Central sync can take up to 30 minutes."
-echo "iOS SPM will automatically pick up the new version from the git tag v$NEW_VERSION."
+echo "✅ Successfully prepared release v$NEW_VERSION!"
+echo "🚀 The GitHub Actions CI/CD pipeline will now build the Mac App and publish the Android/iOS libraries."
+echo "🔗 Monitor progress here: https://github.com/thanhcuong1990/Snag/actions"
