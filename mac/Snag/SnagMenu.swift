@@ -1,7 +1,33 @@
 import Cocoa
 
-struct SnagMenu {
+class SnagMenu {
+    static let shared = SnagMenu()
+    
+    private init() {
+        // Observe language changes and rebuild the menu
+        NotificationCenter.default.addObserver(
+            self,
+            selector: #selector(languageDidChange),
+            name: .languageDidChange,
+            object: nil
+        )
+    }
+    
+    deinit {
+        NotificationCenter.default.removeObserver(self)
+    }
+    
+    @objc private func languageDidChange() {
+        buildMenu()
+    }
+    
     static func setup() {
+        // Ensure shared instance exists to start observing
+        _ = shared
+        shared.buildMenu()
+    }
+    
+    private func buildMenu() {
         let mainMenu = NSMenu()
         
         // App Menu
