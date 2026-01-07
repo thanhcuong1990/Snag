@@ -2,6 +2,7 @@ import SwiftUI
 
 struct DetailsView: View {
     @ObservedObject var viewModelWrapper: DetailViewModelWrapper
+    @ObservedObject var languageManager = LanguageManager.shared
     @Environment(\.colorScheme) var colorScheme
     
     @AppStorage(SnagConstants.requestTabPersistenceKey) private var requestTab: DetailType = .overview
@@ -61,21 +62,21 @@ struct DetailsView: View {
         VStack(spacing: 0) {
             // Header with tabs in a single row
             HStack(spacing: 8) {
-                Text("Request")
+                Text("Request".localized)
                     .font(.system(size: 12, weight: .medium))
                     .foregroundColor(.primary)
                 
                 HStack(spacing: 2) {
-                    TabButton(title: "Overview", isSelected: requestTab == .overview) {
+                    TabButton(title: "Overview".localized, isSelected: requestTab == .overview) {
                         requestTab = .overview
                     }
-                    TabButton(title: "Header", isSelected: requestTab == .requestHeaders) {
+                    TabButton(title: "Header".localized, isSelected: requestTab == .requestHeaders) {
                         requestTab = .requestHeaders
                     }
-                    TabButton(title: "Query", isSelected: requestTab == .requestParameters) {
+                    TabButton(title: "Query".localized, isSelected: requestTab == .requestParameters) {
                         requestTab = .requestParameters
                     }
-                    TabButton(title: "Body", isSelected: requestTab == .requestBody) {
+                    TabButton(title: "Body".localized, isSelected: requestTab == .requestBody) {
                         requestTab = .requestBody
                     }
                 }
@@ -114,15 +115,15 @@ struct DetailsView: View {
         VStack(spacing: 0) {
             // Header with tabs in a single row
             HStack(spacing: 8) {
-                Text("Response")
+                Text("Response".localized)
                     .font(.system(size: 12, weight: .medium))
                     .foregroundColor(.primary)
                 
                 HStack(spacing: 2) {
-                    TabButton(title: "Header", isSelected: responseTab == .responseHeaders) {
+                    TabButton(title: "Header".localized, isSelected: responseTab == .responseHeaders) {
                         responseTab = .responseHeaders
                     }
-                    TabButton(title: "Body", isSelected: responseTab == .responseBody) {
+                    TabButton(title: "Body".localized, isSelected: responseTab == .responseBody) {
                         responseTab = .responseBody
                     }
                 }

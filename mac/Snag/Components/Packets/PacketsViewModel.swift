@@ -9,6 +9,10 @@ enum PacketFilterCategory: String, CaseIterable {
     case status3xx = "3xx"
     case status4xx = "4xx"
     case status5xx = "5xx"
+    
+    var localizedName: String {
+        return self.rawValue.localized
+    }
 }
 
 class PacketsViewModel: BaseListViewModel<SnagPacket>  {

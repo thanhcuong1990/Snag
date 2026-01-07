@@ -3,12 +3,13 @@ import SwiftUI
 struct SidebarView: View {
     @ObservedObject var snagController: SnagController = SnagController.shared
     @ObservedObject var searchViewModel = SearchViewModel.shared
+    @ObservedObject var languageManager = LanguageManager.shared
     @Environment(\.colorScheme) var colorScheme
     
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
             // Sidebar Title/Header
-            Text("REMOTE")
+            Text("REMOTE".localized)
                 .font(.system(size: 10, weight: .bold))
                 .foregroundColor(.secondaryLabelColor)
                 .padding(.horizontal, 16)
@@ -49,12 +50,12 @@ struct SidebarView: View {
                 
                 VStack(alignment: .leading, spacing: 0) {
                     HStack {
-                        Text("RECENT SEARCHES")
+                        Text("RECENT SEARCHES".localized)
                             .font(.system(size: 10, weight: .bold))
                             .foregroundColor(.secondaryLabelColor)
                         Spacer()
                         Button(action: { searchViewModel.clearAllRecents() }) {
-                            Text("Clear")
+                            Text("Clear".localized)
                                 .font(.system(size: 10))
                         }
                         .buttonStyle(PlainButtonStyle())

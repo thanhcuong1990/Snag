@@ -2,6 +2,7 @@ import SwiftUI
 
 struct PacketsToolBar: View {
     @ObservedObject var viewModelWrapper: PacketsViewModelWrapper
+    @ObservedObject var languageManager = LanguageManager.shared
     @FocusState.Binding var isAddressFilterFocused: Bool
     
     @ObservedObject private var searchViewModel = SearchViewModel.shared
@@ -101,7 +102,7 @@ struct PacketsToolBar: View {
                 .font(.system(size: 11))
             
             ZStack(alignment: .trailing) {
-                TextField("Filter URL...", text: $searchViewModel.searchText)
+                TextField("Filter URL...".localized, text: $searchViewModel.searchText)
                     .textFieldStyle(PlainTextFieldStyle())
                     .font(.system(size: 11))
                     .focused($isAddressFilterFocused)
@@ -127,7 +128,7 @@ struct PacketsToolBar: View {
             
             (Text("\(viewModelWrapper.items.count)")
                 .foregroundColor(.primary) +
-            Text(" requests")
+            Text(" requests".localized)
                 .foregroundColor(.secondary))
                 .font(.system(size: 11))
         }
@@ -175,7 +176,7 @@ struct PacketsToolBar: View {
     
     private func categoryButton(_ category: PacketFilterCategory) -> some View {
         let isSelected = viewModelWrapper.selectedCategory == category
-        return Text(category.rawValue)
+        return Text(category.localizedName)
             .font(.system(size: 11, weight: isSelected ? .semibold : .regular))
             .padding(.horizontal, 6)
             .padding(.vertical, 2)

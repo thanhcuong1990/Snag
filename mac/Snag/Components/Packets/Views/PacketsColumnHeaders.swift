@@ -2,35 +2,36 @@ import SwiftUI
 
 struct PacketsColumnHeaders: View {
     @ObservedObject var viewModelWrapper: PacketsViewModelWrapper
+    @ObservedObject var languageManager = LanguageManager.shared
     
     var body: some View {
         HStack(spacing: 0) {
-            Text("Code")
+            Text("Code".localized)
                 .padding(.leading, 8)
                 .frame(width: 75, alignment: .leading)
                 .overlay(headerSeparator, alignment: .trailing)
             
-            Text("Method")
+            Text("Method".localized)
                 .padding(.leading, 8)
                 .frame(width: 60, alignment: .leading)
                 .overlay(headerSeparator, alignment: .trailing)
             
-            Text("URL")
+            Text("URL".localized)
                 .padding(.leading, 8)
                 .frame(maxWidth: .infinity, alignment: .leading)
                 .overlay(headerSeparator, alignment: .trailing)
             
-            Text("Duration")
+            Text("Duration".localized)
                 .padding(.leading, 8)
                 .frame(width: 70, alignment: .leading)
                 .overlay(headerSeparator, alignment: .trailing)
             
-            Text("Request")
+            Text("Request".localized)
                 .padding(.leading, 8)
                 .frame(width: 70, alignment: .leading)
                 .overlay(headerSeparator, alignment: .trailing)
             
-            Text("Response")
+            Text("Response".localized)
                 .padding(.leading, 8)
                 .frame(width: 70, alignment: .leading)
                 .overlay(headerSeparator, alignment: .trailing)
@@ -38,7 +39,7 @@ struct PacketsColumnHeaders: View {
             // Sortable Time column
             Button(action: { viewModelWrapper.toggleSortOrder() }) {
                 HStack(spacing: 4) {
-                    Text("Time")
+                    Text("Time".localized)
                     Image(systemName: viewModelWrapper.sortOrder == .ascending ? "chevron.up" : "chevron.down")
                         .font(.system(size: 8, weight: .bold))
                 }

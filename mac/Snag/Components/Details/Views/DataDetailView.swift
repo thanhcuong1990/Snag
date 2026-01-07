@@ -2,6 +2,7 @@ import SwiftUI
 
 struct DataDetailView: View {
     @ObservedObject var viewModel: DataViewModel
+    @ObservedObject var languageManager = LanguageManager.shared
     @Environment(\.colorScheme) var colorScheme
     @State private var isRaw: Bool = false
     
@@ -23,11 +24,11 @@ struct DataDetailView: View {
                             HStack {
                                 Image(systemName: "info.circle")
                                     .foregroundColor(.blue)
-                                Text("JSON is large (\(formatBytes(size))). Pretty tree-view is disabled for performance.")
+                                Text(String(format: "JSON is large (%@). Pretty tree-view is disabled for performance.".localized, formatBytes(size)))
                                     .font(.system(size: 11))
                                     .foregroundColor(.secondary)
                                 Spacer()
-                                Button("Try Anyway") {
+                                Button("Try Anyway".localized) {
                                     // Maybe add a force override later
                                 }.buttonStyle(.link)
                                 .font(.system(size: 11))
@@ -47,7 +48,7 @@ struct DataDetailView: View {
                 }
             } else {
                 Spacer()
-                Text("No Data").foregroundColor(.secondary).font(.system(size: 11, weight: .regular))
+                Text("No Data".localized).foregroundColor(.secondary).font(.system(size: 11, weight: .regular))
                 Spacer()
             }
             
@@ -64,12 +65,12 @@ struct DataDetailView: View {
                 Spacer()
                 
                 if viewModel.dataRepresentation?.type == .json {
-                    DetailActionButton(title: "Raw", iconName: "text.quote.rtl", isSelected: isRaw) {
+                    DetailActionButton(title: "Raw".localized, iconName: "text.quote.rtl", isSelected: isRaw) {
                         isRaw.toggle()
                     }
                 }
                 
-                DetailActionButton(title: "Copy", iconName: "doc.on.doc") {
+                DetailActionButton(title: "Copy".localized, iconName: "doc.on.doc") {
                     viewModel.copyToClipboard()
                 }
             }

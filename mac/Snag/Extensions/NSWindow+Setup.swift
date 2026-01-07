@@ -27,6 +27,11 @@ extension NSWindow {
         appearanceToggle.layoutAttribute = .trailing
         window.addTitlebarAccessoryViewController(appearanceToggle)
         
+        // Add Language Toggle to titlebar
+        let languageToggle = LanguageToggleViewController()
+        languageToggle.layoutAttribute = .trailing
+        window.addTitlebarAccessoryViewController(languageToggle)
+        
         window.contentViewController = contentViewController
         
         // Enable automatic window frame saving/restoring

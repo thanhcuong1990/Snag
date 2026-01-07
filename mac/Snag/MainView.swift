@@ -3,6 +3,7 @@ import SwiftUI
 
 struct MainView: View {
     @StateObject private var snagController = SnagController.shared
+    @ObservedObject var languageManager = LanguageManager.shared
     @Environment(\.colorScheme) var colorScheme
     
     // Persistent state

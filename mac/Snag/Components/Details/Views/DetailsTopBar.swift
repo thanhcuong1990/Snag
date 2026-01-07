@@ -2,6 +2,7 @@ import SwiftUI
 
 struct DetailsTopBar: View {
     let packet: SnagPacket?
+    @ObservedObject var languageManager = LanguageManager.shared
     @Environment(\.colorScheme) var colorScheme
     
     var body: some View {
@@ -53,20 +54,20 @@ struct DetailsTopBar: View {
 
     private func shortStatusText(for code: Int) -> String {
         switch code {
-        case 200: return "OK"
-        case 201: return "Created"
-        case 202: return "Accepted"
-        case 204: return "No Content"
-        case 301: return "Moved Permanently"
-        case 302: return "Found"
-        case 304: return "Not Modified"
-        case 400: return "Bad Request"
-        case 401: return "Unauthorized"
-        case 403: return "Forbidden"
-        case 404: return "Not Found"
-        case 500: return "Internal Server Error"
-        case 502: return "Bad Gateway"
-        case 503: return "Service Unavailable"
+        case 200: return "OK".localized
+        case 201: return "Created".localized
+        case 202: return "Accepted".localized
+        case 204: return "No Content".localized
+        case 301: return "Moved Permanently".localized
+        case 302: return "Found".localized
+        case 304: return "Not Modified".localized
+        case 400: return "Bad Request".localized
+        case 401: return "Unauthorized".localized
+        case 403: return "Forbidden".localized
+        case 404: return "Not Found".localized
+        case 500: return "Internal Server Error".localized
+        case 502: return "Bad Gateway".localized
+        case 503: return "Service Unavailable".localized
         default: return HTTPURLResponse.localizedString(forStatusCode: code).capitalized
         }
     }

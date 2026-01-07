@@ -2,6 +2,7 @@ import SwiftUI
 
 struct OverviewView: View {
     let packet: SnagPacket?
+    @ObservedObject var languageManager = LanguageManager.shared
     @Environment(\.colorScheme) var colorScheme
     @State private var isCurl: Bool = false
     @StateObject private var viewModel = OverviewViewModel()
@@ -20,11 +21,11 @@ struct OverviewView: View {
             
             HStack(spacing: 8) {
                 Spacer()
-                DetailActionButton(title: isCurl ? "Details" : "cURL", iconName: "terminal", isSelected: isCurl) {
+                DetailActionButton(title: isCurl ? "Details".localized : "cURL", iconName: "terminal", isSelected: isCurl) {
                     isCurl.toggle()
                 }
                 
-                DetailActionButton(title: "Copy", iconName: "doc.on.doc") {
+                DetailActionButton(title: "Copy".localized, iconName: "doc.on.doc") {
                     if isCurl { viewModel.copyCURLToClipboard() } else { viewModel.copyTextToClipboard() }
                 }
             }

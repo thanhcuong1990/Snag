@@ -63,6 +63,10 @@
 		A5D0BCE62F04F4F100C05E93 /* TabToggleViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5D0BCE32F04F4F100C05E93 /* TabToggleViewController.swift */; };
 		A5D0BCE82F04F54700C05E93 /* SnagLog.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5D0BCE72F04F54700C05E93 /* SnagLog.swift */; };
 		A5D1E37A2F0E1128005F3D3A /* ResizableDivider.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5D1E3782F0E1128005F3D3A /* ResizableDivider.swift */; };
+		A5D1E37D2F0E2FAB005F3D3A /* LanguageToggleView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5D1E37B2F0E2FAB005F3D3A /* LanguageToggleView.swift */; };
+		A5D1E37E2F0E2FAB005F3D3A /* LanguageToggleViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5D1E37C2F0E2FAB005F3D3A /* LanguageToggleViewController.swift */; };
+		A5D1E3802F0E2FC5005F3D3A /* LanguageManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5D1E37F2F0E2FC5005F3D3A /* LanguageManager.swift */; };
+		A5D1E3822F0E2FDD005F3D3A /* Localizable.xcstrings in Resources */ = {isa = PBXBuildFile; fileRef = A5D1E3812F0E2FDD005F3D3A /* Localizable.xcstrings */; };
 		BC1F5B37216746D30045C871 /* FontManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = BC1F5B36216746D30045C871 /* FontManager.swift */; };
 		BC32643621738AF0006452FE /* KeyValueRepresentation.swift in Sources */ = {isa = PBXBuildFile; fileRef = BC32643521738AF0006452FE /* KeyValueRepresentation.swift */; };
 		BC5E76C9216A64DB000F658D /* Theme.swift in Sources */ = {isa = PBXBuildFile; fileRef = BC5E76C8216A64DB000F658D /* Theme.swift */; };
@@ -173,6 +177,10 @@
 		A5D0BCE32F04F4F100C05E93 /* TabToggleViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TabToggleViewController.swift; sourceTree = "<group>"; };
 		A5D0BCE72F04F54700C05E93 /* SnagLog.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SnagLog.swift; sourceTree = "<group>"; };
 		A5D1E3782F0E1128005F3D3A /* ResizableDivider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ResizableDivider.swift; sourceTree = "<group>"; };
+		A5D1E37B2F0E2FAB005F3D3A /* LanguageToggleView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LanguageToggleView.swift; sourceTree = "<group>"; };
+		A5D1E37C2F0E2FAB005F3D3A /* LanguageToggleViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LanguageToggleViewController.swift; sourceTree = "<group>"; };
+		A5D1E37F2F0E2FC5005F3D3A /* LanguageManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LanguageManager.swift; sourceTree = "<group>"; };
+		A5D1E3812F0E2FDD005F3D3A /* Localizable.xcstrings */ = {isa = PBXFileReference; lastKnownFileType = text.json.xcstrings; path = Localizable.xcstrings; sourceTree = "<group>"; };
 		BC1F5B36216746D30045C871 /* FontManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FontManager.swift; sourceTree = "<group>"; };
 		BC32643521738AF0006452FE /* KeyValueRepresentation.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KeyValueRepresentation.swift; sourceTree = "<group>"; };
 		BC5E76C8216A64DB000F658D /* Theme.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Theme.swift; sourceTree = "<group>"; };
@@ -375,6 +383,7 @@
 		A5D0BC932F04303A00C05E93 /* Managers */ = {
 			isa = PBXGroup;
 			children = (
+				A5D1E37F2F0E2FC5005F3D3A /* LanguageManager.swift */,
 				A5D0BC922F04303A00C05E93 /* SettingsManager.swift */,
 			);
 			path = Managers;
@@ -503,6 +512,7 @@
 				BCD0E02A210F5E0D00CE5C7B /* Assets.xcassets */,
 				BCD0E02F210F5E0D00CE5C7B /* Info.plist */,
 				A556F1152EF3C171004B8A98 /* main.swift */,
+				A5D1E3812F0E2FDD005F3D3A /* Localizable.xcstrings */,
 				BCD0E030210F5E0D00CE5C7B /* Snag.entitlements */,
 			);
 			path = Snag;
@@ -550,6 +560,8 @@
 		BCFC852D21383252001EC6D7 /* Components */ = {
 			isa = PBXGroup;
 			children = (
+				A5D1E37B2F0E2FAB005F3D3A /* LanguageToggleView.swift */,
+				A5D1E37C2F0E2FAB005F3D3A /* LanguageToggleViewController.swift */,
 				A5D1E3792F0E1128005F3D3A /* Common */,
 				A5D0BCDE2F04F4AF00C05E93 /* Logs */,
 				BCFC852E21383257001EC6D7 /* Projects */,
@@ -740,6 +752,9 @@
 			knownRegions = (
 				en,
 				Base,
+				ja,
+				ko,
+				vi,
 			);
 			mainGroup = BCD0E01A210F5E0D00CE5C7B;
 			packageReferences = (
@@ -763,6 +778,7 @@
 			files = (
 				BCD0E02B210F5E0D00CE5C7B /* Assets.xcassets in Resources */,
 				BC75A81021737A7300A2A5B3 /* jsonviewer.html in Resources */,
+				A5D1E3822F0E2FDD005F3D3A /* Localizable.xcstrings in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -809,6 +825,7 @@
 				A54C27E02EF71557000C8FD2 /* KeyValue.swift in Sources */,
 				A54C27E12EF71557000C8FD2 /* SnagPublisher.swift in Sources */,
 				A54C27E22EF71557000C8FD2 /* SnagConfiguration.swift in Sources */,
+				A5D1E3802F0E2FC5005F3D3A /* LanguageManager.swift in Sources */,
 				A54C27E32EF71557000C8FD2 /* SnagExtensions.swift in Sources */,
 				A54C27E42EF71557000C8FD2 /* SnagProjectController.swift in Sources */,
 				A54C27E52EF71557000C8FD2 /* SnagDeviceController.swift in Sources */,
@@ -868,6 +885,8 @@
 				A530146B2EFCE427008A8420 /* PacketsViewModelWrapper.swift in Sources */,
 				A556F1102EF3BDEF004B8A98 /* PacketsView.swift in Sources */,
 				BCFC853921383D79001EC6D7 /* DetailViewController.swift in Sources */,
+				A5D1E37D2F0E2FAB005F3D3A /* LanguageToggleView.swift in Sources */,
+				A5D1E37E2F0E2FAB005F3D3A /* LanguageToggleViewController.swift in Sources */,
 				BCA60B50216256FD00B9DCAD /* BaseTableHeaderView.swift in Sources */,
 				BCA60B482162403F00B9DCAD /* PacketsViewModel.swift in Sources */,
 				BCFC853621383650001EC6D7 /* PacketsViewController.swift in Sources */,

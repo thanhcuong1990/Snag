@@ -23,15 +23,16 @@ enum AppearanceMode: String, CaseIterable {
     
     var helpText: String {
         switch self {
-        case .auto: return "Style: Auto (System)"
-        case .light: return "Style: Light"
-        case .dark: return "Style: Dark"
+        case .auto: return "Style: Auto (System)".localized
+        case .light: return "Style: Light".localized
+        case .dark: return "Style: Dark".localized
         }
     }
 }
 
 struct AppearanceToggleView: View {
     @AppStorage(SnagConstants.appearanceModeKey) private var appearanceMode: AppearanceMode = .auto
+    @ObservedObject var languageManager = LanguageManager.shared
     @State private var isHovering = false
     
     var body: some View {

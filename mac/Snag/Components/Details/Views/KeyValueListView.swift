@@ -2,6 +2,7 @@ import SwiftUI
 
 struct KeyValueListView: View {
     @ObservedObject var viewModel: KeyValueViewModel
+    @ObservedObject var languageManager = LanguageManager.shared
     @Environment(\.colorScheme) var colorScheme
     @State private var isRaw: Bool = false
     
@@ -11,7 +12,7 @@ struct KeyValueListView: View {
                 CodeTextView(text: viewModel.keyValueRepresentation?.rawString ?? "")
             } else if viewModel.items.isEmpty {
                 Spacer()
-                Text("No Headers").foregroundColor(.secondary)
+                Text("No Headers".localized).foregroundColor(.secondary)
                     .font(.system(size: 11, weight: .regular))
                 Spacer()
             } else {
@@ -42,11 +43,11 @@ struct KeyValueListView: View {
 
             HStack(spacing: 8) {
                 Spacer()
-                DetailActionButton(title: "Raw", iconName: "text.quote.rtl", isSelected: isRaw) {
+                DetailActionButton(title: "Raw".localized, iconName: "text.quote.rtl", isSelected: isRaw) {
                     isRaw.toggle()
                 }
                 
-                DetailActionButton(title: "Copy", iconName: "doc.on.doc") {
+                DetailActionButton(title: "Copy".localized, iconName: "doc.on.doc") {
                     viewModel.copyToClipboard()
                 }
             }
