@@ -8,6 +8,7 @@ class LanguageManager: ObservableObject {
         didSet {
             UserDefaults.standard.set(currentLanguage.rawValue, forKey: "AppLanguage")
             loadBundle()
+            NotificationCenter.default.post(name: .languageDidChange, object: nil)
         }
     }
     
@@ -59,6 +60,10 @@ class LanguageManager: ObservableObject {
     func localizedString(_ key: String) -> String {
         return bundle?.localizedString(forKey: key, value: nil, table: nil) ?? NSLocalizedString(key, comment: "")
     }
+}
+
+extension Notification.Name {
+    static let languageDidChange = Notification.Name("languageDidChange")
 }
 
 extension String {

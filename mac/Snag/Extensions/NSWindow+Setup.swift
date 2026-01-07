@@ -12,7 +12,12 @@ extension NSWindow {
             styleMask: [.titled, .closable, .miniaturizable, .resizable],
             backing: .buffered, defer: false)
         
-        window.title = "Snag - Network Debugger"
+        window.title = "Snag - Network Debugger".localized
+        
+        // Observe language changes to update window title reactively
+        NotificationCenter.default.addObserver(forName: .languageDidChange, object: nil, queue: .main) { [weak window] _ in
+            window?.title = "Snag - Network Debugger".localized
+        }
         window.titlebarAppearsTransparent = true
         window.isReleasedWhenClosed = false
         window.minSize = NSSize(width: 800, height: 600)

@@ -30,6 +30,35 @@
         }
       }
     },
+    "Snag - Network Debugger" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Snag - Network Debugger"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Snag - ネットワークデバッガ"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Snag - 네트워크 디버거"
+          }
+        },
+        "vi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Snag - Trình gỡ lỗi mạng"
+          }
+        }
+      }
+    },
     "[%@]" : {
 
     },
