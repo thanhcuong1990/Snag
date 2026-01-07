@@ -135,6 +135,13 @@ jobs:
       - name: Grant execute permission for gradlew
         run: chmod +x android/gradlew
 
+      - name: Update version from tag
+        run: |
+          VERSION=${GITHUB_REF#refs/tags/v}
+          echo "Updating Android version to $VERSION"
+          sed -i "s/coordinates(\"io.github.thanhcuong1990\", \"snag\", \"[^\"]*\")/coordinates(\"io.github.thanhcuong1990\", \"snag\", \"$VERSION\")/" android/snag/build.gradle.kts
+          cat android/snag/build.gradle.kts | grep coordinates
+
       - name: Publish to Maven Central
         run: |
           cd android
@@ -151,6 +158,13 @@ jobs:
     runs-on: macos-latest
     steps:
       - uses: actions/checkout@v4
+
+      - name: Update version from tag
+        run: |
+          VERSION=${GITHUB_REF#refs/tags/v}
+          echo "Updating iOS podspec version to $VERSION"
+          sed -i '' "s/s.version *= *'[^']*'/s.version          = '$VERSION'/" Snag.podspec
+          cat Snag.podspec | grep "s.version"
 
       - name: Deploy to CocoaPods
         run: |
