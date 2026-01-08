@@ -10,7 +10,6 @@ import {
   ActivityIndicator,
   Image,
 } from 'react-native';
-import Snag from 'react-native-snag';
 import {
   SafeAreaProvider,
   useSafeAreaInsets,
@@ -59,6 +58,11 @@ function AppContent() {
   const [responseText, setResponseText] = useState('Tap a test to run');
   const [loading, setLoading] = useState(false);
   const [imageUrl, setImageUrl] = useState<string | null>(null);
+
+  React.useEffect(() => {
+    console.log('🚀 Snag Example App launched at ' + new Date().toLocaleTimeString());
+    console.info('Tip: You can find all network and log events in the Snag Mac app.');
+  }, []);
 
   const runTest = async (testId: string) => {
     setLoading(true);
@@ -133,16 +137,16 @@ function AppContent() {
           await performRequest('https://httpbin.org/status/500', 'GET');
           break;
         case 'log_info':
-          Snag.log('Info log from RN: ' + new Date().toLocaleTimeString());
-          setResponseText('Sent Info Log to Snag');
+          console.log('Info log from console.log: ' + new Date().toLocaleTimeString());
+          setResponseText('Sent console.log to Snag');
           break;
         case 'log_warn':
-          Snag.log('Warn log from RN: ' + new Date().toLocaleTimeString()); // Note: Snag.log currently only supports message string in my wrapper
-          setResponseText('Sent Warn Log to Snag');
+          console.warn('Warn log from console.warn: ' + new Date().toLocaleTimeString());
+          setResponseText('Sent console.warn to Snag');
           break;
         case 'log_error':
-          Snag.log('Error log from RN: ' + new Date().toLocaleTimeString());
-          setResponseText('Sent Error Log to Snag');
+          console.error('Error log from console.error: ' + new Date().toLocaleTimeString());
+          setResponseText('Sent console.error to Snag');
           break;
         default:
           setResponseText('Unknown test');
@@ -172,6 +176,16 @@ function AppContent() {
     const duration = Date.now() - start;
     const data = await response.text();
 
+    let jsonData: any = null;
+    if (response.ok && response.headers.get('content-type')?.includes('application/json')) {
+      try {
+        jsonData = JSON.parse(data);
+        console.log('console.log > API Response JSON:', jsonData); // Log JSON object for Snag Mac app
+      } catch (e) {
+        console.warn('console.warn > Could not parse response as JSON:', e);
+      }
+    }
+
     const result = [
       `${method} ${url}`,
       `Status: ${response.status} ${response.statusText}`,
@@ -181,7 +195,7 @@ function AppContent() {
       JSON.stringify(Object.fromEntries((response.headers as any).entries()), null, 2),
       '',
       'Body:',
-      data.length > 1000 ? data.substring(0, 1000) + '...' : data,
+      jsonData ? JSON.stringify(jsonData, null, 2) : (data.length > 1000 ? data.substring(0, 1000) + '...' : data),
     ].join('\n');
 
     setResponseText(result);

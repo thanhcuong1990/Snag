@@ -23,8 +23,8 @@
 @implementation RNSnag
 RCT_EXPORT_MODULE(Snag)
 
-- (void)log:(NSString *)message {
-  [RNSnagBridge log:message];
+- (void)log:(NSString *)message level:(NSString *)level {
+  [RNSnagBridge log:message level:level];
 }
 
 #ifdef RCT_NEW_ARCH_ENABLED

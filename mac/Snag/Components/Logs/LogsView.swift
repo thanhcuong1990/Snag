@@ -3,12 +3,16 @@ import SwiftUI
 struct LogsView: View {
     @StateObject var viewModel: LogsViewModel
     
+    private enum Constants {
+        static let padding: CGFloat = 8
+    }
+    
     var body: some View {
         VStack(spacing: 0) {
             // Filter Bar
             HStack {
                 TextField("Filter logs...", text: $viewModel.filterTerm)
-                    .textFieldStyle(RoundedBorderTextFieldStyle())
+                    .textFieldStyle(.roundedBorder)
                 
                 Button(action: {
                     viewModel.togglePause()
@@ -24,7 +28,7 @@ struct LogsView: View {
                 }
                 .help("Clear Logs")
             }
-            .padding(8)
+            .padding(Constants.padding)
             .background(Color(nsColor: .windowBackgroundColor))
             
             Divider()
@@ -43,46 +47,84 @@ struct LogsView: View {
 struct LogRowView: View {
     let log: SnagLog
     
-    var colorForLevel: Color {
-        switch log.level.lowercased() {
-        case "error", "fault": return .red
-        case "warn", "warning": return .orange
+    private enum Constants {
+        static let verticalPadding: CGFloat = 4
+        static let horizontalPadding: CGFloat = 8
+        static let cornerRadius: CGFloat = 4
+        static let timestampWidth: CGFloat = 70
+        static let messageIndent: CGFloat = 78
+        static let tagHorizontalPadding: CGFloat = 4
+        static let tagVerticalPadding: CGFloat = 2
+    }
+    
+    private var lowercasedLogLevel: String {
+        log.level.lowercased()
+    }
+    
+    var backgroundColor: Color {
+        switch lowercasedLogLevel {
+        case "error", "fault": return Color(nsColor: .systemRed).opacity(0.1)
+        case "warn", "warning": return Color(nsColor: .systemYellow).opacity(0.1)
+        default: return Color.clear
+        }
+    }
+    
+    var textColor: Color {
+        switch lowercasedLogLevel {
+        case "error", "fault": return Color(nsColor: .systemRed)
+        case "warn", "warning": return Color(nsColor: .systemOrange)
         case "debug": return .gray
         default: return .primary
         }
     }
     
     var body: some View {
-        VStack(alignment: .leading, spacing: 0) {
-            // Header row with timestamp, level, tag
+        VStack(alignment: .leading, spacing: 4) {
             HStack(alignment: .top, spacing: 8) {
+                // Timestamp
                 Text(datetimeFormatter.string(from: log.timestamp))
-                    .font(.caption)
+                    .font(.caption2)
                     .foregroundColor(.secondary)
-                    .frame(width: 80, alignment: .leading)
+                    .frame(width: Constants.timestampWidth, alignment: .leading)
                 
+                // Level Tag
                 Text(log.level.uppercased())
-                    .font(.caption)
-                    .fontWeight(.bold)
-                    .foregroundColor(colorForLevel)
-                    .frame(width: 50, alignment: .leading)
+                    .modifier(TagModifier(backgroundColor: textColor.opacity(0.1), foregroundColor: textColor))
                 
                 if let tag = log.tag {
-                    Text("[\(tag)]")
-                        .font(.caption)
-                        .foregroundColor(.secondary)
+                    Text(tag)
+                        .modifier(TagModifier(backgroundColor: Color.secondary.opacity(0.1), foregroundColor: .secondary))
                 }
-                
-                // Message content
-                Text(log.message)
-                    .font(.system(.body, design: .monospaced))
-                    .foregroundColor(colorForLevel)
-                    .textSelection(.enabled)
                 
                 Spacer()
             }
+            
+            // Message content
+            Text(log.message)
+                .font(.system(.body, design: .monospaced))
+                .foregroundColor(.primary)
+                .textSelection(.enabled)
+                .padding(.leading, Constants.messageIndent)
         }
-        .padding(.vertical, 2)
+        .padding(.vertical, Constants.verticalPadding)
+        .padding(.horizontal, Constants.horizontalPadding)
+        .background(backgroundColor)
+        .cornerRadius(Constants.cornerRadius)
+    }
+}
+
+private struct TagModifier: ViewModifier {
+    let backgroundColor: Color
+    let foregroundColor: Color
+    
+    func body(content: Content) -> some View {
+        content
+            .font(.caption2)
+            .padding(.horizontal, LogRowView.Constants.tagHorizontalPadding)
+            .padding(.vertical, LogRowView.Constants.tagVerticalPadding)
+            .background(backgroundColor)
+            .foregroundColor(foregroundColor)
+            .cornerRadius(LogRowView.Constants.cornerRadius)
     }
 }
 

@@ -9,7 +9,7 @@ class SnagDeviceController: NSObject, ObservableObject {
     @Published var packets: [SnagPacket] = []
     @Published var logs: [SnagLog] = []
     
-    @Published var isLogsPaused: Bool = true
+    @Published var isLogsPaused: Bool = false
     
     @Published private(set) var selectedPacket: SnagPacket?
     
@@ -28,9 +28,7 @@ class SnagDeviceController: NSObject, ObservableObject {
     func addPacket(newPacket: SnagPacket) -> Bool {
         
         if let log = newPacket.log {
-            if isLogsPaused {
-                return true // Discard log when paused
-            }
+            // Always collect logs, even if paused (paused just means UI doesn't auto-scroll)
             self.logs.append(log)
             if self.logs.count > maxItems {
                 self.logs.removeFirst()

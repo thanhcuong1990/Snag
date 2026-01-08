@@ -6,7 +6,7 @@ import Snag
     Snag.start()
   }
 
-  @objc public static func log(_ message: String) {
-    Snag.log(message)
+  @objc public static func log(_ message: String, level: String) {
+    Snag.log(message, level: level)
   }
 }

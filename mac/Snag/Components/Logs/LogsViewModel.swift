@@ -79,7 +79,7 @@ class LogsViewModel: ObservableObject {
         }
         
         DispatchQueue.main.async {
-            self.items = filtered
+            self.items = filtered.reversed()
         }
     }
     
