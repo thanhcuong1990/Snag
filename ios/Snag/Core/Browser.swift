@@ -79,7 +79,14 @@ class SnagBrowser: NSObject {
     
     private func connect(with endpoint: NWEndpoint) {
         connectingEndpoints.insert(endpoint)
-        let connection = NWConnection(to: endpoint, using: .tcp)
+        let tcpOptions = NWProtocolTCP.Options()
+        tcpOptions.enableKeepalive = true
+        tcpOptions.noDelay = true // Disable Nagle's algorithm for immediate sending
+        
+        let params = NWParameters(tls: nil, tcp: tcpOptions)
+        
+        // Ensure we're using TCP as initially intended
+        let connection = NWConnection(to: endpoint, using: params)
         
         connection.stateUpdateHandler = { [weak self] state in
             switch state {
