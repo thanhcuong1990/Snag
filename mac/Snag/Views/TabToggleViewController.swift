@@ -10,8 +10,6 @@ class TabToggleViewController: NSTitlebarAccessoryViewController {
         hostingView.layer?.backgroundColor = .clear
         
         self.view = hostingView
-        
-        // Slightly wider for Segmented Control
-        self.view.frame = NSRect(x: 0, y: 0, width: 160, height: 40)
+        self.view.translatesAutoresizingMaskIntoConstraints = false
     }
 }

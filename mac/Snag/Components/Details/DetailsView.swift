@@ -88,23 +88,20 @@ struct DetailsView: View {
             
             Divider()
             
-            // Content - using ZStack with opacity to keep views alive
-            ZStack {
-                OverviewView(packet: viewModelWrapper.packet)
-                    .opacity(requestTab == .overview ? 1 : 0)
-                    .allowsHitTesting(requestTab == .overview)
-                
-                KeyValueListView(viewModel: requestHeadersViewModel)
-                    .opacity(requestTab == .requestHeaders ? 1 : 0)
-                    .allowsHitTesting(requestTab == .requestHeaders)
-                
-                KeyValueListView(viewModel: requestParametersViewModel)
-                    .opacity(requestTab == .requestParameters ? 1 : 0)
-                    .allowsHitTesting(requestTab == .requestParameters)
-                
-                DataDetailView(viewModel: requestBodyViewModel)
-                    .opacity(requestTab == .requestBody ? 1 : 0)
-                    .allowsHitTesting(requestTab == .requestBody)
+            // Content - Lazy loaded by using conditional rendering
+            Group {
+                switch requestTab {
+                case .overview:
+                    OverviewView(packet: viewModelWrapper.packet)
+                case .requestHeaders:
+                    KeyValueListView(viewModel: requestHeadersViewModel)
+                case .requestParameters:
+                    KeyValueListView(viewModel: requestParametersViewModel)
+                case .requestBody:
+                    DataDetailView(viewModel: requestBodyViewModel)
+                default:
+                    EmptyView()
+                }
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
         }
@@ -135,15 +132,16 @@ struct DetailsView: View {
             
             Divider()
             
-            // Content - using ZStack with opacity to keep views alive
-            ZStack {
-                KeyValueListView(viewModel: responseHeadersViewModel)
-                    .opacity(responseTab == .responseHeaders ? 1 : 0)
-                    .allowsHitTesting(responseTab == .responseHeaders)
-                
-                DataDetailView(viewModel: responseDataViewModel)
-                    .opacity(responseTab == .responseBody ? 1 : 0)
-                    .allowsHitTesting(responseTab == .responseBody)
+            // Content - Lazy loaded
+            Group {
+                switch responseTab {
+                case .responseHeaders:
+                    KeyValueListView(viewModel: responseHeadersViewModel)
+                case .responseBody:
+                    DataDetailView(viewModel: responseDataViewModel)
+                default:
+                    EmptyView()
+                }
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
         }

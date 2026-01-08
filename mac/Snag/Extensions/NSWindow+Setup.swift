@@ -22,10 +22,10 @@ extension NSWindow {
         window.isReleasedWhenClosed = false
         window.minSize = NSSize(width: 800, height: 600)
         
-        // Add Tab Toggle to titlebar
-        // let tabToggle = TabToggleViewController()
-        // tabToggle.layoutAttribute = .trailing
-        // window.addTitlebarAccessoryViewController(tabToggle)
+        // Add Tab Toggle to titlebar (Centered)
+        let tabToggle = TabToggleViewController()
+        window.addCenteredTitlebarView(tabToggle.view)
+        contentViewController.addChild(tabToggle) // Ensure it stays in the responder chain
         
         // Add Appearance Toggle to titlebar
         let appearanceToggle = AppearanceToggleViewController()
@@ -47,5 +47,23 @@ extension NSWindow {
         }
         
         return window
+    }
+
+    /// Adds a view centered horizontally in the window's title bar.
+    func addCenteredTitlebarView(_ view: NSView) {
+        // Find the titlebar view by traversing the theme frame subviews
+        guard let themeFrame = self.contentView?.superview,
+              let titlebarContainer = themeFrame.subviews.first(where: { NSStringFromClass($0.classForCoder).contains("NSTitlebarContainerView") }),
+              let titlebarView = titlebarContainer.subviews.first(where: { NSStringFromClass($0.classForCoder).contains("NSTitlebarView") }) else {
+            return
+        }
+        
+        view.translatesAutoresizingMaskIntoConstraints = false
+        titlebarView.addSubview(view)
+        
+        NSLayoutConstraint.activate([
+            view.centerXAnchor.constraint(equalTo: titlebarView.centerXAnchor),
+            view.centerYAnchor.constraint(equalTo: titlebarView.centerYAnchor)
+        ])
     }
 }

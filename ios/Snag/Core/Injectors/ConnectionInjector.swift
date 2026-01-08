@@ -69,9 +69,8 @@ class SnagConnectionInjector: NSObject {
                 let original = unsafeBitCast(originalImp, to: InitWithStartBlock.self)
                 
                 let block: @convention(block) (AnyObject, URLRequest, AnyObject?, Bool) -> AnyObject? = { [weak self] instance, request, delegate, startImmediately in
-                    guard let self = self else { return nil }
                     let connection = original(instance, selector, request, delegate, startImmediately) as? NSURLConnection
-                    if let connection = connection, startImmediately {
+                    if let self = self, let connection = connection, startImmediately {
                         self.delegate?.connectionInjector(self, didStart: connection)
                     }
                     return connection
@@ -84,9 +83,8 @@ class SnagConnectionInjector: NSObject {
                 let original = unsafeBitCast(originalImp, to: InitBlock.self)
                 
                 let block: @convention(block) (AnyObject, URLRequest, AnyObject?) -> AnyObject? = { [weak self] instance, request, delegate in
-                    guard let self = self else { return nil }
                     let connection = original(instance, selector, request, delegate) as? NSURLConnection
-                    if let connection = connection {
+                    if let self = self, let connection = connection {
                         self.delegate?.connectionInjector(self, didStart: connection)
                     }
                     return connection
@@ -103,8 +101,7 @@ class SnagConnectionInjector: NSObject {
             let originalStart = unsafeBitCast(originalStartImp, to: StartBlock.self)
             
             let startBlock: @convention(block) (AnyObject) -> Void = { [weak self] instance in
-                guard let self = self else { return }
-                if let connection = instance as? NSURLConnection {
+                if let self = self, let connection = instance as? NSURLConnection {
                     self.delegate?.connectionInjector(self, didStart: connection)
                 }
                 originalStart(instance, startSelector)
@@ -125,8 +122,9 @@ class SnagConnectionInjector: NSObject {
         let original = unsafeBitCast(originalImp, to: DidReceiveResponseBlock.self)
         
         let block: @convention(block) (AnyObject, NSURLConnection, URLResponse) -> Void = { [weak self] (instance, connection, response) in
-            guard let self = self else { return }
-            self.delegate?.connectionInjector(self, didReceiveResponse: connection, response: response)
+            if let self = self {
+                self.delegate?.connectionInjector(self, didReceiveResponse: connection, response: response)
+            }
             original(instance, sel, connection, response)
         }
         
@@ -143,8 +141,9 @@ class SnagConnectionInjector: NSObject {
         let original = unsafeBitCast(originalImp, to: DidReceiveDataBlock.self)
         
         let block: @convention(block) (AnyObject, NSURLConnection, Data) -> Void = { [weak self] (instance, connection, data) in
-            guard let self = self else { return }
-            self.delegate?.connectionInjector(self, didReceiveData: connection, data: data)
+            if let self = self {
+                self.delegate?.connectionInjector(self, didReceiveData: connection, data: data)
+            }
             original(instance, sel, connection, data)
         }
         
@@ -160,8 +159,9 @@ class SnagConnectionInjector: NSObject {
         let original = unsafeBitCast(originalImp, to: DidFailWithErrorBlock.self)
         
         let block: @convention(block) (AnyObject, NSURLConnection, NSError) -> Void = { [weak self] (instance, connection, error) in
-            guard let self = self else { return }
-            self.delegate?.connectionInjector(self, didFailWithError: connection, error: error)
+            if let self = self {
+                self.delegate?.connectionInjector(self, didFailWithError: connection, error: error)
+            }
             original(instance, selector, connection, error)
         }
         
@@ -177,8 +177,9 @@ class SnagConnectionInjector: NSObject {
         let original = unsafeBitCast(originalImp, to: DidFinishLoadingBlock.self)
         
         let block: @convention(block) (AnyObject, NSURLConnection) -> Void = { [weak self] (instance, connection) in
-            guard let self = self else { return }
-            self.delegate?.connectionInjector(self, didFinishLoading: connection)
+            if let self = self {
+                self.delegate?.connectionInjector(self, didFinishLoading: connection)
+            }
             original(instance, selector, connection)
         }
         

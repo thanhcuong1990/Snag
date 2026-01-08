@@ -6,14 +6,22 @@
 #import <react_native_snag/react_native_snag-Swift.h>
 #endif
 
-@implementation RNSnag
-RCT_EXPORT_MODULE(Snag)
+@implementation RNSnag (AutoStart)
 
 + (void)load {
 #ifdef DEBUG
-  [RNSnagBridge start];
+  dispatch_after(
+      dispatch_time(DISPATCH_TIME_NOW, (int64_t)(0.1 * NSEC_PER_SEC)),
+      dispatch_get_main_queue(), ^{
+        [RNSnagBridge start];
+      });
 #endif
 }
+
+@end
+
+@implementation RNSnag
+RCT_EXPORT_MODULE(Snag)
 
 - (void)log:(NSString *)message {
   [RNSnagBridge log:message];

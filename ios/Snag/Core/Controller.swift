@@ -17,7 +17,7 @@ class SnagController: SnagSessionInjectorDelegate, SnagConnectionInjectorDelegat
         self.browser = SnagBrowser(configuration: configuration)
         
         self.sessionInjector = SnagSessionInjector(delegate: self)
-        self.connectionInjector = SnagConnectionInjector(delegate: self)
+        // self.connectionInjector = SnagConnectionInjector(delegate: self)
         
         self.carriers = []
         
@@ -42,22 +42,36 @@ class SnagController: SnagSessionInjectorDelegate, SnagConnectionInjectorDelegat
         queue.async(execute: block)
     }
     
-    private func carrier(with task: URLSessionTask) -> SnagCarrier {
+    private func carrier(with task: URLSessionTask) -> SnagCarrier? {
         if let existing = self.carriers.first(where: { $0.urlSessionTask === task }) {
             return existing
         }
         
         let carrier = SnagCarrier(task: task)
+        
+        if let url = task.originalRequest?.url,
+           (url.host == "localhost" || url.host == "127.0.0.1") {
+            // Skip Metro bundle/local dev server body data to avoid hangs/circular dependencies
+            carrier.shouldSkipBody = true
+        }
+        
         self.carriers.append(carrier)
         return carrier
     }
     
-    private func carrier(with connection: NSURLConnection) -> SnagCarrier {
+    private func carrier(with connection: NSURLConnection) -> SnagCarrier? {
         if let existing = self.carriers.first(where: { $0.urlConnection === connection }) {
             return existing
         }
         
         let carrier = SnagCarrier(urlConnection: connection)
+        
+        if let url = connection.originalRequest.url,
+           (url.host == "localhost" || url.host == "127.0.0.1") {
+            // Skip Metro bundle/local dev server body data to avoid hangs/circular dependencies
+            carrier.shouldSkipBody = true
+        }
+        
         self.carriers.append(carrier)
         return carrier
     }
@@ -66,7 +80,7 @@ class SnagController: SnagSessionInjectorDelegate, SnagConnectionInjectorDelegat
     
     func sessionInjector(_ injector: SnagSessionInjector, didStart dataTask: URLSessionTask) {
         performBlock {
-            let carrier = self.carrier(with: dataTask)
+            guard let carrier = self.carrier(with: dataTask) else { return }
             if !carrier.hasSentInitialPacket {
                 self.send(carrier: carrier)
                 carrier.hasSentInitialPacket = true
@@ -76,7 +90,7 @@ class SnagController: SnagSessionInjectorDelegate, SnagConnectionInjectorDelegat
     
     func sessionInjector(_ injector: SnagSessionInjector, didReceiveResponse dataTask: URLSessionTask, response: URLResponse) {
         performBlock {
-            let carrier = self.carrier(with: dataTask)
+            guard let carrier = self.carrier(with: dataTask) else { return }
             if !carrier.hasSentInitialPacket {
                 self.send(carrier: carrier)
                 carrier.hasSentInitialPacket = true
@@ -89,14 +103,14 @@ class SnagController: SnagSessionInjectorDelegate, SnagConnectionInjectorDelegat
     func sessionInjector(_ injector: SnagSessionInjector, didReceiveData dataTask: URLSessionTask, data: Data) {
         let copiedData = Data(data)
         performBlock {
-            let carrier = self.carrier(with: dataTask)
+            guard let carrier = self.carrier(with: dataTask) else { return }
             carrier.append(data: copiedData)
         }
     }
     
     func sessionInjector(_ injector: SnagSessionInjector, didFinishWithError dataTask: URLSessionTask, error: Error?) {
         performBlock {
-            let carrier = self.carrier(with: dataTask)
+            guard let carrier = self.carrier(with: dataTask) else { return }
             carrier.error = error
             carrier.complete()
             
@@ -112,7 +126,7 @@ class SnagController: SnagSessionInjectorDelegate, SnagConnectionInjectorDelegat
     
     func connectionInjector(_ injector: SnagConnectionInjector, didStart urlConnection: NSURLConnection) {
         performBlock {
-            let carrier = self.carrier(with: urlConnection)
+            guard let carrier = self.carrier(with: urlConnection) else { return }
             if !carrier.hasSentInitialPacket {
                 self.send(carrier: carrier)
                 carrier.hasSentInitialPacket = true
@@ -122,7 +136,7 @@ class SnagController: SnagSessionInjectorDelegate, SnagConnectionInjectorDelegat
     
     func connectionInjector(_ injector: SnagConnectionInjector, didReceiveResponse urlConnection: NSURLConnection, response: URLResponse) {
         performBlock {
-            let carrier = self.carrier(with: urlConnection)
+            guard let carrier = self.carrier(with: urlConnection) else { return }
             if !carrier.hasSentInitialPacket {
                 self.send(carrier: carrier)
                 carrier.hasSentInitialPacket = true
@@ -135,14 +149,14 @@ class SnagController: SnagSessionInjectorDelegate, SnagConnectionInjectorDelegat
     func connectionInjector(_ injector: SnagConnectionInjector, didReceiveData urlConnection: NSURLConnection, data: Data) {
         let copiedData = Data(data)
         performBlock {
-            let carrier = self.carrier(with: urlConnection)
+            guard let carrier = self.carrier(with: urlConnection) else { return }
             carrier.append(data: copiedData)
         }
     }
     
     func connectionInjector(_ injector: SnagConnectionInjector, didFailWithError urlConnection: NSURLConnection, error: Error) {
         performBlock {
-            let carrier = self.carrier(with: urlConnection)
+            guard let carrier = self.carrier(with: urlConnection) else { return }
             carrier.error = error
             carrier.complete()
             
@@ -155,7 +169,7 @@ class SnagController: SnagSessionInjectorDelegate, SnagConnectionInjectorDelegat
     
     func connectionInjector(_ injector: SnagConnectionInjector, didFinishLoading urlConnection: NSURLConnection) {
         performBlock {
-            let carrier = self.carrier(with: urlConnection)
+            guard let carrier = self.carrier(with: urlConnection) else { return }
             carrier.complete()
             
             self.send(carrier: carrier)

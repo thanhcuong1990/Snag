@@ -30,35 +30,6 @@
         }
       }
     },
-    "Snag - Network Debugger" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Snag - Network Debugger"
-          }
-        },
-        "ja" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Snag - ネットワークデバッガ"
-          }
-        },
-        "ko" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Snag - 네트워크 디버거"
-          }
-        },
-        "vi" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Snag - Trình gỡ lỗi mạng"
-          }
-        }
-      }
-    },
     "[%@]" : {
 
     },
@@ -1612,6 +1583,9 @@
         }
       }
     },
+    "Rendering this may cause the app to slow down." : {
+
+    },
     "Request" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -1757,6 +1731,35 @@
         }
       }
     },
+    "Snag - Network Debugger" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Snag - Network Debugger"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Snag - ネットワークデバッガ"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Snag - 네트워크 디버거"
+          }
+        },
+        "vi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Snag - Trình gỡ lỗi mạng"
+          }
+        }
+      }
+    },
     "Style: Auto (System)" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -1843,6 +1846,9 @@
           }
         }
       }
+    },
+    "Text is very large (%@)" : {
+
     },
     "Time" : {
       "extractionState" : "manual",

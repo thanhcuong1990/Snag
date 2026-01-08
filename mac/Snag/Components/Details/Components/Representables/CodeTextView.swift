@@ -21,7 +21,13 @@ struct CodeTextView: NSViewRepresentable {
     
     func updateNSView(_ nsView: NSScrollView, context: Context) {
         let textView = nsView.documentView as! NSTextView
-        textView.string = text
+        
+        // Skip update if string hasn't changed to avoid expensive layout re-calculation
+        if textView.string != text {
+            textView.string = text
+            // Optimization for very large text
+            textView.layoutManager?.allowsNonContiguousLayout = true
+        }
         
         nsView.drawsBackground = true
         

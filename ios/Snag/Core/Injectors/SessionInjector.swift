@@ -53,9 +53,7 @@ class SnagSessionInjector: NSObject {
         let original = unsafeBitCast(originalImp, to: ResumeBlock.self)
         
         let block: @convention(block) (AnyObject) -> Void = { [weak self] (instance) in
-            guard let self = self else { return }
-            
-            if let task = instance as? URLSessionTask {
+            if let self = self, let task = instance as? URLSessionTask {
                 self.delegate?.sessionInjector(self, didStart: task)
             }
             
@@ -75,9 +73,9 @@ class SnagSessionInjector: NSObject {
              let original = unsafeBitCast(originalImp, to: DidReceiveResponseRewriteBlock.self)
              
              let block: @convention(block) (AnyObject, AnyObject, Bool, Bool) -> Void = { [weak self] (instance, response, sniff, rewrite) in
-                 guard let self = self else { return }
-                 
-                 if let task = instance.value(forKey: "task") as? URLSessionTask, let urlResponse = response as? URLResponse {
+                 if let self = self,
+                    let task = instance.value(forKey: "task") as? URLSessionTask,
+                    let urlResponse = response as? URLResponse {
                      self.delegate?.sessionInjector(self, didReceiveResponse: task, response: urlResponse)
                  }
                  
@@ -96,9 +94,9 @@ class SnagSessionInjector: NSObject {
         let original = unsafeBitCast(originalImp, to: DidReceiveResponseBlock.self)
         
         let block: @convention(block) (AnyObject, AnyObject, Bool) -> Void = { [weak self] (instance, response, sniff) in
-            guard let self = self else { return }
-            
-            if let task = instance.value(forKey: "task") as? URLSessionTask, let urlResponse = response as? URLResponse {
+            if let self = self,
+               let task = instance.value(forKey: "task") as? URLSessionTask,
+               let urlResponse = response as? URLResponse {
                 self.delegate?.sessionInjector(self, didReceiveResponse: task, response: urlResponse)
             }
             
@@ -117,9 +115,9 @@ class SnagSessionInjector: NSObject {
         let original = unsafeBitCast(originalImp, to: DidReceiveDataBlock.self)
         
         let block: @convention(block) (AnyObject, AnyObject) -> Void = { [weak self] (instance, dataObj) in
-            guard let self = self else { return }
-            
-            if let task = instance.value(forKey: "task") as? URLSessionTask, let data = dataObj as? Data {
+            if let self = self,
+               let task = instance.value(forKey: "task") as? URLSessionTask,
+               let data = dataObj as? Data {
                 self.delegate?.sessionInjector(self, didReceiveData: task, data: data)
             }
             
@@ -138,9 +136,8 @@ class SnagSessionInjector: NSObject {
         let original = unsafeBitCast(originalImp, to: DidFinishWithErrorBlock.self)
         
         let block: @convention(block) (AnyObject, AnyObject?) -> Void = { [weak self] (instance, errorObj) in
-            guard let self = self else { return }
-            
-            if let task = instance.value(forKey: "task") as? URLSessionTask {
+            if let self = self,
+               let task = instance.value(forKey: "task") as? URLSessionTask {
                 let error = errorObj as? Error
                 self.delegate?.sessionInjector(self, didFinishWithError: task, error: error)
             }

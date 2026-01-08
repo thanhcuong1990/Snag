@@ -93,12 +93,18 @@ function AppContent() {
         case 'delete_post':
           await performRequest('https://jsonplaceholder.typicode.com/posts/1', 'DELETE');
           break;
-        case 'get_image':
-          const img = 'https://picsum.photos/400/300';
-          setImageUrl(img);
-          await fetch(img);
-          setResponseText('GET Image\nStatus: 200\nURL: ' + img);
+        case 'get_image': {
+          const img = `https://picsum.photos/400/300?t=${Date.now()}`;
+          const response = await fetch(img);
+          const blob = await response.blob();
+          const reader = new FileReader();
+          reader.onloadend = () => {
+            setImageUrl(reader.result as string);
+          };
+          reader.readAsDataURL(blob);
+          setResponseText('GET Image\nStatus: ' + response.status + '\nURL: ' + img);
           break;
+        }
         case 'get_large_json':
           await performRequest('https://raw.githubusercontent.com/miloyip/nativejson-benchmark/master/data/citm_catalog.json', 'GET');
           break;

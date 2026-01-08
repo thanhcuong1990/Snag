@@ -65,21 +65,50 @@ class DataRepresentationParser {
 
     @MainActor
     static func parseAsync(data: Data) async -> DataRepresentation? {
-        let jsonString = await Task.detached { () -> String? in
+        // Move ALL parsing logic to a detached task to avoid blocking the main thread
+        return await Task.detached(priority: .userInitiated) {
+            // Check for JSON first
             if let jsonObject = try? JSONSerialization.jsonObject(with: data, options: .mutableContainers),
                let jsonData = try? JSONSerialization.data(withJSONObject: jsonObject, options: .prettyPrinted),
                let str = String(data: jsonData, encoding: .utf8) {
-                return str.replacingOccurrences(of: "\\/", with: "/")
+                let representation = DataJSONRepresentation(data: data)
+                representation.rawString = str.replacingOccurrences(of: "\\/", with: "/")
+                representation.type = .json
+                return representation
             }
+            
+            // Check for Images
+            if let image = NSImage(data: data) {
+                let textAttachmentCell = NSTextAttachmentCell(imageCell: image)
+                let textAttachment = NSTextAttachment()
+                textAttachment.attachmentCell = textAttachmentCell
+                
+                let attributedString = NSMutableAttributedString(attachment: textAttachment)
+                
+                let imageData = DataImageRepresentation(data: data)
+                imageData.attributedString = attributedString
+                imageData.type = .image
+                return imageData
+            }
+            
+            // Check for HTML/Rich Text
+            if let htmlString = NSMutableAttributedString(html: data, documentAttributes: nil) {
+                let textData = DataTextRepresentation(data: data)
+                textData.rawString = htmlString.string
+                textData.attributedString = htmlString
+                textData.type = .text
+                return textData
+            }
+            
+            // Plain Text fallback
+            if let dataString = String(data: data, encoding: .utf8) {
+                let textData = DataTextRepresentation(data: data)
+                textData.rawString = dataString
+                textData.type = .text
+                return textData
+            }
+            
             return nil
         }.value
-        
-        if let jsonString = jsonString {
-            let representation = DataJSONRepresentation(data: data)
-            representation.rawString = jsonString
-            return representation
-        }
-        
-        return parse(data: data)
     }
 }

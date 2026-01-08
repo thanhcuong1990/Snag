@@ -16,6 +16,7 @@ class SnagCarrier {
     
     var isCompleted: Bool = false
     var hasSentInitialPacket: Bool = false
+    var shouldSkipBody: Bool = false
     
     init(task: URLSessionTask) {
         self.id = SnagUtility.uuid()
@@ -36,6 +37,7 @@ class SnagCarrier {
     }
     
     func append(data: Data) {
+        if self.shouldSkipBody { return }
         if self.data == nil {
             self.data = Data(data)
         } else {
@@ -84,8 +86,13 @@ class SnagCarrier {
             requestInfo.statusCode = "---"
         }
         
-        if self.isCompleted {
+        if self.isCompleted && !self.shouldSkipBody {
             requestInfo.responseData = self.data
+        }
+        
+        if self.shouldSkipBody {
+            requestInfo.requestBody = nil
+            requestInfo.responseData = nil
         }
         
         requestInfo.startDate = self.startDate

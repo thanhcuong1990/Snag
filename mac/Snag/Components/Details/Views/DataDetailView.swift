@@ -6,6 +6,10 @@ struct DataDetailView: View {
     @Environment(\.colorScheme) var colorScheme
     @State private var isRaw: Bool = false
     
+    @State private var forceShowLargeText: Bool = false
+    
+    private let largeTextThreshold = 1024 * 1024 // 1MB
+    
     var body: some View {
         VStack(spacing: 0) {
             if viewModel.isLoading {
@@ -44,7 +48,39 @@ struct DataDetailView: View {
                         JSONWebView(jsonString: data.rawString ?? "")
                     }
                 } else {
-                    CodeTextView(text: data.rawString ?? "")
+                    let text = data.rawString ?? ""
+                    let size = text.data(using: .utf8)?.count ?? 0
+                    
+                    if size > largeTextThreshold && !forceShowLargeText {
+                        VStack(spacing: 0) {
+                            Spacer()
+                            Image(systemName: "exclamationmark.triangle")
+                                .font(.system(size: 30))
+                                .foregroundColor(.orange)
+                                .padding(.bottom, 8)
+                            Text("Text is very large (\(formatBytes(size)))")
+                                .font(.system(size: 13, weight: .semibold))
+                            Text("Rendering this may cause the app to slow down.")
+                                .font(.system(size: 11))
+                                .foregroundColor(.secondary)
+                                .padding(.bottom, 16)
+                            
+                            HStack(spacing: 12) {
+                                Button("Copy to Clipboard") {
+                                    viewModel.copyToClipboard()
+                                }
+                                .buttonStyle(.bordered)
+                                
+                                Button("View Anyway") {
+                                    forceShowLargeText = true
+                                }
+                                .buttonStyle(.borderedProminent)
+                            }
+                            Spacer()
+                        }
+                    } else {
+                        CodeTextView(text: text)
+                    }
                 }
             } else {
                 Spacer()
@@ -82,6 +118,21 @@ struct DataDetailView: View {
             viewModel.register()
             viewModel.didSelectPacket()
         }
+    }
+    
+    @ViewBuilder
+    private func largePayloadWarning(size: Int) -> some View {
+        HStack {
+            Image(systemName: "info.circle")
+                .foregroundColor(.blue)
+            Text(String(format: "JSON is large (%@). Pretty tree-view is disabled for performance.".localized, formatBytes(size)))
+                .font(.system(size: 11))
+                .foregroundColor(.secondary)
+            Spacer()
+        }
+        .padding(.horizontal, 10)
+        .padding(.vertical, 8)
+        .background(Color.blue.opacity(0.1))
     }
     
     private func formatBytes(_ bytes: Int) -> String {
