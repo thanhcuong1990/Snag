@@ -34,12 +34,21 @@ struct LogsView: View {
             Divider()
             
             // Log List
-            List {
-                ForEach(viewModel.items) { log in
-                    LogRowView(log: log)
+            ScrollViewReader { proxy in
+                List {
+                    ForEach(viewModel.items) { log in
+                        LogRowView(log: log)
+                            .id(log.id) // Ensure we can identify the row
+                    }
+                }
+                .listStyle(PlainListStyle())
+                .onChange(of: viewModel.items) { items in
+                    guard !viewModel.isPaused, let firstLog = items.first else { return }
+                    withAnimation {
+                        proxy.scrollTo(firstLog.id, anchor: .top)
+                    }
                 }
             }
-            .listStyle(PlainListStyle())
         }
     }
 }
