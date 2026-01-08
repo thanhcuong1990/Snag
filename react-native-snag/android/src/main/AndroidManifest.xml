@@ -1,0 +1,9 @@
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+    <application>
+        <provider
+            android:name="com.snag.reactnative.SnagInitializer"
+            android:authorities="${applicationId}.snag-initializer"
+            android:exported="false"
+            android:initOrder="101" />
+    </application>
+</manifest>

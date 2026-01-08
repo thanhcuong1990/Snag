@@ -1,0 +1,45 @@
+{
+  "name": "react-native-snag",
+  "version": "1.0.0",
+  "description": "React Native wrapper for Snag native libraries",
+  "main": "src/index",
+  "module": "src/index",
+  "types": "src/index",
+  "files": [
+    "src",
+    "ios",
+    "android",
+    "react-native-snag.podspec",
+    "!**/__tests__",
+    "!**/__fixtures__",
+    "!**/__mocks__"
+  ],
+  "scripts": {
+    "typescript": "tsc --noEmit"
+  },
+  "keywords": [
+    "react-native",
+    "ios",
+    "android"
+  ],
+  "repository": "https://github.com/thanhcuong1990/Snag",
+  "author": "Cuong Lam <thanhcuong1990@gmail.com>",
+  "license": "Apache-2.0",
+  "peerDependencies": {
+    "react": "*",
+    "react-native": "*"
+  },
+  "devDependencies": {
+    "react": "19.0.0",
+    "react-native": "0.83.1",
+    "typescript": "^5.0.0"
+  },
+  "codegenConfig": {
+    "name": "RNSnagSpec",
+    "type": "modules",
+    "jsSrcsDir": "src",
+    "android": {
+      "package": "com.snag.reactnative"
+    }
+  }
+}

@@ -1,0 +1,15 @@
+pluginManagement {
+    repositories {
+        google()
+        mavenCentral()
+        gradlePluginPortal()
+    }
+    includeBuild("../node_modules/@react-native/gradle-plugin")
+}
+plugins { id("com.facebook.react.settings") }
+extensions.configure(com.facebook.react.ReactSettingsExtension){ ex -> ex.autolinkLibrariesFromCommand() }
+rootProject.name = 'SnagExample'
+include ':app'
+include ':snag'
+project(':snag').projectDir = new File(settingsDir, '../../../android/snag')
+includeBuild('../node_modules/@react-native/gradle-plugin')
