@@ -18,7 +18,11 @@ class SnagPublisher: NSObject {
             self.stopPublishingLocked()
             
             do {
-                let params = NWParameters.tcp
+                let tcpOptions = NWProtocolTCP.Options()
+                tcpOptions.enableKeepalive = true
+                tcpOptions.noDelay = true // Disable Nagle's algorithm for immediate sending
+                
+                let params = NWParameters(tls: nil, tcp: tcpOptions)
                 params.includePeerToPeer = true
                 
                 let listener = try NWListener(using: params, on: NWEndpoint.Port(rawValue: UInt16(SnagConfiguration.netServicePort))!)

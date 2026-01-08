@@ -54,16 +54,29 @@ class LogsViewModel: ObservableObject {
     @objc func onDeviceChanged() {
         self.reloadLogs()
     }
+    private var lastUpdate: Date = .distantPast
+    
     func reloadLogs() {
         if isPaused { return }
         if isUpdatePending { return }
         
-        isUpdatePending = true
+        let now = Date()
+        let timeSinceLast = now.timeIntervalSince(lastUpdate)
         
-        DispatchQueue.main.asyncAfter(deadline: .now() + updateRateLimit) { [weak self] in
-            guard let self = self else { return }
-            self.isUpdatePending = false
+        if timeSinceLast >= updateRateLimit {
+            // Update immediately
             self.performUpdate()
+            self.lastUpdate = Date()
+        } else {
+            // Schedule for later (at the end of the window)
+            isUpdatePending = true
+            let delay = updateRateLimit - timeSinceLast
+            DispatchQueue.main.asyncAfter(deadline: .now() + delay) { [weak self] in
+                guard let self = self else { return }
+                self.isUpdatePending = false
+                self.performUpdate()
+                self.lastUpdate = Date()
+            }
         }
     }
     

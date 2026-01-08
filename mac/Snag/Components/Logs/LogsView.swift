@@ -47,7 +47,7 @@ struct LogsView: View {
 struct LogRowView: View {
     let log: SnagLog
     
-    private enum Constants {
+    struct Constants {
         static let verticalPadding: CGFloat = 4
         static let horizontalPadding: CGFloat = 8
         static let cornerRadius: CGFloat = 4
@@ -64,7 +64,7 @@ struct LogRowView: View {
     var backgroundColor: Color {
         switch lowercasedLogLevel {
         case "error", "fault": return Color(nsColor: .systemRed).opacity(0.1)
-        case "warn", "warning": return Color(nsColor: .systemYellow).opacity(0.1)
+        case "warn", "warning": return Color(nsColor: .systemYellow).opacity(0.2)
         default: return Color.clear
         }
     }
