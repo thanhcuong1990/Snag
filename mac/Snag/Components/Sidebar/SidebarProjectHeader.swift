@@ -26,7 +26,7 @@ struct SidebarProjectHeader: View {
             }
             
             VStack(alignment: .leading, spacing: 0) {
-                Text(project.projectName ?? "Unknown Project")
+                Text(project.projectName ?? "Unknown Project".localized)
                     .font(.system(size: 12, weight: .bold))
                     .foregroundColor(.labelColor)
                 

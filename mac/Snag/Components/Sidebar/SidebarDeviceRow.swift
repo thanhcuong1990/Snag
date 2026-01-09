@@ -12,7 +12,7 @@ struct SidebarDeviceRow: View {
                 .frame(width: 16)
                 .foregroundColor(isSelected ? .white : .secondaryLabelColor)
             
-            Text(device.deviceName ?? "Unknown Device")
+            Text(device.deviceName ?? "Unknown Device".localized)
                 .font(.system(size: 11, weight: isSelected ? .semibold : .regular))
                 .foregroundColor(isSelected ? .white : .labelColor)
             

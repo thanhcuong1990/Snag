@@ -26,11 +26,11 @@ struct EmptySidebarState: View {
             }
             
             VStack(spacing: 6) {
-                Text("No Apps Connected")
+                Text("No Apps Connected".localized)
                     .font(.system(size: 12, weight: .medium))
                     .foregroundColor(.secondaryLabelColor)
                 
-                Text("Waiting for devices on port \(String(SnagConfiguration.netServicePort))...")
+                Text(String(format: "Waiting for devices on port %@...".localized, String(SnagConfiguration.netServicePort)))
                     .font(.system(size: 10))
                     .foregroundColor(.secondaryLabelColor.opacity(0.6))
                     .multilineTextAlignment(.center)
