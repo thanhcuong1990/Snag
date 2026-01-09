@@ -18,12 +18,21 @@
   shouldStart = YES;
 #endif
 
-  // Check for force-enable flag in Info.plist
+  // Check for force-enable flag in Info.plist or Launch Argument
   if (!shouldStart) {
+    // 1. Check Info.plist
     id enabled =
         [[NSBundle mainBundle] objectForInfoDictionaryKey:@"SnagEnabled"];
     if (enabled && [enabled respondsToSelector:@selector(boolValue)]) {
       shouldStart = [enabled boolValue];
+    }
+
+    // 2. Check Launch Arguments (e.g. -SnagEnabled passed via Xcode Scheme)
+    if (!shouldStart) {
+      NSArray *arguments = [[NSProcessInfo processInfo] arguments];
+      if ([arguments containsObject:@"-SnagEnabled"]) {
+        shouldStart = YES;
+      }
     }
   }
 

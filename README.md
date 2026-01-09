@@ -94,6 +94,16 @@ pod 'Snag', '~> 1.0.11'
  <true/>
  ```
  
+ ### Enable via Launch Argument (Xcode Scheme)
+ 
+ You can also force-enable Snag by passing `-SnagEnabled` as a launch argument. This is useful for temporary debugging or specific test schemes.
+ 
+ 1. In Xcode, go to **Product** > **Scheme** > **Edit Scheme...**
+ 2. Select **Run** from the left sidebar.
+ 3. Go to the **Arguments** tab.
+ 4. Under **Arguments Passed On Launch**, click **+** and add:
+    `-SnagEnabled`
+ 
  ### Manual Initialization (Optional)
  
  If you need to start Snag manually (e.g. for specific configurations):
