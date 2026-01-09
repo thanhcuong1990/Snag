@@ -8,6 +8,8 @@ struct SnagNotifications {
     static let didSelectProject = NSNotification.Name("DidSelectProject")
     static let didSelectDevice = NSNotification.Name("DidSelectDevice")
     static let didSelectPacket = NSNotification.Name("DidSelectPacket")
+    static let didSelectSavedPacket = NSNotification.Name("DidSelectSavedPacket") // New notification for saved packets
+    static let didUpdateSavedPackets = NSNotification.Name("DidUpdateSavedPackets") // New notification for list updates
 }
 
 class SnagController: NSObject, SnagPublisherDelegate, ObservableObject {
@@ -24,6 +26,12 @@ class SnagController: NSObject, SnagPublisherDelegate, ObservableObject {
     @Published var selectedProjectController: SnagProjectController? {
         didSet {
             NotificationCenter.default.post(name: SnagNotifications.didSelectProject, object: nil)
+        }
+    }
+    // New property for saved request selection
+    @Published var selectedSavedPacket: SnagPacket? {
+        didSet {
+            NotificationCenter.default.post(name: SnagNotifications.didSelectSavedPacket, object: nil)
         }
     }
     
@@ -88,6 +96,16 @@ class SnagController: NSObject, SnagPublisherDelegate, ObservableObject {
     func checkInitialSelection() {
         if self.selectedProjectController?.selectedDeviceController?.packets.count == 1 {
             self.selectedProjectController?.selectedDeviceController?.notifyPacketSelection()
+        }
+    }
+    
+    // Unified Accessor for Current Packet (Live or Saved)
+    var currentSelectedPacket: SnagPacket? {
+        if let project = selectedProjectController,
+           let device = project.selectedDeviceController {
+            return device.selectedPacket
+        } else {
+            return selectedSavedPacket
         }
     }
 }

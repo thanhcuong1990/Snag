@@ -38,6 +38,17 @@ struct PacketsView: View {
                             .onTapGesture {
                                 onPacketSelect(item)
                             }
+                            .contextMenu {
+                                if viewModelWrapper.isSavedMode {
+                                    Button("Delete") {
+                                        viewModelWrapper.deletePacket(item)
+                                    }
+                                } else {
+                                    Button("Save Request") {
+                                        SavedRequestsViewModel.shared.save(packet: item)
+                                    }
+                                }
+                            }
                     }
                 }
             }

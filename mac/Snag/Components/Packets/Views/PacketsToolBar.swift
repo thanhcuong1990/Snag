@@ -79,7 +79,15 @@ struct PacketsToolBar: View {
     
     private var domains: [String] {
         var counts: [String: Int] = [:]
-        let sourceItems = SnagController.shared.selectedProjectController?.selectedDeviceController?.packets ?? []
+        
+        let sourceItems: [SnagPacket]
+        if let project = SnagController.shared.selectedProjectController,
+           let device = project.selectedDeviceController {
+            sourceItems = device.packets
+        } else {
+            sourceItems = SavedRequestsViewModel.shared.savedPackets
+        }
+        
         for item in sourceItems {
             guard let urlString = item.requestInfo?.url, 
                   let domain = urlString.extractDomain() else { continue }

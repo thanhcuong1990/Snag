@@ -79,7 +79,7 @@ class DataRepresentationParser {
             
             // Check for Images
             if let image = NSImage(data: data) {
-                let textAttachmentCell = NSTextAttachmentCell(imageCell: image)
+                let textAttachmentCell = await NSTextAttachmentCell(imageCell: image)
                 let textAttachment = NSTextAttachment()
                 textAttachment.attachmentCell = textAttachmentCell
                 

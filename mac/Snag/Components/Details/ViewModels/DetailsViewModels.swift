@@ -26,10 +26,11 @@ class OverviewViewModel: BaseViewModel {
     func register() {
          NotificationCenter.default.addObserver(self, selector: #selector(self.didSelectPacket), name: SnagNotifications.didSelectPacket, object: nil)
          NotificationCenter.default.addObserver(self, selector: #selector(self.didUpdatePacket), name: SnagNotifications.didUpdatePacket, object: nil)
+         NotificationCenter.default.addObserver(self, selector: #selector(self.didSelectPacket), name: SnagNotifications.didSelectSavedPacket, object: nil)
     }
     
     @objc func didSelectPacket() {
-        if let packet = SnagController.shared.selectedProjectController?.selectedDeviceController?.selectedPacket {
+        if let packet = SnagController.shared.currentSelectedPacket {
             self.overviewRepresentation = ContentRepresentationParser.overviewRepresentation(requestInfo: packet.requestInfo!)
             self.curlRepresentation = CURLRepresentation(requestInfo: packet.requestInfo)
         } else {
@@ -41,7 +42,7 @@ class OverviewViewModel: BaseViewModel {
     
     @objc func didUpdatePacket(notification: Notification) {
         if let packet = notification.userInfo?["packet"] as? SnagPacket,
-           let selectedPacket = SnagController.shared.selectedProjectController?.selectedDeviceController?.selectedPacket,
+           let selectedPacket = SnagController.shared.currentSelectedPacket,
            packet.packetId == selectedPacket.packetId {
             self.overviewRepresentation = ContentRepresentationParser.overviewRepresentation(requestInfo: packet.requestInfo!)
             self.curlRepresentation = CURLRepresentation(requestInfo: packet.requestInfo)
@@ -60,6 +61,7 @@ class KeyValueViewModel: BaseViewModel {
     func register() {
         NotificationCenter.default.addObserver(self, selector: #selector(self.didSelectPacket), name: SnagNotifications.didSelectPacket, object: nil)
         NotificationCenter.default.addObserver(self, selector: #selector(self.didUpdatePacket), name: SnagNotifications.didUpdatePacket, object: nil)
+        NotificationCenter.default.addObserver(self, selector: #selector(self.didSelectPacket), name: SnagNotifications.didSelectSavedPacket, object: nil)
     }
     
     @objc func didSelectPacket() {
@@ -69,7 +71,7 @@ class KeyValueViewModel: BaseViewModel {
     
     @objc func didUpdatePacket(notification: Notification) {
         if let packet = notification.userInfo?["packet"] as? SnagPacket,
-           let selectedPacket = SnagController.shared.selectedProjectController?.selectedDeviceController?.selectedPacket,
+           let selectedPacket = SnagController.shared.currentSelectedPacket,
            packet.packetId == selectedPacket.packetId {
             self.update()
             self.onChange?()
@@ -83,7 +85,7 @@ class KeyValueViewModel: BaseViewModel {
 
 class RequestHeadersViewModel: KeyValueViewModel {
     override func update() {
-        if let packet = SnagController.shared.selectedProjectController?.selectedDeviceController?.selectedPacket {
+        if let packet = SnagController.shared.currentSelectedPacket {
             self.items = packet.requestInfo?.requestHeaders?.toKeyValueArray() ?? []
             self.keyValueRepresentation = ContentRepresentationParser.keyValueRepresentation(dictionary: packet.requestInfo?.requestHeaders ?? [:])
         } else {
@@ -95,7 +97,7 @@ class RequestHeadersViewModel: KeyValueViewModel {
 
 class RequestParametersViewModel: KeyValueViewModel {
     override func update() {
-        if let packet = SnagController.shared.selectedProjectController?.selectedDeviceController?.selectedPacket {
+        if let packet = SnagController.shared.currentSelectedPacket {
             if let urlString = packet.requestInfo?.url, let url = URL(string: urlString) {
                 self.items = url.toKeyValueArray()
                 self.keyValueRepresentation = ContentRepresentationParser.keyValueRepresentation(url: url)
@@ -112,7 +114,7 @@ class RequestParametersViewModel: KeyValueViewModel {
 
 class ResponseHeadersViewModel: KeyValueViewModel {
     override func update() {
-        if let packet = SnagController.shared.selectedProjectController?.selectedDeviceController?.selectedPacket {
+        if let packet = SnagController.shared.currentSelectedPacket {
             self.items = packet.requestInfo?.responseHeaders?.toKeyValueArray() ?? []
             self.keyValueRepresentation = ContentRepresentationParser.keyValueRepresentation(dictionary: packet.requestInfo?.responseHeaders ?? [:])
         } else {
@@ -169,6 +171,7 @@ class DataViewModel: BaseViewModel {
     func register() {
         NotificationCenter.default.addObserver(self, selector: #selector(self.didSelectPacket), name: SnagNotifications.didSelectPacket, object: nil)
         NotificationCenter.default.addObserver(self, selector: #selector(self.didUpdatePacket), name: SnagNotifications.didUpdatePacket, object: nil)
+        NotificationCenter.default.addObserver(self, selector: #selector(self.didSelectPacket), name: SnagNotifications.didSelectSavedPacket, object: nil)
     }
     
     @objc func didSelectPacket() {
@@ -178,7 +181,7 @@ class DataViewModel: BaseViewModel {
     
     @objc func didUpdatePacket(notification: Notification) {
         if let packet = notification.userInfo?["packet"] as? SnagPacket,
-           let selectedPacket = SnagController.shared.selectedProjectController?.selectedDeviceController?.selectedPacket,
+           let selectedPacket = SnagController.shared.currentSelectedPacket,
            packet.packetId == selectedPacket.packetId {
             self.update()
             self.onChange?()
@@ -194,7 +197,7 @@ class DataViewModel: BaseViewModel {
 
 class RequestBodyViewModel: DataViewModel {
     override func update() {
-        if let packet = SnagController.shared.selectedProjectController?.selectedDeviceController?.selectedPacket,
+        if let packet = SnagController.shared.currentSelectedPacket,
            let data = packet.requestInfo?.requestBody?.base64Data {
             self.performUpdate(with: data)
         } else {
@@ -205,7 +208,7 @@ class RequestBodyViewModel: DataViewModel {
 
 class ResponseDataViewModel: DataViewModel {
     override func update() {
-        if let packet = SnagController.shared.selectedProjectController?.selectedDeviceController?.selectedPacket,
+        if let packet = SnagController.shared.currentSelectedPacket,
            let data = packet.requestInfo?.responseData?.base64Data {
             self.performUpdate(with: data)
         } else {

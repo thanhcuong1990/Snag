@@ -43,6 +43,34 @@ struct SidebarView: View {
                     }
                 }
                 .padding(.vertical, 8)
+                
+                // Saved Requests Section
+                VStack(alignment: .leading, spacing: 0) {
+                    Text("LOCAL".localized)
+                        .font(.system(size: 10, weight: .bold))
+                        .foregroundColor(.secondaryLabelColor)
+                        .padding(.horizontal, 16)
+                        .padding(.top, 12)
+                        .padding(.bottom, 8)
+                    
+                    VStack(alignment: .leading, spacing: 0) {
+                        HStack {
+                            Image(systemName: "folder")
+                                .font(.system(size: 11))
+                            Text("Saved Requests".localized)
+                                .font(.system(size: 11, weight: .semibold))
+                            Spacer()
+                        }
+                        .padding(.vertical, 4)
+                        .padding(.horizontal, 16)
+                        .contentShape(Rectangle())
+                        .background(snagController.selectedProjectController == nil ? Color(nsColor: .selectedContentBackgroundColor) : Color.clear)
+                        .foregroundColor(snagController.selectedProjectController == nil ? .white : .secondary)
+                        .onTapGesture {
+                            snagController.selectedProjectController = nil 
+                        }
+                    }
+                }
             }
             
             if !searchViewModel.recentSearches.isEmpty {

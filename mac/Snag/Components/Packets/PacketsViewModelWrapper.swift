@@ -11,6 +11,7 @@ class PacketsViewModelWrapper: ObservableObject {
     @Published var addressFilter: String = ""
     @Published var selectedCategory: PacketFilterCategory = .all
     @Published var sortOrder: SortOrder = .descending  // Default: newest first
+    @Published var isSavedMode: Bool = false
 
     private var viewModel: PacketsViewModel?
 
@@ -29,6 +30,7 @@ class PacketsViewModelWrapper: ObservableObject {
         let rawItems = viewModel?.items ?? []
         self.items = sortItems(rawItems)
         self.selectedPacket = viewModel?.selectedItem
+        self.isSavedMode = viewModel?.isSavedMode ?? false
     }
     
     func updateFilters() {
@@ -38,6 +40,10 @@ class PacketsViewModelWrapper: ObservableObject {
     
     func clearPackets() {
         viewModel?.clearPackets()
+    }
+    
+    func deletePacket(_ packet: SnagPacket) {
+        viewModel?.deletePacket(packet)
     }
     
     func toggleSortOrder() {

@@ -8,6 +8,7 @@ class DetailViewModel: BaseViewModel {
         
         NotificationCenter.default.addObserver(self, selector: #selector(self.didUpdatePacket), name: SnagNotifications.didUpdatePacket, object: nil)
         NotificationCenter.default.addObserver(self, selector: #selector(self.refreshPacket), name: SnagNotifications.didSelectPacket, object: nil)
+        NotificationCenter.default.addObserver(self, selector: #selector(self.refreshPacket), name: SnagNotifications.didSelectSavedPacket, object: nil)
         
         self.refreshPacket()
     }
@@ -22,7 +23,13 @@ class DetailViewModel: BaseViewModel {
     }
     
     @objc func refreshPacket() {
-        self.packet = SnagController.shared.selectedProjectController?.selectedDeviceController?.selectedPacket
+        if let project = SnagController.shared.selectedProjectController,
+           let device = project.selectedDeviceController {
+            self.packet = device.selectedPacket
+        } else {
+            // Fallback to saved packet if no remote project/device is selected
+            self.packet = SnagController.shared.selectedSavedPacket
+        }
         self.onChange?()
     }
 }

@@ -36,9 +36,12 @@ struct MainView: View {
                             }
                     )
                 
-                // Content Area (Packets and Details)
                 Group {
-                    if snagController.selectedTab == .network {
+                    // Logic: Show Logs ONLY if a project is selected AND the Logs tab is active.
+                    // Otherwise (Network tab or Saved Requests mode), show the Packets/Detail split view.
+                    if snagController.selectedProjectController != nil && snagController.selectedTab == .logs {
+                         LogsViewControllerWrapper()
+                    } else {
                         GeometryReader { innerGeometry in
                             VStack(spacing: 0) {
                                 PacketsViewControllerWrapper()
@@ -63,8 +66,6 @@ struct MainView: View {
                                     .frame(maxHeight: .infinity)
                             }
                         }
-                    } else {
-                        LogsViewControllerWrapper()
                     }
                 }
                 .background(Color(nsColor: ThemeColor.packetListAndDetailBackgroundColor))
@@ -109,7 +110,12 @@ struct PacketsViewControllerWrapper: NSViewControllerRepresentable {
         vc.viewModel = PacketsViewModel()
         vc.viewModel?.register()
         vc.onPacketSelect = { packet in
-            SnagController.shared.selectedProjectController?.selectedDeviceController?.select(packet: packet)
+            if let project = SnagController.shared.selectedProjectController,
+               let device = project.selectedDeviceController {
+                device.select(packet: packet)
+            } else {
+                SnagController.shared.selectedSavedPacket = packet
+            }
         }
         return vc
     }

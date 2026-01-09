@@ -81,7 +81,12 @@ class PacketsViewModel: BaseListViewModel<SnagPacket>  {
     
     
     private var allPackets: [SnagPacket] {
-        return SnagController.shared.selectedProjectController?.selectedDeviceController?.packets ?? []
+        if let project = SnagController.shared.selectedProjectController,
+           let device = project.selectedDeviceController {
+            return device.packets
+        } else {
+            return SavedRequestsViewModel.shared.savedPackets
+        }
     }
     
     
@@ -96,11 +101,20 @@ class PacketsViewModel: BaseListViewModel<SnagPacket>  {
         
         NotificationCenter.default.addObserver(self, selector: #selector(self.refreshItems), name: SnagNotifications.didSelectPacket, object: nil)
         
+        // Observers for Saved Requests
+        NotificationCenter.default.addObserver(self, selector: #selector(self.refreshItems), name: SnagNotifications.didSelectSavedPacket, object: nil)
+        NotificationCenter.default.addObserver(self, selector: #selector(self.refreshItems), name: SnagNotifications.didUpdateSavedPackets, object: nil)
+        
         self.refreshItems()
     }
     
     var selectedItem: SnagPacket? {
-        return SnagController.shared.selectedProjectController?.selectedDeviceController?.selectedPacket
+        if let project = SnagController.shared.selectedProjectController,
+           let device = project.selectedDeviceController {
+            return device.selectedPacket
+        } else {
+            return SnagController.shared.selectedSavedPacket
+        }
     }
     
     var selectedItemIndex: Int? {
@@ -159,7 +173,23 @@ class PacketsViewModel: BaseListViewModel<SnagPacket>  {
     
     
     func clearPackets() {
-        SnagController.shared.selectedProjectController?.selectedDeviceController?.clear()
+        if let project = SnagController.shared.selectedProjectController,
+           let device = project.selectedDeviceController {
+            device.clear()
+        } else {
+            SavedRequestsViewModel.shared.clearAll()
+        }
         self.refreshItems()
+    }
+    
+    var isSavedMode: Bool {
+        return SnagController.shared.selectedProjectController == nil
+    }
+    
+    func deletePacket(_ packet: SnagPacket) {
+        if isSavedMode {
+            SavedRequestsViewModel.shared.delete(packet: packet)
+            // No need to manually refresh here as we observer didUpdateSavedPackets
+        }
     }
 }

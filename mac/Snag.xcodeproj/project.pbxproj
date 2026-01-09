@@ -3,7 +3,7 @@
 	archiveVersion = 1;
 	classes = {
 	};
-	objectVersion = 54;
+	objectVersion = 70;
 	objects = {
 
 /* Begin PBXBuildFile section */
@@ -224,6 +224,10 @@
 		BCFC8544213846B0001EC6D7 /* BaseListViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BaseListViewModel.swift; sourceTree = "<group>"; };
 		BCFC854621384776001EC6D7 /* BaseViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BaseViewController.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
+
+/* Begin PBXFileSystemSynchronizedRootGroup section */
+		A5DE2F152F109F8B0079744F /* SavedConfiguration */ = {isa = PBXFileSystemSynchronizedRootGroup; explicitFileTypes = {}; explicitFolders = (); path = SavedConfiguration; sourceTree = "<group>"; };
+/* End PBXFileSystemSynchronizedRootGroup section */
 
 /* Begin PBXFrameworksBuildPhase section */
 		BCD0E020210F5E0D00CE5C7B /* Frameworks */ = {
@@ -569,6 +573,7 @@
 				BCFC853421383641001EC6D7 /* Packets */,
 				BCFC8537213836B7001EC6D7 /* Details */,
 				A556F1182EF3E3DB004B8A98 /* Sidebar */,
+				A5DE2F152F109F8B0079744F /* SavedConfiguration */,
 			);
 			path = Components;
 			sourceTree = "<group>";
@@ -677,6 +682,9 @@
 			buildRules = (
 			);
 			dependencies = (
+			);
+			fileSystemSynchronizedGroups = (
+				A5DE2F152F109F8B0079744F /* SavedConfiguration */,
 			);
 			name = Snag;
 			productName = Snag;
