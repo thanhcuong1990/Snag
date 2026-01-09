@@ -37,7 +37,26 @@ sed -i '' "s/snag\/.*\/\"/snag\/$NEW_VERSION\/\"/g" "$ROOT_DIR/android/publishin
 # Handle the path without quotes if any
 sed -i '' "s/snag\/[0-9]*\.[0-9]*\.[0-9]*\//snag\/$NEW_VERSION\//g" "$ROOT_DIR/android/publishing.md"
 
-# 5. Git Commit and Tag
+# 5. Verify Builds
+echo "🔍 Verifying Android build..."
+if ! (cd "$ROOT_DIR/android" && ./gradlew :snag:publishToMavenLocal); then
+    echo "❌ Android build failed. Aborting release."
+    exit 1
+fi
+
+echo "🔍 Verifying iOS build (CocoaPods)..."
+if ! (cd "$ROOT_DIR" && pod lib lint Snag.podspec --allow-warnings); then
+    echo "❌ iOS (CocoaPods) build failed. Aborting release."
+    exit 1
+fi
+
+echo "🔍 Verifying Swift Package Manager build..."
+if ! (cd "$ROOT_DIR" && swift build -c release); then
+    echo "❌ Swift Package Manager build failed. Aborting release."
+    exit 1
+fi
+
+# 6. Git Commit and Tag
 echo "💾 Committing version changes..."
 git add "$ROOT_DIR/android/snag/build.gradle.kts" \
         "$ROOT_DIR/Snag.podspec" \
@@ -47,7 +66,7 @@ git add "$ROOT_DIR/android/snag/build.gradle.kts" \
 git commit -m "chore: bump version to $NEW_VERSION"
 git tag -a "v$NEW_VERSION" -m "Release v$NEW_VERSION"
 
-# 6. Push to Remote
+# 7. Push to Remote
 echo "🔄 Pushing changes and tags to origin..."
 git push origin main
 git push origin "v$NEW_VERSION"
