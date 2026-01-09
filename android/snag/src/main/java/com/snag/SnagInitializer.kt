@@ -37,7 +37,7 @@ class SnagInitializer : Initializer<Unit> {
     private fun registerReactNativeFactory() {
         try {
             com.facebook.react.modules.network.OkHttpClientProvider.setOkHttpClientFactory(SnagOkHttpClientFactory())
-        } catch (e: Exception) {
+        } catch (e: Throwable) {
             android.util.Log.e("Snag", "Failed to register SnagOkHttpClientFactory", e)
         }
     }
