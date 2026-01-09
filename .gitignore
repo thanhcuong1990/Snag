@@ -88,3 +88,5 @@ Carthage/Build/
 .build/
 dist/
 android/.kotlin/sessions/.*
+android/.gemini_security/DRAFT_SECURITY_REPORT.md
+android/.gemini_security/SECURITY_ANALYSIS_TODO.md

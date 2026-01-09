@@ -7,41 +7,12 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
-		A5D0BCCC2F04F38800C05E93 /* Log.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5D0BCC22F04F38800C05E93 /* Log.swift */; };
-		A5D0BCCD2F04F38800C05E93 /* ConnectionInjector.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5D0BCB82F04F38800C05E93 /* ConnectionInjector.swift */; };
-		A5D0BCCE2F04F38800C05E93 /* Project.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5D0BCC42F04F38800C05E93 /* Project.swift */; };
-		A5D0BCCF2F04F38800C05E93 /* CarrierDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5D0BCC72F04F38800C05E93 /* CarrierDelegate.swift */; };
-		A5D0BCD02F04F38800C05E93 /* Configuration.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5D0BCBD2F04F38800C05E93 /* Configuration.swift */; };
-		A5D0BCD12F04F38800C05E93 /* RequestInfo.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5D0BCC52F04F38800C05E93 /* RequestInfo.swift */; };
-		A5D0BCD22F04F38800C05E93 /* SessionInjector.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5D0BCB92F04F38800C05E93 /* SessionInjector.swift */; };
-		A5D0BCD32F04F38800C05E93 /* Carrier.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5D0BCBC2F04F38800C05E93 /* Carrier.swift */; };
-		A5D0BCD42F04F38800C05E93 /* Snag.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5D0BCCA2F04F38800C05E93 /* Snag.swift */; };
-		A5D0BCD52F04F38800C05E93 /* Utility.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5D0BCC82F04F38800C05E93 /* Utility.swift */; };
-		A5D0BCD62F04F38800C05E93 /* Browser.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5D0BCBB2F04F38800C05E93 /* Browser.swift */; };
-		A5D0BCD72F04F38800C05E93 /* Packet.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5D0BCC32F04F38800C05E93 /* Packet.swift */; };
-		A5D0BCD82F04F38800C05E93 /* LogInterceptor.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5D0BCBF2F04F38800C05E93 /* LogInterceptor.swift */; };
-		A5D0BCD92F04F38800C05E93 /* Controller.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5D0BCBE2F04F38800C05E93 /* Controller.swift */; };
-		A5D0BCDA2F04F38800C05E93 /* Device.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5D0BCC12F04F38800C05E93 /* Device.swift */; };
+		A506B2AA2F110D4900C8DB77 /* Snag in Frameworks */ = {isa = PBXBuildFile; productRef = A506B2A92F110D4900C8DB77 /* Snag */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
 		A51234562EF71818000C8FD2 /* Info-iOS.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = "Info-iOS.plist"; sourceTree = "<group>"; };
 		A54C280A2EF71818000C8FD2 /* example.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; name = example.app; path = "Snag Example.app"; sourceTree = BUILT_PRODUCTS_DIR; };
-		A5D0BCB82F04F38800C05E93 /* ConnectionInjector.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ConnectionInjector.swift; sourceTree = "<group>"; };
-		A5D0BCB92F04F38800C05E93 /* SessionInjector.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SessionInjector.swift; sourceTree = "<group>"; };
-		A5D0BCBB2F04F38800C05E93 /* Browser.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Browser.swift; sourceTree = "<group>"; };
-		A5D0BCBC2F04F38800C05E93 /* Carrier.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Carrier.swift; sourceTree = "<group>"; };
-		A5D0BCBD2F04F38800C05E93 /* Configuration.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Configuration.swift; sourceTree = "<group>"; };
-		A5D0BCBE2F04F38800C05E93 /* Controller.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Controller.swift; sourceTree = "<group>"; };
-		A5D0BCBF2F04F38800C05E93 /* LogInterceptor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LogInterceptor.swift; sourceTree = "<group>"; };
-		A5D0BCC12F04F38800C05E93 /* Device.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Device.swift; sourceTree = "<group>"; };
-		A5D0BCC22F04F38800C05E93 /* Log.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Log.swift; sourceTree = "<group>"; };
-		A5D0BCC32F04F38800C05E93 /* Packet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Packet.swift; sourceTree = "<group>"; };
-		A5D0BCC42F04F38800C05E93 /* Project.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Project.swift; sourceTree = "<group>"; };
-		A5D0BCC52F04F38800C05E93 /* RequestInfo.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RequestInfo.swift; sourceTree = "<group>"; };
-		A5D0BCC72F04F38800C05E93 /* CarrierDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CarrierDelegate.swift; sourceTree = "<group>"; };
-		A5D0BCC82F04F38800C05E93 /* Utility.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Utility.swift; sourceTree = "<group>"; };
-		A5D0BCCA2F04F38800C05E93 /* Snag.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Snag.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
@@ -57,6 +28,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				A506B2AA2F110D4900C8DB77 /* Snag in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -73,7 +45,6 @@
 		A54C28012EF71818000C8FD2 = {
 			isa = PBXGroup;
 			children = (
-				A5D0BCCB2F04F38800C05E93 /* Snag */,
 				A54C280C2EF71818000C8FD2 /* example */,
 				A51234562EF71818000C8FD2 /* Info-iOS.plist */,
 				A5410B5C2EF7EB9D0074BE89 /* Frameworks */,
@@ -88,61 +59,6 @@
 			);
 			name = Products;
 			sourceTree = "<group>";
-		};
-		A5D0BCBA2F04F38800C05E93 /* Injectors */ = {
-			isa = PBXGroup;
-			children = (
-				A5D0BCB82F04F38800C05E93 /* ConnectionInjector.swift */,
-				A5D0BCB92F04F38800C05E93 /* SessionInjector.swift */,
-			);
-			path = Injectors;
-			sourceTree = "<group>";
-		};
-		A5D0BCC02F04F38800C05E93 /* Core */ = {
-			isa = PBXGroup;
-			children = (
-				A5D0BCBA2F04F38800C05E93 /* Injectors */,
-				A5D0BCBB2F04F38800C05E93 /* Browser.swift */,
-				A5D0BCBC2F04F38800C05E93 /* Carrier.swift */,
-				A5D0BCBD2F04F38800C05E93 /* Configuration.swift */,
-				A5D0BCBE2F04F38800C05E93 /* Controller.swift */,
-				A5D0BCBF2F04F38800C05E93 /* LogInterceptor.swift */,
-			);
-			path = Core;
-			sourceTree = "<group>";
-		};
-		A5D0BCC62F04F38800C05E93 /* Models */ = {
-			isa = PBXGroup;
-			children = (
-				A5D0BCC12F04F38800C05E93 /* Device.swift */,
-				A5D0BCC22F04F38800C05E93 /* Log.swift */,
-				A5D0BCC32F04F38800C05E93 /* Packet.swift */,
-				A5D0BCC42F04F38800C05E93 /* Project.swift */,
-				A5D0BCC52F04F38800C05E93 /* RequestInfo.swift */,
-			);
-			path = Models;
-			sourceTree = "<group>";
-		};
-		A5D0BCC92F04F38800C05E93 /* Support */ = {
-			isa = PBXGroup;
-			children = (
-				A5D0BCC72F04F38800C05E93 /* CarrierDelegate.swift */,
-				A5D0BCC82F04F38800C05E93 /* Utility.swift */,
-			);
-			path = Support;
-			sourceTree = "<group>";
-		};
-		A5D0BCCB2F04F38800C05E93 /* Snag */ = {
-			isa = PBXGroup;
-			children = (
-				A5D0BCC02F04F38800C05E93 /* Core */,
-				A5D0BCC62F04F38800C05E93 /* Models */,
-				A5D0BCC92F04F38800C05E93 /* Support */,
-				A5D0BCCA2F04F38800C05E93 /* Snag.swift */,
-			);
-			name = Snag;
-			path = /Users/hv/workspace/app/Snag/ios/Snag;
-			sourceTree = "<absolute>";
 		};
 /* End PBXGroup section */
 
@@ -164,6 +80,7 @@
 			);
 			name = example;
 			packageProductDependencies = (
+				A506B2A92F110D4900C8DB77 /* Snag */,
 			);
 			productName = example;
 			productReference = A54C280A2EF71818000C8FD2 /* example.app */;
@@ -194,6 +111,7 @@
 			mainGroup = A54C28012EF71818000C8FD2;
 			minimizedProjectReferenceProxies = 1;
 			packageReferences = (
+				A506B2A82F110D4900C8DB77 /* XCLocalSwiftPackageReference "../../../Snag" */,
 			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = A54C280B2EF71818000C8FD2 /* Products */;
@@ -220,21 +138,6 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				A5D0BCCC2F04F38800C05E93 /* Log.swift in Sources */,
-				A5D0BCCD2F04F38800C05E93 /* ConnectionInjector.swift in Sources */,
-				A5D0BCCE2F04F38800C05E93 /* Project.swift in Sources */,
-				A5D0BCCF2F04F38800C05E93 /* CarrierDelegate.swift in Sources */,
-				A5D0BCD02F04F38800C05E93 /* Configuration.swift in Sources */,
-				A5D0BCD12F04F38800C05E93 /* RequestInfo.swift in Sources */,
-				A5D0BCD22F04F38800C05E93 /* SessionInjector.swift in Sources */,
-				A5D0BCD32F04F38800C05E93 /* Carrier.swift in Sources */,
-				A5D0BCD42F04F38800C05E93 /* Snag.swift in Sources */,
-				A5D0BCD52F04F38800C05E93 /* Utility.swift in Sources */,
-				A5D0BCD62F04F38800C05E93 /* Browser.swift in Sources */,
-				A5D0BCD72F04F38800C05E93 /* Packet.swift in Sources */,
-				A5D0BCD82F04F38800C05E93 /* LogInterceptor.swift in Sources */,
-				A5D0BCD92F04F38800C05E93 /* Controller.swift in Sources */,
-				A5D0BCDA2F04F38800C05E93 /* Device.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -475,6 +378,20 @@
 			defaultConfigurationName = Release;
 		};
 /* End XCConfigurationList section */
+
+/* Begin XCLocalSwiftPackageReference section */
+		A506B2A82F110D4900C8DB77 /* XCLocalSwiftPackageReference "../../../Snag" */ = {
+			isa = XCLocalSwiftPackageReference;
+			relativePath = ../../../Snag;
+		};
+/* End XCLocalSwiftPackageReference section */
+
+/* Begin XCSwiftPackageProductDependency section */
+		A506B2A92F110D4900C8DB77 /* Snag */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = Snag;
+		};
+/* End XCSwiftPackageProductDependency section */
 	};
 	rootObject = A54C28022EF71818000C8FD2 /* Project object */;
 }

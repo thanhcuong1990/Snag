@@ -27,8 +27,14 @@
     }
   }
 
-  if (shouldStart && NSClassFromString(@"Snag")) {
-    [NSClassFromString(@"Snag") performSelector:@selector(start)];
+  if (shouldStart) {
+    Class snagClass = NSClassFromString(@"Snag");
+    if (snagClass) {
+      NSLog(@"[Snag] Auto-starting...");
+      [snagClass performSelector:@selector(start)];
+    } else {
+      NSLog(@"[Snag] Failed to auto-start: 'Snag' class not found.");
+    }
   }
 }
 

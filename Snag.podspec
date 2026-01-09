@@ -1,7 +1,7 @@
 
 Pod::Spec.new do |s|
   s.name             = 'Snag'
-  s.version          = '1.0.10'
+  s.version          = '1.0.11'
   s.summary          = "Native cross-platform network debugger for iOS & Android - no proxies needed."
 
   s.description      = <<-DESC
@@ -18,7 +18,7 @@ Pod::Spec.new do |s|
   s.ios.deployment_target = '15.0'
   
   # Updated source files to Swift and ObjC
-  s.source_files = 'ios/Snag/**/*'
+  s.source_files = 'ios/Snag/**/*', 'ios/SnagObjC/**/*'
 
   s.swift_version = '5.0'
   s.requires_arc = true

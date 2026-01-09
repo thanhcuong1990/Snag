@@ -9,7 +9,7 @@ class SnagDeviceController: NSObject, ObservableObject {
     @Published var packets: [SnagPacket] = []
     @Published var logs: [SnagLog] = []
     
-    @Published var isLogsPaused: Bool = false
+    @Published var isLogsPaused: Bool = true
     
     @Published private(set) var selectedPacket: SnagPacket?
     

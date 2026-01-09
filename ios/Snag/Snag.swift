@@ -1,5 +1,6 @@
 import Foundation
 
+@objc(Snag)
 public class Snag: NSObject {
 
     static var controller: SnagController?

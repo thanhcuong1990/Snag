@@ -14,8 +14,14 @@ let package = Package(
     targets: [
         .target(
             name: "Snag",
-            dependencies: [],
+            dependencies: ["SnagObjC"],
             path: "ios/Snag"
+        ),
+        .target(
+            name: "SnagObjC",
+            dependencies: [],
+            path: "ios/SnagObjC",
+            publicHeadersPath: "include"
         )
     ]
 )

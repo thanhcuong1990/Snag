@@ -7,12 +7,11 @@
 
 import SwiftUI
 import OSLog
+import Snag
 
 @main
 struct exampleApp: App {
     init() {
-        Snag.start()
-        
         // Test logs
         print("Snag Example: Standard print log")
         NSLog("Snag Example: NSLog message")
