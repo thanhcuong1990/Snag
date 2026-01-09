@@ -154,35 +154,54 @@ Snag is **zero-config** on Android. Just add the dependency and it will automati
 > [!IMPORTANT]
 > Snag only initializes itself if it detects that the app is debuggable or running in an emulator.
 
-### Manual Initialization (Optional)
+### Custom OkHttp Client
+ 
+ If you use a custom `OkHttpClient` (or want to use it with Retrofit/Apollo), you can manually add the Snag interceptor:
 
-If you want to customize the configuration:
-
-```kotlin
-import com.snag.Snag
-import com.snag.core.config.Config
-
-val config = Config(
-    projectName = "Custom Project Name",
-    enableLogs = true
-)
-Snag.start(context, config)
-```
-
-### Logging
-
-Snag automatically captures `Logcat` output and displays it in the desktop viewer.
-
-- **Automatic Capture**: Intercepts standard Android logs (`Log.v`, `Log.d`, etc.).
-- **Manual Logging**: Send custom logs using `Snag.log("message")`.
-
-To disable automatic log capture:
-
-```kotlin
-// In your initialization logic
-val config = Config.getDefault(context).copy(enableLogs = false)
-Snag.start(context, config)
-```
+ ```kotlin
+ val builder = OkHttpClient.Builder()
+ Snag.addInterceptor(builder) // Safe to call multiple times
+ ```
+ 
+ ### Enable via Manifest (e.g. for Staging)
+ 
+ By default, Snag only runs in debug builds or simulators. To force-enable it (e.g., for a QA/Staging build), add this to your `AndroidManifest.xml`:
+ 
+ ```xml
+ <meta-data
+     android:name="com.snag.ENABLED"
+     android:value="true" />
+ ```
+ 
+ ### Manual Initialization (Optional)
+ 
+ If you want to customize other configuration options:
+ 
+ ```kotlin
+ import com.snag.Snag
+ import com.snag.core.config.Config
+ 
+ val config = Config(
+     projectName = "Custom Project Name",
+     enableLogs = true
+ )
+ Snag.start(context, config)
+ ```
+ 
+ ### Logging
+ 
+ Snag automatically captures `Logcat` output and displays it in the desktop viewer.
+ 
+ - **Automatic Capture**: Intercepts standard Android logs (`Log.v`, `Log.d`, etc.).
+ - **Manual Logging**: Send custom logs using `Snag.log("message")`.
+ 
+ To disable automatic log capture:
+ 
+ ```kotlin
+ // In your initialization logic
+ val config = Config.getDefault(context).copy(enableLogs = false)
+ Snag.start(context, config)
+ ```
 
 ---
 

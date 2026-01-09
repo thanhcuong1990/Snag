@@ -2,6 +2,7 @@
 minSdk = "24"
 targetSdk ="36"
 compileSdk = "36"
+reactAndroid = "0.83.1"
 
 agp = "8.12.0"
 kotlin = "2.1.0"
@@ -57,6 +58,7 @@ androidx-appcompat = { group = "androidx.appcompat", name = "appcompat", version
 material = { group = "com.google.android.material", name = "material", version.ref = "material" }
 androidx-hilt-navigation-compose = { group = "androidx.hilt", name = "hilt-navigation-compose", version.ref = "hiltNavigationCompose" }
 socket-io-client = { group = "io.socket", name = "socket.io-client", version.ref = "socketIoClient" }
+react-android = { group = "com.facebook.react", name = "react-android", version.ref = "reactAndroid" }
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }

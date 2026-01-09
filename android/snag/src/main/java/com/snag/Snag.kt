@@ -46,6 +46,18 @@ object Snag {
         }
     }
 
+    /**
+     * Helper to manually add Snag interceptor to your OkHttpClient.Builder.
+     * Use this if you are not using React Native's default OkHttpClient or want to add it to a specific client.
+     */
+    @JvmStatic
+    fun addInterceptor(builder: okhttp3.OkHttpClient.Builder) {
+        // Prevent duplicate interceptors
+        if (builder.interceptors().none { it is SnagInterceptor }) {
+            builder.addInterceptor(SnagInterceptor.getInstance())
+        }
+    }
+
     @JvmStatic
     @JvmOverloads
     fun log(

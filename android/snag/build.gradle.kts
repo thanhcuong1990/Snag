@@ -90,7 +90,7 @@ dependencies {
     implementation(libs.logging.interceptor)
     implementation(libs.timber)
     implementation(libs.socket.io.client)
-    compileOnly("com.facebook.react:react-android")
+    compileOnly(libs.react.android)
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
