@@ -1,10 +1,10 @@
 import Foundation
 
-public class Snag {
+public class Snag: NSObject {
 
     static var controller: SnagController?
     
-    public static func start() {
+    @objc public static func start() {
         start(configuration: SnagConfiguration.defaultConfiguration)
     }
     

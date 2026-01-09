@@ -79,16 +79,30 @@ pod 'Snag', '~> 1.0.10'
 ```
 
 ### Usage
-
-Initialize Snag in your `AppDelegate` or at the start of your app:
-
-```swift
-import Snag
-
-#if DEBUG
-Snag.start()
-#endif
-```
+ 
+ Snag is **zero-config** on iOS. Just add the dependency and it will automatically initialize itself in **Debug** builds.
+ 
+ > [!IMPORTANT]
+ > Snag uses an Objective-C loader to start automatically. This ensures it **only runs in DEBUG builds**, keeping your production app clean.
+ 
+ ### Enable via Info.plist (e.g. for Staging)
+ 
+ By default, Snag only runs in DEBUG builds. To force-enable it (e.g. for Staging), add `SnagEnabled` (Boolean) to your `Info.plist`:
+ 
+ ```xml
+ <key>SnagEnabled</key>
+ <true/>
+ ```
+ 
+ ### Manual Initialization (Optional)
+ 
+ If you need to start Snag manually (e.g. for specific configurations):
+ 
+ ```swift
+ import Snag
+ 
+ Snag.start()
+ ```
 
 ### Local Network permissions (required on real devices)
 

@@ -17,8 +17,8 @@ Pod::Spec.new do |s|
 
   s.ios.deployment_target = '15.0'
   
-  # Updated source files to Swift
-  s.source_files = 'ios/Snag/**/*.swift'
+  # Updated source files to Swift and ObjC
+  s.source_files = 'ios/Snag/**/*'
 
   s.swift_version = '5.0'
   s.requires_arc = true
