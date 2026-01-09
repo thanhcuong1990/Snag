@@ -1,7 +1,7 @@
 # Snag
 
 <p align="center">
-  <img src="./assets/header.png" width="128" alt="Snag App Icon">
+  <img src="https://raw.githubusercontent.com/thanhcuong1990/Snag/main/assets/header.png" width="128" alt="Snag App Icon">
 </p>
 
 <p align="center">
@@ -23,7 +23,7 @@
 
 ## Preview
 
-![Snag Screenshot](./assets/screenshot.png)
+![Snag Screenshot](https://raw.githubusercontent.com/thanhcuong1990/Snag/main/assets/screenshot.png)
 
 ## 🖥️ Desktop Viewer (Mac)
 
