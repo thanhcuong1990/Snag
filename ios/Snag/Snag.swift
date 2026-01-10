@@ -24,9 +24,14 @@ public class Snag: NSObject {
         }
     }
     
-    public static func log(_ message: String, level: String = "info", tag: String? = nil, details: [String: String]? = nil) {
+    @objc public static func log(_ message: String, level: String = "info", tag: String? = nil, details: [String: String]? = nil) {
         let log = SnagLog(level: level, message: message, tag: tag, details: details)
         controller?.send(log: log)
+    }
+    
+    /// Simplified log for React Native zero-config hook
+    @objc public static func logRN(_ message: String, level: String) {
+        self.log(message, level: level, tag: "React Native")
     }
     
     @available(iOS 15.0, *)

@@ -27,17 +27,14 @@
       else if (level >= 3)
         levelStr = @"error";
 
-      // Call Snag.log(message, level, tag)
-      SEL logSelector = NSSelectorFromString(@"log:level:tag:details:");
+      // Call Snag.logRN(message, level)
+      SEL logSelector = NSSelectorFromString(@"logRN:level:");
       if ([snagClass respondsToSelector:logSelector]) {
 #pragma clang diagnostic push
 #pragma clang diagnostic ignored "-Warc-performSelector-leaks"
         [snagClass performSelector:logSelector
                         withObject:message
                         withObject:levelStr];
-        // Note: performSelector:withObject:withObject: only supports 2 args.
-        // For 4 args we could use NSInvocation, but for zero-config simplicity
-        // we'll stick to basic logs or use a simpler 3-arg log if available.
 #pragma clang diagnostic pop
       }
 
@@ -50,6 +47,9 @@
       }
     };
     RCTSetLogFunction((__bridge void *)logHook);
+  } else {
+    NSLog(
+        @"[Snag] RCTSetLogFunction NOT found. Zero-config logs may not work.");
   }
 }
 
@@ -81,7 +81,6 @@
   if (shouldStart) {
     Class snagClass = NSClassFromString(@"Snag");
     if (snagClass) {
-      NSLog(@"[Snag] Auto-starting...");
       [snagClass performSelector:@selector(start)];
 
       // Try to hook RCTLog for React Native zero-config support
