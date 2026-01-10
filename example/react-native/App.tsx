@@ -169,6 +169,7 @@ function AppContent() {
     };
     if (body) {
       options.body = JSON.stringify(body);
+      console.log(body)
     }
 
     const start = Date.now();

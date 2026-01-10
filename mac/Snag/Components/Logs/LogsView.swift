@@ -11,22 +11,32 @@ struct LogsView: View {
         VStack(spacing: 0) {
             // Filter Bar
             HStack {
-                TextField("Filter logs...", text: $viewModel.filterTerm)
+                TextField("Filter logs...".localized, text: $viewModel.filterTerm)
                     .textFieldStyle(.roundedBorder)
+                
+                Divider().frame(height: 14)
+                
+                (Text("\(viewModel.items.count)")
+                    .foregroundColor(.primary) +
+                Text(" records".localized)
+                    .foregroundColor(.secondary))
+                    .font(.system(size: 11))
+                
+                Divider().frame(height: 14)
                 
                 Button(action: {
                     viewModel.togglePause()
                 }) {
                     Image(systemName: viewModel.isPaused ? "play.fill" : "pause.fill")
                 }
-                .help(viewModel.isPaused ? "Resume Auto-scroll" : "Pause Output")
+                .help(viewModel.isPaused ? "Resume Auto-scroll".localized : "Pause Output".localized)
                 
                 Button(action: {
                     viewModel.clearLogs()
                 }) {
                     Image(systemName: "trash")
                 }
-                .help("Clear Logs")
+                .help("Clear Logs".localized)
             }
             .padding(Constants.padding)
             .background(Color(nsColor: .windowBackgroundColor))
@@ -75,6 +85,7 @@ struct LogsView: View {
 
 struct LogRowView: View {
     let log: SnagLog
+    @State private var isExpanded: Bool = false
     
     struct Constants {
         static let verticalPadding: CGFloat = 4
@@ -88,6 +99,11 @@ struct LogRowView: View {
     
     private var lowercasedLogLevel: String {
         log.level.lowercased()
+    }
+    
+    private var isMultiLine: Bool {
+        let trimmed = log.message.trimmingCharacters(in: .whitespacesAndNewlines)
+        return trimmed.contains("\n") || trimmed.count > 200
     }
     
     var backgroundColor: Color {
@@ -109,7 +125,7 @@ struct LogRowView: View {
     
     var body: some View {
         VStack(alignment: .leading, spacing: 4) {
-            HStack(alignment: .top, spacing: 8) {
+            HStack(alignment: .firstTextBaseline, spacing: 8) {
                 // Timestamp
                 Text(datetimeFormatter.string(from: log.timestamp))
                     .font(.caption2)
@@ -126,6 +142,13 @@ struct LogRowView: View {
                 }
                 
                 Spacer()
+                
+                if isMultiLine {
+                    Image(systemName: "chevron.right")
+                        .font(.system(size: 10, weight: .bold))
+                        .foregroundColor(.secondary)
+                        .rotationEffect(.degrees(isExpanded ? 90 : 0))
+                }
             }
             
             // Message content
@@ -133,12 +156,21 @@ struct LogRowView: View {
                 .font(.system(.body, design: .monospaced))
                 .foregroundColor(.primary)
                 .textSelection(.enabled)
+                .lineLimit(isExpanded ? nil : 1)
                 .padding(.leading, Constants.messageIndent)
+                .padding(.trailing, 16)
         }
         .padding(.vertical, Constants.verticalPadding)
         .padding(.horizontal, Constants.horizontalPadding)
         .background(backgroundColor)
         .cornerRadius(Constants.cornerRadius)
+        .contentShape(Rectangle())
+        .animation(.spring(response: 0.35, dampingFraction: 0.85), value: isExpanded)
+        .onTapGesture {
+            if isMultiLine {
+                isExpanded.toggle()
+            }
+        }
     }
 }
 
