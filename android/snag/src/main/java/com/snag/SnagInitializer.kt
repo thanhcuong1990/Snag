@@ -25,12 +25,59 @@ class SnagInitializer : Initializer<Unit> {
         // Initialize native Snag
         Snag.start(context)
 
+        // Try to hook React Native logs if present
+        try {
+            hookReactNativeLogs()
+        } catch (_: Exception) {}
+
         // Try to register React Native OkHttp factory if React Native is on the classpath
         try {
             Class.forName("com.facebook.react.modules.network.OkHttpClientProvider")
             registerReactNativeFactory()
         } catch (_: ClassNotFoundException) {
             // React Native not present, skipping
+        }
+    }
+
+    private fun hookReactNativeLogs() {
+        try {
+            val fLogClass = Class.forName("com.facebook.common.logging.FLog")
+            val loggingDelegateInterface = Class.forName("com.facebook.common.logging.LoggingDelegate")
+            
+            val proxy = java.lang.reflect.Proxy.newProxyInstance(
+                loggingDelegateInterface.classLoader,
+                arrayOf(loggingDelegateInterface)
+            ) { _, method, args ->
+                if (args != null && args.size >= 2 && args[0] is String && args[1] is String) {
+                    val tag = args[0] as String
+                    val msg = args[1] as String
+                    
+                    val level = when (method.name) {
+                        "v", "verbose" -> "verbose"
+                        "d", "debug" -> "debug"
+                        "i", "info" -> "info"
+                        "w", "warn" -> "warn"
+                        "e", "error", "wtf" -> "error"
+                        else -> "info"
+                    }
+                    
+                    if (!msg.contains("Snag:") && !tag.contains("Snag")) {
+                        Snag.log(msg, level, tag)
+                    }
+                }
+                
+                // Return default values for primitive return types to avoid NPE on unboxing
+                when (method.returnType) {
+                    Boolean::class.javaPrimitiveType -> true
+                    Int::class.javaPrimitiveType -> 2 // VERBOSE
+                    else -> null
+                }
+            }
+            
+            val setDelegateMethod = fLogClass.getDeclaredMethod("setLoggingDelegate", loggingDelegateInterface)
+            setDelegateMethod.invoke(null, proxy)
+        } catch (_: Exception) {
+            // FLog not on classpath
         }
     }
 

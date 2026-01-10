@@ -14,6 +14,7 @@ import com.snag.snagandroid.ui.main.MainRoute
 import com.snag.snagandroid.ui.main.MainScreen
 import com.snag.snagandroid.ui.theme.SnagAndroidTheme
 import dagger.hilt.android.AndroidEntryPoint
+import timber.log.Timber
 
 @AndroidEntryPoint
 class MainActivity : ComponentActivity() {
@@ -23,11 +24,11 @@ class MainActivity : ComponentActivity() {
         enableEdgeToEdge()
         
         // Test logs
-        android.util.Log.v("SnagExample", "Verbose log message")
-        android.util.Log.d("SnagExample", "Debug log message")
-        android.util.Log.i("SnagExample", "Info log message")
-        android.util.Log.w("SnagExample", "Warning log message")
-        android.util.Log.e("SnagExample", "Error log message")
+        Timber.tag("SnagExample").v("Verbose log message")
+        Timber.tag("SnagExample").d("Debug log message")
+        Timber.tag("SnagExample").i("Info log message")
+        Timber.tag("SnagExample").w("Warning log message")
+        Timber.tag("SnagExample").e("Error log message")
         com.snag.Snag.log("Manual Snag.log message from Android")
         
         // Test JSON log

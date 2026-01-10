@@ -15,5 +15,7 @@ interface Browser {
         }
 
         fun getInstance(): Browser = instance ?: throw IllegalStateException("Snag is not started")
+
+        fun isInitialized(): Boolean = instance != null
     }
 }

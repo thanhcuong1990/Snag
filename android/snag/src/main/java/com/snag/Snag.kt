@@ -15,6 +15,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.MainScope
 import kotlinx.coroutines.launch
 import java.io.ByteArrayOutputStream
+import androidx.core.graphics.createBitmap
 
 object Snag {
     @JvmStatic
@@ -115,8 +116,6 @@ object Snag {
                                 currentLine.contains("Redefining intrinsic method") ||
                                 currentLine.contains("OkHttpClient") ||
                                 currentLine.contains("okhttp3") ||
-                                currentLine.contains("ReactNativeJS") ||
-                                currentLine.contains("React Native") ||
                                 currentLine.contains("resource failed to call close") ||
                                 currentLine.contains("Choreographer") ||
                                 currentLine.contains("Skipped") && currentLine.contains("frames")) {
@@ -175,7 +174,7 @@ object Snag {
             } else {
                 val width = icon.intrinsicWidth.takeIf { it > 0 } ?: 100
                 val height = icon.intrinsicHeight.takeIf { it > 0 } ?: 100
-                val bitmap = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888)
+                val bitmap = createBitmap(width, height)
                 val canvas = Canvas(bitmap)
                 icon.setBounds(0, 0, canvas.width, canvas.height)
                 icon.draw(canvas)
