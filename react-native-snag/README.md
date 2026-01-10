@@ -2,6 +2,9 @@
 
 React Native wrapper for the Snag network debugger.
 
+> [!NOTE]
+> This library is **optional**. Snag native libraries now support **truly zero-config** React Native logging and network interception. Use this library if you need manual tagging or object inspection.
+
 ## Installation
 
 ```bash
@@ -51,9 +54,14 @@ If you want to completely remove the library native binaries from your productio
 ```tsx
 import Snag from 'react-native-snag';
 
-// Capture a custom log
-Snag.log('User clicked login button');
+// Capture a custom log with a tag
+Snag.log('App Started', 'info', 'Lifecycle');
+
+// Advanced: Manual Console Hijacking
+// Only needed if you want to inspect complex objects via console.log
+// (Standard string logs are already captured natively via zero-config)
+Snag.hijackConsole();
 ```
 
-## captured Logs on Snag Mac App
+## Captured Logs on Snag Mac App
 All logs captured via `Snag.log` will appear in the Snag Mac App when the device is connected to the same network.

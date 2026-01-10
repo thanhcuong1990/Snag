@@ -44,10 +44,9 @@ export function hijackConsole(): void {
   });
 }
 
-// Auto-initialize hijacking if enabled
-if (__DEV__ || isEnabled()) {
-  hijackConsole();
-}
+// Note: We no longer auto-hijack the console because the native Snag libraries
+// now handle console.log capture automatically via zero-config hooks.
+// You can still call hijackConsole() manually if you want object inspection.
 
 export default {
   log,

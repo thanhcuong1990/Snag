@@ -229,6 +229,37 @@ Snag is **zero-config** on Android. Just add the dependency and it will automati
 
 ---
 
+## ⚛️ React Native Integration
+
+Snag provides a **truly zero-config** experience for React Native.
+
+### 1. Zero-Config (Recommended)
+Just add the native Snag library to your `ios` and `android` projects as described above. Snag will automatically:
+- Intercept `console.log`, `console.warn`, and `console.error`.
+- Capture all network requests (`fetch`, `XMLHttpRequest`).
+- **No JavaScript changes or imports required.**
+
+### 2. Manual Logging & Object Inspection
+If you want to log complex objects or use custom tags from JavaScript, you can use the `react-native-snag` wrapper.
+
+#### Installation
+```bash
+npm install react-native-snag
+```
+
+#### Usage
+```javascript
+import Snag from 'react-native-snag';
+
+// Manual logging with tags
+Snag.log('User logged in', 'info', 'Auth');
+
+// Note: console.log is already handled by the native hooks.
+// Use Snag.log when you need more control.
+```
+
+---
+
 ## 🤝 Contributing
 
 Contributions are welcome! Here's how you can help:
