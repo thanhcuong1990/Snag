@@ -104,6 +104,8 @@ object Snag {
                                 currentLine.contains("Redefining intrinsic method") ||
                                 currentLine.contains("OkHttpClient") ||
                                 currentLine.contains("okhttp3") ||
+                                currentLine.contains("ReactNativeJS") ||
+                                currentLine.contains("React Native") ||
                                 currentLine.contains("resource failed to call close") ||
                                 currentLine.contains("Choreographer") ||
                                 currentLine.contains("Skipped") && currentLine.contains("frames")) {
