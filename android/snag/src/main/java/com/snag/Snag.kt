@@ -23,6 +23,7 @@ object Snag {
         context: Context,
         config: Config = Config.getDefault(context)
     ) {
+        if (Browser.isInitialized()) return
         val device = Device(
             deviceName = Build.MODEL,
             deviceDescription = "Android ${Build.VERSION.RELEASE}",
@@ -43,6 +44,16 @@ object Snag {
         
         if (config.enableLogs) {
             enableAutoLogCapture()
+        }
+    }
+
+    @JvmStatic
+    fun isEnabled(): Boolean {
+        return try {
+            Browser.getInstance()
+            true
+        } catch (_: Exception) {
+            false
         }
     }
 

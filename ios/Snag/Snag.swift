@@ -9,7 +9,12 @@ public class Snag: NSObject {
         start(configuration: SnagConfiguration.defaultConfiguration)
     }
     
+    @objc public static func isEnabled() -> Bool {
+        return controller != nil
+    }
+    
     public static func start(configuration: SnagConfiguration) {
+        if controller != nil { return }
         controller = SnagController(configuration: configuration)
         
         if configuration.enableLogs {

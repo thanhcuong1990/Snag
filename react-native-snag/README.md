@@ -31,12 +31,15 @@ Zero configuration required. Snag automatically:
 Snag is designed to be **safe by default** in production. You don't need to write any extra code to "ignore" it for release builds.
 
 ### Internal Guards
-1.  **Android**: Automatically detects the environment. If the app is not debuggable and not on an emulator, Snag remains inactive.
-2.  **iOS**: Native initialization is wrapped in `#if DEBUG`, ensuring it only runs in development.
-3.  **JavaScript**: All logging calls are internally wrapped in `__DEV__` checks, so they are ignored in your production JS bundle.
+1.  **Android**: Automatically detects the environment. If the app is not debuggable and not on an emulator, Snag remains inactive unless `com.snag.ENABLED` is set to `true` in your `AndroidManifest.xml`.
+2.  **iOS**: Native initialization normally only runs in `#DEBUG`. You can force-enable it by adding `SnagEnabled` (Boolean) to your `Info.plist` or passing `-SnagEnabled` as a launch argument.
+3.  **JavaScript**: All logging calls check if Snag is natively enabled. If force-enabled in production, JS logs will pass through.
 
 ### Advanced: Complete Binary Removal
-If you want to completely remove the library binaries from your production build (to save space), you can optionally use these native configuration steps:
+If you want to completely remove the library native binaries from your production build (to save space), use these native configuration steps.
+
+> [!CAUTION]
+> If you remove the binaries for production builds, the **Force-Enable** feature (via `Info.plist` or `Manifest`) will **not work** because the code is physically removed from the app.
 
 - **Android**: Use `debugImplementation` in `app/build.gradle`.
 - **iOS**: Use `:configurations => ['Debug']` in your `Podfile`.

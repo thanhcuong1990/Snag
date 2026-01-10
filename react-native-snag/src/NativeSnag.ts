@@ -3,6 +3,7 @@ import { TurboModuleRegistry } from 'react-native';
 
 export interface Spec extends TurboModule {
   log(message: string, level: string, tag: string): void;
+  isEnabled(): boolean;
 }
 
 export default TurboModuleRegistry.get<Spec>(

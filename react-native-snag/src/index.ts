@@ -1,7 +1,11 @@
 import Snag from './NativeSnag';
 
+export function isEnabled(): boolean {
+  return Snag?.isEnabled() ?? false;
+}
+
 export function log(message: string, level: string = 'info', tag: string = 'React Native'): void {
-  if (__DEV__) {
+  if (__DEV__ || isEnabled()) {
     Snag?.log(message, level, tag);
   }
 }
@@ -9,7 +13,7 @@ export function log(message: string, level: string = 'info', tag: string = 'Reac
 let hijacked = false;
 
 export function hijackConsole(): void {
-  if (hijacked || !__DEV__) return;
+  if (hijacked || (!__DEV__ && !isEnabled())) return;
   hijacked = true;
 
   const levels: (keyof Console)[] = ['log', 'warn', 'error', 'info', 'debug'];
@@ -40,12 +44,13 @@ export function hijackConsole(): void {
   });
 }
 
-// Auto-initialize hijacking in dev mode
-if (__DEV__) {
+// Auto-initialize hijacking if enabled
+if (__DEV__ || isEnabled()) {
   hijackConsole();
 }
 
 export default {
   log,
+  isEnabled,
   hijackConsole,
 };

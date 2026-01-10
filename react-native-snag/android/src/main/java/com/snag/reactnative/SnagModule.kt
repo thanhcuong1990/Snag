@@ -16,6 +16,10 @@ class SnagModule(reactContext: ReactApplicationContext) : NativeSnagSpec(reactCo
     Snag.log(message, level = level, tag = tag)
   }
 
+  override fun isEnabled(): Boolean {
+    return Snag.isEnabled()
+  }
+
   companion object {
     const val NAME = "Snag"
   }

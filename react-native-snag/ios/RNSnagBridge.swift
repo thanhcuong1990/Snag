@@ -9,4 +9,8 @@ import Snag
   @objc public static func log(_ message: String, level: String, tag: String) {
     Snag.log(message, level: level, tag: tag)
   }
+
+  @objc public static func isEnabled() -> Bool {
+    return Snag.isEnabled()
+  }
 }
