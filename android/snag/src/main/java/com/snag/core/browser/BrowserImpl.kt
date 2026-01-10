@@ -159,40 +159,40 @@ internal class BrowserImpl(
             }
 
         val data = buffer.array()
-        val targets = socketConnections.entries.flatMap { serviceEntry ->
-            serviceEntry.value.entries.map { hostEntry ->
+        
+        // Get the first available socket connection (instead of sending to all)
+        val firstTarget = socketConnections.entries.firstNotNullOfOrNull { serviceEntry ->
+            serviceEntry.value.entries.firstOrNull()?.let { hostEntry ->
                 Triple(serviceEntry.key, hostEntry.key, hostEntry.value)
             }
         }
 
-        if (targets.isEmpty()) {
+        if (firstTarget == null) {
             pendingBuffers.offer(data)
             attemptReconnect()
             return
         }
 
+        val (serviceName, hostAddress, socket) = firstTarget
+        
         snagScope.launch(Dispatchers.IO) {
-            val succeeded = targets.map { (serviceName, hostAddress, socket) ->
-                async {
-                    try {
-                        if (!socket.isClosed) {
-                            synchronized(socket) {
-                                socket.getOutputStream().write(data)
-                            }
-                            true
-                        } else {
-                            false
-                        }
-                    } catch (_: Exception) {
-                        try {
-                            socket.close()
-                        } catch (_: Exception) {
-                        }
-                        socketConnections[serviceName]?.remove(hostAddress)
-                        false
+            val succeeded = try {
+                if (!socket.isClosed) {
+                    synchronized(socket) {
+                        socket.getOutputStream().write(data)
                     }
+                    true
+                } else {
+                    false
                 }
-            }.awaitAll().any { it }
+            } catch (_: Exception) {
+                try {
+                    socket.close()
+                } catch (_: Exception) {
+                }
+                socketConnections[serviceName]?.remove(hostAddress)
+                false
+            }
 
             if (!succeeded) {
                 pendingBuffers.offer(data)
