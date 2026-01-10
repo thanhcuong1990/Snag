@@ -78,7 +78,7 @@ actor LogInterceptor {
                         print("Snag: Log stream error: \(error)")
                     }
                     
-                    try? await Task.sleep(nanoseconds: 1 * 1_000_000_000) // 1 second
+                    try? await Task.sleep(nanoseconds: 500_000_000) // 500ms for near real-time
                 }
             } catch {
                 print("Snag: Failed to setup OSLogStore: \(error)")
