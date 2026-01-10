@@ -51,5 +51,11 @@
 	</array>
 	<key>UIViewControllerBasedStatusBarAppearance</key>
 	<false/>
+	<key>NSLocalNetworkUsageDescription</key>
+	<string>This app uses the local network to discover nearby devices using Bonjour.</string>
+	<key>NSBonjourServices</key>
+	<array>
+		<string>_Snag._tcp</string>
+	</array>
 </dict>
 </plist>
