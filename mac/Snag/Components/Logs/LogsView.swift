@@ -31,6 +31,26 @@ struct LogsView: View {
             .padding(Constants.padding)
             .background(Color(nsColor: .windowBackgroundColor))
             
+            // Tag Filter Bar
+            if !viewModel.tags.isEmpty {
+                ScrollView(.horizontal, showsIndicators: false) {
+                    HStack(spacing: 6) {
+                        ForEach(viewModel.tags, id: \.self) { tag in
+                            TagChip(tag: tag, isSelected: viewModel.selectedTag == tag) {
+                                if viewModel.selectedTag == tag {
+                                    viewModel.selectedTag = nil
+                                } else {
+                                    viewModel.selectedTag = tag
+                                }
+                            }
+                        }
+                    }
+                    .padding(.horizontal, Constants.padding)
+                    .padding(.bottom, Constants.padding)
+                }
+                .background(Color(nsColor: .windowBackgroundColor))
+            }
+            
             Divider()
             
             // Log List
@@ -142,3 +162,22 @@ private let datetimeFormatter: DateFormatter = {
     formatter.dateFormat = "HH:mm:ss.SSS"
     return formatter
 }()
+
+struct TagChip: View {
+    let tag: String
+    let isSelected: Bool
+    let action: () -> Void
+    
+    var body: some View {
+        Text(tag)
+            .font(.system(size: 11, weight: isSelected ? .semibold : .regular))
+            .padding(.horizontal, 8)
+            .padding(.vertical, 3)
+            .background(Color.secondary.opacity(isSelected ? 0.18 : 0.08))
+            .cornerRadius(4)
+            .foregroundColor(isSelected ? .primary : .secondary)
+            .contentShape(Rectangle())
+            .onTapGesture(perform: action)
+    }
+}
+

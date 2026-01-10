@@ -80,11 +80,84 @@ class LogsViewModel: ObservableObject {
         }
     }
     
+    @Published var selectedTag: String? = nil {
+        didSet {
+            self.reloadLogs()
+        }
+    }
+    @Published var tags: [String] = []
+
+    private func isSystemTag(_ tag: String) -> Bool {
+        if tag.isEmpty || tag == "System" { return true }
+        if tag.starts(with: "com.apple.") || tag.starts(with: "com.google.") || tag.starts(with: "com.android.") {
+            return true
+        }
+        
+        // Match common prefixes for system/chromium/view processes
+        if tag.starts(with: "cr_") || tag.starts(with: "VRI[") || tag.starts(with: "Netd") || tag.starts(with: "Compatibility") {
+            return true
+        }
+        
+        let androidSystemTags: Set<String> = [
+            "ApplicationLoaders", "HWUI", "ProfileInstaller", "chromium",
+            "Choreographer", "ActivityThread", "ViewRootImpl", "WindowManager",
+            "InputMethodManager", "AudioTrack", "OpenGLRenderer", "vndksupport",
+            "logcat", "ServiceManager", "System.out", "System.err",
+            "DesktopExperienceFlags", "DesktopModeFlags", "GFXSTREAM",
+            "GraphicsEnvironment", "ImeTracker", "InsetsController",
+            "ResourcesManager", "SoLoader", "WebViewFactory",
+            "WindowOnBackDispatcher", "Zygote", "ashmem",
+            "jni_lib_merge", "nativeloader", "unknown", "Process",
+            "StudioAgent", "TransportManager"
+        ]
+        return androidSystemTags.contains(tag)
+    }
+
     private func performUpdate() {
         let logs = self.allLogs
         let term = self.filterTerm.lowercased()
         
+        // Extract tags with grouping
+        let rawTags = logs.compactMap { $0.tag }
+        var uniqueTags = Set<String>()
+        
+        for tag in rawTags {
+            if tag == "React Native" || tag.starts(with: "com.facebook.react.log") {
+                uniqueTags.insert("React Native")
+            } else if isSystemTag(tag) {
+                uniqueTags.insert("System")
+            } else {
+                uniqueTags.insert(tag)
+            }
+        }
+        
+        // Sort tags: React Native first, System second, then others alphabetically
+        let allTags = uniqueTags.sorted { t1, t2 in
+            if t1 == "React Native" { return true }
+            if t2 == "React Native" { return false }
+            if t1 == "System" { return true }
+            if t2 == "System" { return false }
+            return t1 < t2
+        }
+        
         let filtered = logs.filter { log in
+            // Filter by Tag
+            if let selected = selectedTag {
+                let logTag = log.tag ?? ""
+                if selected == "System" {
+                     if !isSystemTag(logTag) {
+                         return false
+                     }
+                } else if selected == "React Native" {
+                    if !logTag.starts(with: "com.facebook.react.log") && logTag != "React Native" {
+                        return false
+                    }
+                } else if logTag != selected {
+                    return false
+                }
+            }
+            
+            // Filter by Search Term
             if term.isEmpty { return true }
             return log.message.lowercased().contains(term) ||
             log.tag?.lowercased().contains(term) ?? false ||
@@ -92,6 +165,7 @@ class LogsViewModel: ObservableObject {
         }
         
         DispatchQueue.main.async {
+            self.tags = allTags
             self.items = filtered.reversed()
         }
     }

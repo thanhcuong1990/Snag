@@ -12,8 +12,8 @@ class SnagModule(reactContext: ReactApplicationContext) : NativeSnagSpec(reactCo
     return NAME
   }
 
-  override fun log(message: String) {
-    Snag.log(message)
+  override fun log(message: String, level: String, tag: String) {
+    Snag.log(message, level = level, tag = tag)
   }
 
   companion object {

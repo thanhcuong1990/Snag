@@ -110,10 +110,36 @@ object Snag {
                                 continue
                             }
 
-                            // Simple parsing or just send raw line
-                            // Logcat format: date time pid tid level tag: message
-                            // We can parse it or just send as message
-                            log(currentLine, level = "verbose", tag = "logcat")
+                            // Logcat format with -v threadtime -v year -v zone:
+                            // 2026-01-10 16:03:42.246 +0700  4758  4879 W ReactNativeJS: message
+                            val logcatRegex = Regex("""^.*?\s+\d+\s+\d+\s+([VDIWEF])\s+(.*?):\s?(.*)$""")
+                            val match = logcatRegex.find(currentLine)
+                            
+                            if (match != null) {
+                                val levelChar = match.groupValues[1]
+                                var tag = match.groupValues[2].trim()
+                                val message = match.groupValues[3]
+                                
+                                val logLevel = when (levelChar) {
+                                    "V" -> "verbose"
+                                    "D" -> "debug"
+                                    "I" -> "info"
+                                    "W" -> "warn"
+                                    "E" -> "error"
+                                    "F" -> "fatal"
+                                    else -> "info"
+                                }
+                                
+                                // Map React Native native tag to our friendly name
+                                if (tag == "ReactNativeJS") {
+                                    tag = "React Native"
+                                }
+                                
+                                log(message, level = logLevel, tag = tag)
+                            } else {
+                                // Fallback for unexpected formats
+                                log(currentLine, level = "verbose", tag = "logcat")
+                            }
                         }
                     }
                 }

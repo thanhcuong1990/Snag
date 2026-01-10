@@ -1,8 +1,8 @@
 import Snag from './NativeSnag';
 
-export function log(message: string, level: string = 'info'): void {
+export function log(message: string, level: string = 'info', tag: string = 'React Native'): void {
   if (__DEV__) {
-    Snag?.log(message, level);
+    Snag?.log(message, level, tag);
   }
 }
 
