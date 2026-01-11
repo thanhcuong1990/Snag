@@ -110,6 +110,7 @@ internal class BrowserImpl(
                     nsdServiceInfoCallback
                 )
             } else {
+                @Suppress("DEPRECATION")
                 nsdManager.resolveService(
                     serviceInfo,
                     nsdResolveListener
@@ -268,6 +269,7 @@ internal class BrowserImpl(
             val addresses = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
                 nsdServiceInfo.hostAddresses
             } else {
+                @Suppress("DEPRECATION")
                 listOf(nsdServiceInfo.host)
             }
 
@@ -366,6 +368,7 @@ internal class BrowserImpl(
             val addresses = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
                 serviceInfo.hostAddresses
             } else {
+                @Suppress("DEPRECATION")
                 listOf(serviceInfo.host)
             }
 
