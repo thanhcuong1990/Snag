@@ -230,6 +230,7 @@
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
+		A572313D2F14B7D6005EAD53 /* Utilities */ = {isa = PBXFileSystemSynchronizedRootGroup; explicitFileTypes = {}; explicitFolders = (); path = Utilities; sourceTree = "<group>"; };
 		A5DE2F152F109F8B0079744F /* SavedConfiguration */ = {isa = PBXFileSystemSynchronizedRootGroup; explicitFileTypes = {}; explicitFolders = (); path = SavedConfiguration; sourceTree = "<group>"; };
 /* End PBXFileSystemSynchronizedRootGroup section */
 
@@ -511,6 +512,7 @@
 				BCFC852D21383252001EC6D7 /* Components */,
 				BCFC85412138467C001EC6D7 /* Base */,
 				A50374E92EFDAA5300FA0067 /* Extensions */,
+				A572313D2F14B7D6005EAD53 /* Utilities */,
 				BCD0E026210F5E0D00CE5C7B /* AppDelegate.swift */,
 				A51E32252F0D593F00C17718 /* SparkleManager.swift */,
 				A50374E42EFDAA3700FA0067 /* Constants.swift */,
@@ -690,6 +692,7 @@
 			dependencies = (
 			);
 			fileSystemSynchronizedGroups = (
+				A572313D2F14B7D6005EAD53 /* Utilities */,
 				A5DE2F152F109F8B0079744F /* SavedConfiguration */,
 			);
 			name = Snag;
