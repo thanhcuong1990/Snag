@@ -39,6 +39,13 @@ struct PacketsView: View {
                                 onPacketSelect(item)
                             }
                             .contextMenu {
+                                Button(NSLocalizedString("Copy cURL", comment: "Copy cURL context menu item")) {
+                                    if let curl = item.toCurlCommand() {
+                                        NSPasteboard.general.clearContents()
+                                        NSPasteboard.general.setString(curl, forType: .string)
+                                    }
+                                }
+                                
                                 if viewModelWrapper.isSavedMode {
                                     Button("Delete") {
                                         viewModelWrapper.deletePacket(item)

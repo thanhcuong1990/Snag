@@ -55,6 +55,8 @@
 		A556F1142EF3BE1D004B8A98 /* MainView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A556F1132EF3BE1D004B8A98 /* MainView.swift */; };
 		A556F1162EF3C171004B8A98 /* main.swift in Sources */ = {isa = PBXBuildFile; fileRef = A556F1152EF3C171004B8A98 /* main.swift */; };
 		A556F1192EF3E3DB004B8A98 /* SidebarView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A556F1172EF3E3DB004B8A98 /* SidebarView.swift */; };
+		A572313B2F14B129005EAD53 /* SnagRequestInfo+Curl.swift in Sources */ = {isa = PBXBuildFile; fileRef = A572313A2F14B129005EAD53 /* SnagRequestInfo+Curl.swift */; };
+		A57CA53F2F14A4FB00D603B1 /* SnagPacket+Curl.swift in Sources */ = {isa = PBXBuildFile; fileRef = A57CA53E2F14A4FB00D603B1 /* SnagPacket+Curl.swift */; };
 		A5D0BC942F04303A00C05E93 /* SettingsManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5D0BC922F04303A00C05E93 /* SettingsManager.swift */; };
 		A5D0BCDF2F04F4AF00C05E93 /* LogsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5D0BCDB2F04F4AF00C05E93 /* LogsView.swift */; };
 		A5D0BCE02F04F4AF00C05E93 /* LogsViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5D0BCDD2F04F4AF00C05E93 /* LogsViewModel.swift */; };
@@ -169,6 +171,8 @@
 		A556F1132EF3BE1D004B8A98 /* MainView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MainView.swift; sourceTree = "<group>"; };
 		A556F1152EF3C171004B8A98 /* main.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = main.swift; sourceTree = "<group>"; };
 		A556F1172EF3E3DB004B8A98 /* SidebarView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SidebarView.swift; sourceTree = "<group>"; };
+		A572313A2F14B129005EAD53 /* SnagRequestInfo+Curl.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "SnagRequestInfo+Curl.swift"; sourceTree = "<group>"; };
+		A57CA53E2F14A4FB00D603B1 /* SnagPacket+Curl.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "SnagPacket+Curl.swift"; sourceTree = "<group>"; };
 		A5D0BC922F04303A00C05E93 /* SettingsManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsManager.swift; sourceTree = "<group>"; };
 		A5D0BCDB2F04F4AF00C05E93 /* LogsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LogsView.swift; sourceTree = "<group>"; };
 		A5D0BCDC2F04F4AF00C05E93 /* LogsViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LogsViewController.swift; sourceTree = "<group>"; };
@@ -342,6 +346,8 @@
 		A54C27DA2EF71557000C8FD2 /* Models */ = {
 			isa = PBXGroup;
 			children = (
+				A572313A2F14B129005EAD53 /* SnagRequestInfo+Curl.swift */,
+				A57CA53E2F14A4FB00D603B1 /* SnagPacket+Curl.swift */,
 				A5D0BCE72F04F54700C05E93 /* SnagLog.swift */,
 				A54C27D52EF71557000C8FD2 /* KeyValue.swift */,
 				A54C27D62EF71557000C8FD2 /* SnagDeviceModel.swift */,
@@ -837,6 +843,7 @@
 				A54C27E32EF71557000C8FD2 /* SnagExtensions.swift in Sources */,
 				A54C27E42EF71557000C8FD2 /* SnagProjectController.swift in Sources */,
 				A54C27E52EF71557000C8FD2 /* SnagDeviceController.swift in Sources */,
+				A57CA53F2F14A4FB00D603B1 /* SnagPacket+Curl.swift in Sources */,
 				A54C27E62EF71557000C8FD2 /* SnagRequestInfo.swift in Sources */,
 				A54C27E72EF71557000C8FD2 /* SnagProjectModel.swift in Sources */,
 				A54C27E82EF71557000C8FD2 /* SnagPacket.swift in Sources */,
@@ -881,6 +888,7 @@
 				A53014672EFC5AB7008A8420 /* DetailsTopBar.swift in Sources */,
 				BC1F5B37216746D30045C871 /* FontManager.swift in Sources */,
 				BCA60B522162655000B9DCAD /* FlatTableHeaderCell.swift in Sources */,
+				A572313B2F14B129005EAD53 /* SnagRequestInfo+Curl.swift in Sources */,
 				BC7E67E9216E192800E1289E /* DataImageRepresentation.swift in Sources */,
 				A5D0BCE52F04F4F100C05E93 /* TabToggleView.swift in Sources */,
 				A5D0BCE62F04F4F100C05E93 /* TabToggleViewController.swift in Sources */,
