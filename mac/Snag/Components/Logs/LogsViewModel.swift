@@ -113,6 +113,24 @@ class LogsViewModel: ObservableObject {
         return androidSystemTags.contains(tag)
     }
 
+    enum LogFilterLevel: String, CaseIterable {
+        case all = "All"
+        case error = "Error"
+        case warning = "Warning"
+        case info = "Info"
+        case debug = "Debug"
+        
+        var localizedName: String {
+            return self.rawValue.localized
+        }
+    }
+    
+    @Published var selectedLogLevel: LogFilterLevel = .all {
+        didSet {
+            self.reloadLogs()
+        }
+    }
+
     private func performUpdate() {
         let logs = self.allLogs
         let term = self.filterTerm.lowercased()
@@ -141,6 +159,22 @@ class LogsViewModel: ObservableObject {
         }
         
         let filtered = logs.filter { log in
+            // Filter by Level
+            if self.selectedLogLevel != .all {
+                let level = log.level.lowercased()
+                switch self.selectedLogLevel {
+                case .error:
+                    if !level.contains("error") && !level.contains("fault") { return false }
+                case .warning:
+                    if !level.contains("warn") { return false }
+                case .info:
+                    if !level.contains("info") { return false }
+                case .debug:
+                    if !level.contains("debug") { return false }
+                default: break
+                }
+            }
+            
             // Filter by Tag
             if let selected = selectedTag {
                 let logTag = log.tag ?? ""

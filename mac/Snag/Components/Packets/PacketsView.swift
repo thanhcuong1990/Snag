@@ -43,7 +43,6 @@ struct PacketsView: View {
                             }
                             .contextMenu {
                                 Button(NSLocalizedString("Copy cURL", comment: "Copy cURL context menu item")) {
-                                    onPacketSelect(item)
                                     if let curl = item.toCurlCommand() {
                                         NSPasteboard.general.clearContents()
                                         NSPasteboard.general.setString(curl, forType: .string)
@@ -56,7 +55,6 @@ struct PacketsView: View {
                                     }
                                 } else {
                                     Button("Save Request") {
-                                        onPacketSelect(item)
                                         SavedRequestsViewModel.shared.save(packet: item)
                                     }
                                 }

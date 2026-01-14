@@ -13,6 +13,7 @@ struct LogsView: View {
             HStack {
                 TextField("Filter logs...".localized, text: $viewModel.filterTerm)
                     .textFieldStyle(.roundedBorder)
+                    .frame(width: 200) // Constrain width so it doesn't take all space
                 
                 Divider().frame(height: 14)
                 
@@ -23,6 +24,21 @@ struct LogsView: View {
                     .font(.system(size: 11))
                 
                 Divider().frame(height: 14)
+                
+                HStack(spacing: 2) {
+                    logLevelButton(.all)
+                    Rectangle()
+                        .fill(Color.secondary.opacity(0.3))
+                        .frame(width: 1, height: 14)
+                        .padding(.horizontal, 4)
+                    
+                    logLevelButton(.error)
+                    logLevelButton(.warning)
+                    logLevelButton(.info)
+                    logLevelButton(.debug)
+                }
+                
+                Spacer()
                 
                 Button(action: {
                     viewModel.togglePause()
@@ -80,6 +96,19 @@ struct LogsView: View {
                 }
             }
         }
+    }
+    private func logLevelButton(_ level: LogsViewModel.LogFilterLevel) -> some View {
+        let isSelected = viewModel.selectedLogLevel == level
+        return Text(level.localizedName)
+            .font(.system(size: 11, weight: isSelected ? .semibold : .regular))
+            .padding(.horizontal, 6)
+            .padding(.vertical, 2)
+            .background(isSelected ? Color.secondary.opacity(0.15) : Color.clear)
+            .cornerRadius(3)
+            .foregroundColor(isSelected ? .primary : .secondary)
+            .onTapGesture {
+                viewModel.selectedLogLevel = level
+            }
     }
 }
 
