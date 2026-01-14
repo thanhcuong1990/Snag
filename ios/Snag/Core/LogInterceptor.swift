@@ -8,6 +8,8 @@ actor LogInterceptor {
     
     private let pipe = Pipe()
     private var isCapturing = false
+    private var originalStdout: Int32 = -1
+    private var originalStderr: Int32 = -1
     
     func startCapturing() {
         guard !isCapturing else { return }
@@ -17,9 +19,11 @@ actor LogInterceptor {
         let pipeReadHandle = pipe.fileHandleForReading
         let pipeFileDescriptor = pipe.fileHandleForWriting.fileDescriptor
         
-        // Save original stdout/stderr (discarding result as we don't restore them yet)
-        _ = dup(STDOUT_FILENO)
-        _ = dup(STDERR_FILENO)
+        // Save original stdout/stderr to restore/echo
+        let stdoutFd = dup(STDOUT_FILENO)
+        let stderrFd = dup(STDERR_FILENO)
+        originalStdout = stdoutFd
+        originalStderr = stderrFd
         
         dup2(pipeFileDescriptor, STDOUT_FILENO)
         dup2(pipeFileDescriptor, STDERR_FILENO)
@@ -27,6 +31,13 @@ actor LogInterceptor {
         pipeReadHandle.readabilityHandler = { handle in
             let data = handle.availableData
             if data.isEmpty { return }
+            
+            // Echo back to original stdout so it shows in Xcode console
+            if stdoutFd != -1 {
+                data.withUnsafeBytes { ptr in
+                    _ = write(stdoutFd, ptr.baseAddress, data.count)
+                }
+            }
             
             if let string = String(data: data, encoding: .utf8) {
                 // Limit message length to prevent excessive packet size
@@ -41,6 +52,25 @@ actor LogInterceptor {
         
         // Start OSLogStore polling/streaming
         startOSLogStream()
+    }
+    
+    func stopCapturing() {
+        guard isCapturing else { return }
+        isCapturing = false
+        
+        // Restore stdout/stderr
+        if originalStdout != -1 {
+            dup2(originalStdout, STDOUT_FILENO)
+            close(originalStdout)
+            originalStdout = -1
+        }
+        if originalStderr != -1 {
+            dup2(originalStderr, STDERR_FILENO)
+            close(originalStderr)
+            originalStderr = -1
+        }
+        
+        pipe.fileHandleForReading.readabilityHandler = nil
     }
     
     private func startOSLogStream() {

@@ -9,7 +9,8 @@ class SnagUtility {
     }
     
     static func projectName() -> String? {
-        return Bundle.main.infoDictionary?[kCFBundleNameKey as String] as? String
+        return Bundle.main.infoDictionary?["CFBundleDisplayName"] as? String ??
+               Bundle.main.infoDictionary?[kCFBundleNameKey as String] as? String
     }
     
     static func deviceId() -> String {

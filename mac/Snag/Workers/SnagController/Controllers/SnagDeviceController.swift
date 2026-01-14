@@ -8,8 +8,14 @@ class SnagDeviceController: NSObject, ObservableObject {
     
     @Published var packets: [SnagPacket] = []
     @Published var logs: [SnagLog] = []
+    @Published var appInfo: SnagAppInfo?
+    private var lastAppInfoRequest: Date = .distantPast
     
-    @Published var isLogsPaused: Bool = true
+    @Published var isLogsPaused: Bool = true {
+        didSet {
+            self.sendStreamingControl()
+        }
+    }
     
     @Published private(set) var selectedPacket: SnagPacket?
     
@@ -27,11 +33,31 @@ class SnagDeviceController: NSObject, ObservableObject {
     @discardableResult
     func addPacket(newPacket: SnagPacket) -> Bool {
         
+        if self.deviceName == nil {
+            self.deviceName = newPacket.device?.deviceName
+        }
+        if self.deviceDescription == nil {
+            self.deviceDescription = newPacket.device?.deviceDescription
+        }
+        
+        if self.appInfo == nil && newPacket.control == nil && Date().timeIntervalSince(lastAppInfoRequest) > 5.0 {
+            self.requestAppInfo()
+            self.lastAppInfoRequest = Date()
+        }
+        
+        if let control = newPacket.control {
+            self.handleControl(control)
+            return true
+        }
+        
         if let log = newPacket.log {
-            // Always collect logs, even if paused (paused just means UI doesn't auto-scroll)
-            self.logs.append(log)
-            if self.logs.count > maxItems {
-                self.logs.removeFirst()
+            print("Snag: Log Received -> [\(log.tag)] \(log.message)")
+            // Only collect logs if not paused
+            if !self.isLogsPaused {
+                self.logs.append(log)
+                if self.logs.count > maxItems {
+                    self.logs.removeFirst()
+                }
             }
             return true
         }
@@ -67,5 +93,37 @@ class SnagDeviceController: NSObject, ObservableObject {
         self.packets.removeAll()
         self.logs.removeAll()
         self.select(packet: nil)
+    }
+    
+    private func handleControl(_ control: SnagControl) {
+        switch control.type {
+        case "appInfoResponse":
+            self.appInfo = control.appInfo
+        case "logStreamingStatusRequest":
+            self.sendStreamingControl()
+            if self.appInfo == nil {
+                self.requestAppInfo()
+            }
+        default:
+            break
+        }
+    }
+    
+    func requestAppInfo() {
+        var control = SnagControl(type: "appInfoRequest")
+        self.sendControl(control)
+    }
+    
+    private func sendStreamingControl() {
+        let control = SnagControl(type: "logStreamingControl", shouldStreamLogs: !self.isLogsPaused)
+        self.sendControl(control)
+    }
+    
+    private func sendControl(_ control: SnagControl) {
+        guard let deviceId = self.deviceId else { return }
+        let packet = SnagPacket()
+        packet.control = control
+        // Optionally provide device/project info if needed by client
+        SnagController.shared.publisher.send(packet: packet, toDeviceId: deviceId)
     }
 }

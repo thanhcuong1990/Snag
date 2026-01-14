@@ -29,6 +29,7 @@ import java.net.Socket
 import java.nio.ByteBuffer
 import java.nio.ByteOrder
 import java.util.concurrent.ConcurrentHashMap
+import java.util.concurrent.ConcurrentLinkedQueue
 import java.util.concurrent.Executors
 import java.util.concurrent.LinkedBlockingQueue
 
@@ -57,6 +58,7 @@ internal class BrowserImpl(
 
     private val nsdServices = ConcurrentHashMap<String, NsdServiceInfo>()
     private val socketConnections = ConcurrentHashMap<String, MutableMap<String, Socket>>()
+    private val packetListeners = java.util.concurrent.CopyOnWriteArrayList<Browser.PacketListener>()
     
     // Memory-safe buffers
     private val packetChannel = Channel<Packet>(
@@ -303,6 +305,7 @@ internal class BrowserImpl(
             if (socket.isConnected) {
                 Timber.d("Connected with $hostAddress:$port hostname: $serviceName")
                 connections[hostAddress] = socket
+                startReceiving(socket)
                 flushPending()
                 sendHelloPacket()
             }
@@ -388,6 +391,53 @@ internal class BrowserImpl(
             if (socket.isConnected) socket.close()
         }
         nsdServices.remove(serviceName)
+    }
+
+    override fun addPacketListener(listener: Browser.PacketListener) {
+        packetListeners.add(listener)
+    }
+
+    override fun removePacketListener(listener: Browser.PacketListener) {
+        packetListeners.remove(listener)
+    }
+
+    override fun sendPacket(packet: Packet) {
+        send(packet)
+    }
+
+    private fun startReceiving(socket: Socket) {
+        snagScope.launch(Dispatchers.IO) {
+            val inputStream = socket.getInputStream()
+            val headerBuffer = ByteArray(8)
+            while (!socket.isClosed && socket.isConnected) {
+                try {
+                    var read = 0
+                    while (read < 8) {
+                        val r = inputStream.read(headerBuffer, read, 8 - read)
+                        if (r == -1) return@launch
+                        read += r
+                    }
+                    val length = ByteBuffer.wrap(headerBuffer).order(ByteOrder.LITTLE_ENDIAN).long.toInt()
+                    if (length <= 0 || length > 50_000_000) break
+                    
+                    val bodyBuffer = ByteArray(length)
+                    read = 0
+                    while (read < length) {
+                        val r = inputStream.read(bodyBuffer, read, length - read)
+                        if (r == -1) return@launch
+                        read += r
+                    }
+                    
+                    val packet = json.decodeFromString<Packet>(String(bodyBuffer))
+                    snagScope.launch(Dispatchers.Main) {
+                        packetListeners.forEach { it.onPacketReceived(packet) }
+                    }
+                } catch (e: Exception) {
+                    Timber.w("Receive error: ${e.message}")
+                    break
+                }
+            }
+        }
     }
 
     companion object {

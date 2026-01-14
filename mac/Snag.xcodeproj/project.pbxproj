@@ -16,6 +16,8 @@
 		A50374E62EFDAA3700FA0067 /* Constants.swift in Sources */ = {isa = PBXBuildFile; fileRef = A50374E42EFDAA3700FA0067 /* Constants.swift */; };
 		A50374E72EFDAA3700FA0067 /* SnagMenu.swift in Sources */ = {isa = PBXBuildFile; fileRef = A50374E52EFDAA3700FA0067 /* SnagMenu.swift */; };
 		A50374EA2EFDAA5300FA0067 /* NSWindow+Setup.swift in Sources */ = {isa = PBXBuildFile; fileRef = A50374E82EFDAA5300FA0067 /* NSWindow+Setup.swift */; };
+		A509B9172F1741BE00BE473F /* SnagAppInfo.swift in Sources */ = {isa = PBXBuildFile; fileRef = A509B9152F1741BE00BE473F /* SnagAppInfo.swift */; };
+		A509B9182F1741BE00BE473F /* SnagControl.swift in Sources */ = {isa = PBXBuildFile; fileRef = A509B9162F1741BE00BE473F /* SnagControl.swift */; };
 		A51C9AAF2F03A7D6009E7B66 /* SearchViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = A51C9AAE2F03A7D6009E7B66 /* SearchViewModel.swift */; };
 		A51C9AB42F03AB45009E7B66 /* RecentSearchRow.swift in Sources */ = {isa = PBXBuildFile; fileRef = A51C9AB12F03AB45009E7B66 /* RecentSearchRow.swift */; };
 		A51C9AB52F03AB45009E7B66 /* SidebarDeviceRow.swift in Sources */ = {isa = PBXBuildFile; fileRef = A51C9AB22F03AB45009E7B66 /* SidebarDeviceRow.swift */; };
@@ -133,6 +135,8 @@
 		A50374E42EFDAA3700FA0067 /* Constants.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Constants.swift; sourceTree = "<group>"; };
 		A50374E52EFDAA3700FA0067 /* SnagMenu.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SnagMenu.swift; sourceTree = "<group>"; };
 		A50374E82EFDAA5300FA0067 /* NSWindow+Setup.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "NSWindow+Setup.swift"; sourceTree = "<group>"; };
+		A509B9152F1741BE00BE473F /* SnagAppInfo.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SnagAppInfo.swift; sourceTree = "<group>"; };
+		A509B9162F1741BE00BE473F /* SnagControl.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SnagControl.swift; sourceTree = "<group>"; };
 		A51C9AAE2F03A7D6009E7B66 /* SearchViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SearchViewModel.swift; sourceTree = "<group>"; };
 		A51C9AB02F03AB45009E7B66 /* EmptySidebarState.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EmptySidebarState.swift; sourceTree = "<group>"; };
 		A51C9AB12F03AB45009E7B66 /* RecentSearchRow.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RecentSearchRow.swift; sourceTree = "<group>"; };
@@ -347,6 +351,8 @@
 		A54C27DA2EF71557000C8FD2 /* Models */ = {
 			isa = PBXGroup;
 			children = (
+				A509B9152F1741BE00BE473F /* SnagAppInfo.swift */,
+				A509B9162F1741BE00BE473F /* SnagControl.swift */,
 				A572313A2F14B129005EAD53 /* SnagRequestInfo+Curl.swift */,
 				A57CA53E2F14A4FB00D603B1 /* SnagPacket+Curl.swift */,
 				A5D0BCE72F04F54700C05E93 /* SnagLog.swift */,
@@ -908,6 +914,8 @@
 				A5D1E37E2F0E2FAB005F3D3A /* LanguageToggleViewController.swift in Sources */,
 				BCA60B50216256FD00B9DCAD /* BaseTableHeaderView.swift in Sources */,
 				BCA60B482162403F00B9DCAD /* PacketsViewModel.swift in Sources */,
+				A509B9172F1741BE00BE473F /* SnagAppInfo.swift in Sources */,
+				A509B9182F1741BE00BE473F /* SnagControl.swift in Sources */,
 				BCFC853621383650001EC6D7 /* PacketsViewController.swift in Sources */,
 				BCD0E027210F5E0D00CE5C7B /* AppDelegate.swift in Sources */,
 				A5D1E37A2F0E1128005F3D3A /* ResizableDivider.swift in Sources */,

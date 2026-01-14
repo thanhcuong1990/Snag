@@ -169,7 +169,7 @@ function AppContent() {
     };
     if (body) {
       options.body = JSON.stringify(body);
-      console.log(body)
+      console.log('Request body:', body);
     }
 
     const start = Date.now();

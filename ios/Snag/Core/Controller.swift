@@ -23,6 +23,11 @@ class SnagController: SnagSessionInjectorDelegate, SnagConnectionInjectorDelegat
         
         self.browser.didConnect = { [weak self] in
             self?.sendHelloPacket()
+            self?.sendHandshakePackets()
+        }
+        
+        self.browser.didReceivePacket = { [weak self] packet in
+            self?.handleReceivedPacket(packet)
         }
         
         self.browser.start()
@@ -206,5 +211,49 @@ class SnagController: SnagSessionInjectorDelegate, SnagConnectionInjectorDelegat
             log: log
         )
         self.browser.send(packet: packet)
+    }
+    
+    // MARK: - Handshake & Control
+    
+    private func sendHandshakePackets() {
+        self.sendAppInfo()
+        self.browser.send(packet: SnagPacket(control: SnagControl(type: "logStreamingStatusRequest")))
+    }
+    
+    private func sendAppInfo() {
+        let appInfo = SnagAppInfo(
+            bundleId: Bundle.main.bundleIdentifier,
+            isReactNative: NSClassFromString("RCTBridge") != nil
+        )
+        let control = SnagControl(type: "appInfoResponse", appInfo: appInfo)
+        let packet = SnagPacket(control: control)
+        self.browser.send(packet: packet)
+    }
+    
+    private func handleReceivedPacket(_ packet: SnagPacket) {
+        if let control = packet.control {
+            self.handleControl(control)
+        }
+    }
+    
+    private func handleControl(_ control: SnagControl) {
+        switch control.type {
+        case "appInfoRequest":
+            self.sendAppInfo()
+        case "logStreamingControl":
+            if let shouldStream = control.shouldStreamLogs {
+                if #available(iOS 15.0, *) {
+                    Task {
+                        if shouldStream {
+                            await LogInterceptor.shared.startCapturing()
+                        } else {
+                            await LogInterceptor.shared.stopCapturing()
+                        }
+                    }
+                }
+            }
+        default:
+            break
+        }
     }
 }

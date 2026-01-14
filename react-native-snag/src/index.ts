@@ -44,12 +44,12 @@ export function hijackConsole(): void {
   });
 }
 
-// Note: We no longer auto-hijack the console because the native Snag libraries
-// now handle console.log capture automatically via zero-config hooks.
-// You can still call hijackConsole() manually if you want object inspection.
+// Note: Native Snag libraries capture console.log automatically via logcat (Android) and OSLog (iOS).
+// You can optionally call hijackConsole() if you want enhanced object serialization in logs.
 
 export default {
   log,
   isEnabled,
   hijackConsole,
 };
+

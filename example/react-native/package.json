@@ -4,7 +4,8 @@
   "private": true,
   "scripts": {
     "android": "npx react-native run-android",
-    "ios": "npx react-native run-ios --simulator='iPhone 17'",
+    "ios": "npm run pod && npx react-native run-ios --simulator='iPhone 17'",
+    "pod": "cd ios && pod install && cd ..",
     "lint": "eslint .",
     "start": "npx react-native start --reset-cache",
     "test": "jest"

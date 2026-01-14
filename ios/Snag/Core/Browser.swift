@@ -26,6 +26,7 @@ class SnagBrowser: NSObject {
     }
 
     var didConnect: (() -> Void)?
+    var didReceivePacket: ((SnagPacket) -> Void)?
 
     func start() {
         self.startBrowsing()
@@ -118,6 +119,7 @@ class SnagBrowser: NSObject {
         queue.async {
             self.flushPendingLocked()
             self.didConnect?()
+            self.receive(on: connection)
         }
     }
     
@@ -159,7 +161,15 @@ class SnagBrowser: NSObject {
     func send(packet: SnagPacket) {
         queue.async {
             do {
-                let packetData = try self.encoder.encode(packet)
+                var finalPacket = packet
+                if finalPacket.project == nil {
+                    finalPacket.project = self.configuration?.project
+                }
+                if finalPacket.device == nil {
+                    finalPacket.device = self.configuration?.device
+                }
+                
+                let packetData = try self.encoder.encode(finalPacket)
                 
                 var headerLength = UInt64(packetData.count)
                 let headerData = Data(bytes: &headerLength, count: MemoryLayout<UInt64>.size)
@@ -207,6 +217,71 @@ class SnagBrowser: NSObject {
             for connection in readyConnections {
                 sendData(buffer, on: connection)
             }
+        }
+    }
+    
+    private func receive(on connection: NWConnection) {
+        connection.receive(minimumIncompleteLength: 8, maximumLength: 8) { [weak self] data, context, isComplete, error in
+            if let error = error {
+                print("SnagBrowser: Receive header error: \(error)")
+                self?.removeConnection(connection)
+                return
+            }
+            
+            guard let data = data, data.count == 8 else {
+                if isComplete { self?.removeConnection(connection) }
+                return
+            }
+            
+            guard let length = self?.lengthOf(data: data) else {
+                print("SnagBrowser: Invalid length header")
+                self?.removeConnection(connection)
+                return
+            }
+            
+            connection.receive(minimumIncompleteLength: length, maximumLength: length) { data, context, isComplete, error in
+                if let error = error {
+                    print("SnagBrowser: Receive body error: \(error)")
+                    self?.removeConnection(connection)
+                    return
+                }
+                
+                if let data = data {
+                    self?.parseBody(data: data)
+                }
+                
+                if !isComplete {
+                    self?.receive(on: connection)
+                } else {
+                    self?.removeConnection(connection)
+                }
+            }
+        }
+    }
+    
+    private func lengthOf(data: Data) -> Int? {
+        if data.count < MemoryLayout<UInt64>.stride { return nil }
+        var length: UInt64 = 0
+        data.withUnsafeBytes { bytes in
+            if let base = bytes.baseAddress {
+                memcpy(&length, base, MemoryLayout<UInt64>.stride)
+            }
+        }
+        if length == 0 || length > 50_000_000 { return nil }
+        return Int(length)
+    }
+    
+    private func parseBody(data: Data) {
+        let decoder = JSONDecoder()
+        decoder.dateDecodingStrategy = .secondsSince1970
+        
+        do {
+            let packet = try decoder.decode(SnagPacket.self, from: data)
+            DispatchQueue.main.async {
+                self.didReceivePacket?(packet)
+            }
+        } catch {
+            print("SnagBrowser: Parse error: \(error)")
         }
     }
 }

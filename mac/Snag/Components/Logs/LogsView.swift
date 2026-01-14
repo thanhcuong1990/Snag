@@ -10,51 +10,77 @@ struct LogsView: View {
     var body: some View {
         VStack(spacing: 0) {
             // Filter Bar
-            HStack {
-                TextField("Filter logs...".localized, text: $viewModel.filterTerm)
-                    .textFieldStyle(.roundedBorder)
-                    .frame(width: 200) // Constrain width so it doesn't take all space
-                
-                Divider().frame(height: 14)
-                
-                (Text("\(viewModel.items.count)")
-                    .foregroundColor(.primary) +
-                Text(" records".localized)
-                    .foregroundColor(.secondary))
-                    .font(.system(size: 11))
-                
-                Divider().frame(height: 14)
-                
-                HStack(spacing: 2) {
-                    logLevelButton(.all)
-                    Rectangle()
-                        .fill(Color.secondary.opacity(0.3))
-                        .frame(width: 1, height: 14)
-                        .padding(.horizontal, 4)
+            GeometryReader { geo in
+                HStack(spacing: 8) {
+                    HStack(spacing: 8) {
+                        Image(systemName: "magnifyingglass")
+                            .foregroundColor(.secondary)
+                            .font(.system(size: 11))
+                        
+                        ZStack(alignment: .trailing) {
+                            TextField("Filter logs...".localized, text: $viewModel.filterTerm)
+                                .textFieldStyle(PlainTextFieldStyle())
+                                .font(.system(size: 11))
+                                .padding(.trailing, 16)
+                            
+                            if !viewModel.filterTerm.isEmpty {
+                                Button(action: {
+                                    viewModel.filterTerm = ""
+                                }) {
+                                    Image(systemName: "xmark.circle.fill")
+                                        .foregroundColor(.secondary)
+                                        .font(.system(size: 11))
+                                }
+                                .buttonStyle(PlainButtonStyle())
+                            }
+                        }
+                    }
+                    .frame(width: geo.size.width * 0.5, alignment: .leading)
                     
-                    logLevelButton(.error)
-                    logLevelButton(.warning)
-                    logLevelButton(.info)
-                    logLevelButton(.debug)
+                    Divider().frame(height: 14)
+                    
+                    (Text("\(viewModel.items.count)")
+                        .foregroundColor(.primary) +
+                    Text(" records".localized)
+                        .foregroundColor(.secondary))
+                        .font(.system(size: 11))
+                    
+                    Divider().frame(height: 14)
+                    
+                    HStack(spacing: 2) {
+                        logLevelButton(.all)
+                        Rectangle()
+                            .fill(Color.secondary.opacity(0.3))
+                            .frame(width: 1, height: 14)
+                            .padding(.horizontal, 4)
+                        
+                        logLevelButton(.error)
+                        logLevelButton(.warning)
+                        logLevelButton(.info)
+                        logLevelButton(.debug)
+                    }
+                    
+                    Spacer()
+                    
+                    Button(action: {
+                        viewModel.togglePause()
+                    }) {
+                        Image(systemName: viewModel.isPaused ? "play.fill" : "pause.fill")
+                    }
+                    .help(viewModel.isPaused ? "Resume Auto-scroll".localized : "Pause Output".localized)
+                    
+                    Button(action: {
+                        viewModel.clearLogs()
+                    }) {
+                        Image(systemName: "trash")
+                    }
+                    .help("Clear Logs".localized)
                 }
-                
-                Spacer()
-                
-                Button(action: {
-                    viewModel.togglePause()
-                }) {
-                    Image(systemName: viewModel.isPaused ? "play.fill" : "pause.fill")
-                }
-                .help(viewModel.isPaused ? "Resume Auto-scroll".localized : "Pause Output".localized)
-                
-                Button(action: {
-                    viewModel.clearLogs()
-                }) {
-                    Image(systemName: "trash")
-                }
-                .help("Clear Logs".localized)
+                .padding(.horizontal, Constants.padding)
+                .frame(width: geo.size.width, height: geo.size.height)
             }
-            .padding(Constants.padding)
+            .frame(height: 32)
+            .padding(.vertical, 4)
             .background(Color(nsColor: .windowBackgroundColor))
             
             // Tag Filter Bar
@@ -68,6 +94,14 @@ struct LogsView: View {
                                 } else {
                                     viewModel.selectedTag = tag
                                 }
+                            }
+                            
+                            // Add a visual separator after the primary "Defined" tags
+                            if tag == "System" && viewModel.tags.count > 3 {
+                                Rectangle()
+                                    .fill(Color.secondary.opacity(0.3))
+                                    .frame(width: 1, height: 14)
+                                    .padding(.horizontal, 4)
                             }
                         }
                     }

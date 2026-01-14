@@ -11,6 +11,7 @@ class SnagPublisher: NSObject {
     
     private var listener: NWListener?
     private var connections: [NWConnection] = []
+    private var deviceConnections: [String: NWConnection] = [:]
     private let queue = DispatchQueue(label: "com.snag.publisher.queue")
     
     func startPublishing() {
@@ -106,7 +107,7 @@ class SnagPublisher: NSObject {
                 }
                 
                 if let data = data {
-                    self?.parseBody(data: data)
+                    self?.parseBody(data: data, from: connection)
                 }
                 
                 // Continue reading next packet if not closed
@@ -133,6 +134,7 @@ class SnagPublisher: NSObject {
             connection.cancel()
         }
         connections.removeAll()
+        deviceConnections.removeAll()
     }
     
     private func lengthOf(data: Data) -> Int? {
@@ -154,17 +156,83 @@ class SnagPublisher: NSObject {
         return Int(length)
     }
     
-    private func parseBody(data: Data) {
+    private func parseBody(data: Data, from connection: NWConnection) {
         let jsonDecoder = JSONDecoder()
         jsonDecoder.dateDecodingStrategy = .secondsSince1970
         
         do {
             let snagPacket = try jsonDecoder.decode(SnagPacket.self, from: data)
+            
+            if let deviceId = snagPacket.device?.deviceId {
+                queue.async {
+                    self.deviceConnections[deviceId] = connection
+                }
+            }
+            
             DispatchQueue.main.async {
                 self.delegate?.didGetPacket(publisher: self, packet: snagPacket)
             }
         } catch {
             print("SnagPublisher: Parse error: \(error)")
+        }
+    }
+    
+    func send(packet: SnagPacket, toDeviceId deviceId: String) {
+        queue.async {
+            guard let connection = self.deviceConnections[deviceId], connection.state == .ready else {
+                print("SnagPublisher: No ready connection for device \(deviceId)")
+                return
+            }
+            
+            do {
+                let encoder = JSONEncoder()
+                encoder.dateEncodingStrategy = .secondsSince1970
+                let packetData = try encoder.encode(packet)
+                
+                var headerLength = UInt64(packetData.count)
+                let headerData = Data(bytes: &headerLength, count: MemoryLayout<UInt64>.size)
+                
+                var buffer = Data()
+                buffer.append(headerData)
+                buffer.append(packetData)
+                
+                connection.send(content: buffer, completion: .contentProcessed { error in
+                    if let error = error {
+                        print("SnagPublisher: Send error to device \(deviceId): \(error)")
+                        connection.cancel()
+                    }
+                })
+            } catch {
+                print("SnagPublisher: Encoding error for device \(deviceId): \(error)")
+            }
+        }
+    }
+    
+    func broadcast(packet: SnagPacket) {
+        queue.async {
+            for connection in self.connections where connection.state == .ready {
+                do {
+                    let encoder = JSONEncoder()
+                    encoder.dateEncodingStrategy = .secondsSince1970
+                    let packetData = try encoder.encode(packet)
+                    
+                    var headerLength = UInt64(packetData.count)
+                    let headerData = Data(bytes: &headerLength, count: MemoryLayout<UInt64>.size)
+                    
+                    var buffer = Data()
+                    buffer.append(headerData)
+                    buffer.append(packetData)
+                    
+                    connection.send(content: buffer, completion: .contentProcessed { error in
+                        if let error = error {
+                            print("SnagPublisher: Broadcast send error: \(error)")
+                            connection.cancel()
+                        }
+                    })
+                } catch {
+                    print("SnagPublisher: Broadcast encoding error: \(error)")
+                }
+            }
         }
     }
     

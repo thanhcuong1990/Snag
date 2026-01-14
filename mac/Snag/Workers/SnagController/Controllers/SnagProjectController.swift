@@ -30,12 +30,8 @@ class SnagProjectController: NSObject, ObservableObject {
                 return deviceController.addPacket(newPacket: newPacket)
             }
         }
-        
         let deviceController = SnagDeviceController()
-        
         deviceController.deviceId = newPacket.device?.deviceId
-        deviceController.deviceName = newPacket.device?.deviceName
-        deviceController.deviceDescription = newPacket.device?.deviceDescription
         
         deviceController.addPacket(newPacket: newPacket)
         
