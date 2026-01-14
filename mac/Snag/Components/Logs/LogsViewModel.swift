@@ -32,6 +32,12 @@ class LogsViewModel: ObservableObject {
         }
     } 
     
+    func resume() {
+        self.isPaused = false
+        self.objectWillChange.send()
+        self.reloadLogs()
+    }
+    
     private var allLogs: [SnagLog] {
         return SnagController.shared.selectedProjectController?.selectedDeviceController?.logs ?? []
     }
@@ -70,6 +76,7 @@ class LogsViewModel: ObservableObject {
     }
     
     @objc func onDeviceChanged() {
+        self.isPaused = false // Auto-resume on device change
         self.objectWillChange.send()
         self.reloadLogs(force: true)
     }

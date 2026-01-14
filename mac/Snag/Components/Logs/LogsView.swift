@@ -130,6 +130,9 @@ struct LogsView: View {
                 }
             }
         }
+        .onAppear {
+            viewModel.resume()
+        }
     }
     private func logLevelButton(_ level: LogsViewModel.LogFilterLevel) -> some View {
         let isSelected = viewModel.selectedLogLevel == level
