@@ -286,31 +286,33 @@ internal class BrowserImpl(
     private fun connectToHost(hostAddress: String, port: Int, serviceName: String) {
         val connections = socketConnections.getOrPut(serviceName) { mutableMapOf() }
         
-        val existing = connections[hostAddress]
-        if (existing != null) {
-            if (!existing.isConnected || existing.isClosed) {
-                connections.remove(hostAddress)
-            } else {
-                return
-            }
-        }
-
-        try {
-            Timber.d("Connecting to $hostAddress:$port")
-            val socket = Socket().apply {
-                keepAlive = true
-                connect(InetSocketAddress(hostAddress, port), 1500)
+        synchronized(connections) {
+            val existing = connections[hostAddress]
+            if (existing != null) {
+                if (!existing.isConnected || existing.isClosed) {
+                    connections.remove(hostAddress)
+                } else {
+                    return
+                }
             }
 
-            if (socket.isConnected) {
-                Timber.d("Connected with $hostAddress:$port hostname: $serviceName")
-                connections[hostAddress] = socket
-                startReceiving(socket)
-                flushPending()
-                sendHelloPacket()
+            try {
+                Timber.d("Connecting to $hostAddress:$port")
+                val socket = Socket().apply {
+                    keepAlive = true
+                    connect(InetSocketAddress(hostAddress, port), 1500)
+                }
+
+                if (socket.isConnected) {
+                    Timber.d("Connected with $hostAddress:$port hostname: $serviceName")
+                    connections[hostAddress] = socket
+                    startReceiving(socket)
+                    flushPending()
+                    sendHelloPacket()
+                }
+            } catch (e: Exception) {
+                Timber.w("Connection failed to $hostAddress:$port: ${e.message}")
             }
-        } catch (e: Exception) {
-            Timber.w("Connection failed to $hostAddress:$port: ${e.message}")
         }
     }
 
@@ -428,9 +430,19 @@ internal class BrowserImpl(
                         read += r
                     }
                     
-                    val packet = json.decodeFromString<Packet>(String(bodyBuffer))
-                    snagScope.launch(Dispatchers.Main) {
-                        packetListeners.forEach { it.onPacketReceived(packet) }
+                    // Parse on background thread
+                    val packetString = String(bodyBuffer)
+                    val packet = try {
+                        json.decodeFromString<Packet>(packetString)
+                    } catch (e: Exception) {
+                        Timber.e(e, "Failed to decode packet")
+                        null
+                    }
+
+                    if (packet != null) {
+                        snagScope.launch(Dispatchers.Main) {
+                            packetListeners.forEach { it.onPacketReceived(packet) }
+                        }
                     }
                 } catch (e: Exception) {
                     Timber.w("Receive error: ${e.message}")

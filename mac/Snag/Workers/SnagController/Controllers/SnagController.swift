@@ -21,11 +21,16 @@ class SnagController: NSObject, SnagPublisherDelegate, ObservableObject {
         case logs
     }
     
-    @Published var selectedTab: MainTab = .network
+    @Published var selectedTab: MainTab = .network {
+        didSet {
+            self.updateLogStreamingState()
+        }
+    }
     @Published var projectControllers: [SnagProjectController] = []
     @Published var selectedProjectController: SnagProjectController? {
         didSet {
             NotificationCenter.default.post(name: SnagNotifications.didSelectProject, object: nil)
+            self.updateLogStreamingState()
         }
     }
     // New property for saved request selection
@@ -43,6 +48,26 @@ class SnagController: NSObject, SnagPublisherDelegate, ObservableObject {
         self.publisher.delegate = self
         self.publisher.startPublishing()
         
+        NotificationCenter.default.addObserver(self, selector: #selector(handleDeviceSelection), name: SnagNotifications.didSelectDevice, object: nil)
+    }
+    
+    @objc private func handleDeviceSelection() {
+        self.updateLogStreamingState()
+    }
+    
+    private func updateLogStreamingState() {
+        for project in self.projectControllers {
+            for device in project.deviceControllers {
+                let isSelected = (project == self.selectedProjectController) && (device == project.selectedDeviceController)
+                let shouldStream = isSelected && (self.selectedTab == .logs)
+                
+                // Update isLogsPaused state only if it differs from the desired state
+                // isLogsPaused needs to be false if streaming is desired
+                if device.isLogsPaused == shouldStream {
+                    device.isLogsPaused = !shouldStream
+                }
+            }
+        }
     }
     
     func didGetPacket(publisher: SnagPublisher, packet: SnagPacket) {
@@ -60,6 +85,11 @@ class SnagController: NSObject, SnagPublisherDelegate, ObservableObject {
             self.checkInitialSelection()
         } else {
             NotificationCenter.default.post(name: SnagNotifications.didUpdatePacket, object: nil, userInfo: ["packet": packet])
+        }
+        
+        // Ensure log streaming state is correct for new devices
+        if packet.device != nil {
+             self.updateLogStreamingState()
         }
     }
     

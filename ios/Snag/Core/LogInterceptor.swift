@@ -44,9 +44,7 @@ actor LogInterceptor {
                 let maxLength = 10_000
                 let message = string.count > maxLength ? String(string.prefix(maxLength)) + "... (truncated in interceptor)" : string
                 
-                Task { @MainActor in
-                    Snag.log(message, level: "info", tag: "stdout")
-                }
+                Snag.log(message, level: "info", tag: "stdout")
             }
         }
         
@@ -97,9 +95,7 @@ actor LogInterceptor {
                                 let level = LogInterceptor.levelString(for: logEntry.level)
                                 let tag = logEntry.subsystem.isEmpty ? logEntry.category : "\(logEntry.subsystem)/\(logEntry.category)"
                                 
-                                Task { @MainActor in
-                                    Snag.log(message, level: level, tag: tag)
-                                }
+                                Snag.log(message, level: level, tag: tag)
                             }
                             
                             lastDate = entry.date
@@ -108,7 +104,7 @@ actor LogInterceptor {
                         print("Snag: Log stream error: \(error)")
                     }
                     
-                    try? await Task.sleep(nanoseconds: 500_000_000) // 500ms for near real-time
+                    try? await Task.sleep(nanoseconds: 200_000_000) // 200ms polling
                 }
             } catch {
                 print("Snag: Failed to setup OSLogStore: \(error)")
