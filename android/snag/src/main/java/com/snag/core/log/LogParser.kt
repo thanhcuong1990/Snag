@@ -3,11 +3,16 @@ package com.snag.core.log
 import java.util.regex.Pattern
 
 object LogParser {
-    // Compiled patterns for better performance
-    private val LOGCAT_PATTERN = Pattern.compile("([VDIWEF])\\s+(.*?):\\s?(.*)$")
+    // Standard logcat format: "I/Tag( 123): Message"
+    private val STANDARD_PATTERN = Pattern.compile("^([VDIWEF])\\s+(.*?):\\s?(.*)$")
     
-    // Simple check to avoid counting braces on obvious date lines (unlikely in message but good for safety)
-    private val DATE_PREFIX = Pattern.compile("^\\d{4}-\\d{2}-\\d{2}")
+    // Threadtime format: "MM-DD HH:MM:SS.ms PID TID Level Tag: Message"
+    // Example: "01-14 14:43:32.123 1234 5678 I Tag : Message"
+    private val THREADTIME_PATTERN = Pattern.compile("^.*?\\s+\\d+\\s+\\d+\\s+([VDIWEF])\\s+(.*?):\\s?(.*)$")
+    
+    // Check for date to avoid treating new logs as content lines
+    // Matches "YYYY-MM-DD" or "MM-DD "
+    private val DATE_PREFIX = Pattern.compile("^(\\d{4}-\\d{2}-\\d{2}|\\d{2}-\\d{2}\\s)")
 
     data class ParsedLog(
         val level: String,
@@ -16,8 +21,11 @@ object LogParser {
     )
 
     fun parse(line: String): ParsedLog? {
-        val matcher = LOGCAT_PATTERN.matcher(line)
-        if (!matcher.find()) return null
+        var matcher = STANDARD_PATTERN.matcher(line)
+        if (!matcher.find()) {
+            matcher = THREADTIME_PATTERN.matcher(line)
+            if (!matcher.find()) return null
+        }
 
         val levelChar = matcher.group(1) ?: "I"
         var tag = matcher.group(2)?.trim() ?: ""

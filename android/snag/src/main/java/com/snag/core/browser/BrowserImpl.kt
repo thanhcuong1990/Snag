@@ -178,7 +178,6 @@ internal class BrowserImpl(
 
         val (serviceName, hostAddress, socket) = firstTarget
         
-        snagScope.launch(Dispatchers.IO) {
             val succeeded = try {
                 if (!socket.isClosed) {
                     synchronized(socket) {
@@ -201,7 +200,6 @@ internal class BrowserImpl(
                 pendingBuffers.offer(data)
                 attemptReconnect()
             }
-        }
     }
 
     override fun sendPacket(requestInfo: RequestInfo) {

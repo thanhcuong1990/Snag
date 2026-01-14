@@ -156,10 +156,28 @@ class SnagBrowser: NSObject {
         startBrowsing()
     }
     
+    private var pendingTaskCount: Int = 0
+    private let counterLock = NSLock()
+    private let MAX_PENDING_TASKS = 500
+    
     // MARK: - Sending Packet
     
     func send(packet: SnagPacket) {
+        counterLock.lock()
+        if pendingTaskCount >= MAX_PENDING_TASKS {
+            counterLock.unlock()
+            return
+        }
+        pendingTaskCount += 1
+        counterLock.unlock()
+        
         queue.async {
+            defer {
+                self.counterLock.lock()
+                self.pendingTaskCount -= 1
+                self.counterLock.unlock()
+            }
+            
             do {
                 var finalPacket = packet
                 if finalPacket.project == nil {
