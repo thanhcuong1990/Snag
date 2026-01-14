@@ -1,5 +1,6 @@
 import Cocoa
 
+@MainActor
 class DevicesViewModel: BaseListViewModel<SnagDeviceController>  {
 
     func register() {

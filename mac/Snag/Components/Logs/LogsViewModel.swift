@@ -1,5 +1,6 @@
 import Cocoa
 
+@MainActor
 class LogsViewModel: ObservableObject {
     
     @Published var items: [SnagLog] = []

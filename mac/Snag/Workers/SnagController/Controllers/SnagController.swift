@@ -12,6 +12,7 @@ struct SnagNotifications {
     static let didUpdateSavedPackets = NSNotification.Name("DidUpdateSavedPackets") // New notification for list updates
 }
 
+@MainActor
 class SnagController: NSObject, SnagPublisherDelegate, ObservableObject {
     
     static let shared = SnagController()

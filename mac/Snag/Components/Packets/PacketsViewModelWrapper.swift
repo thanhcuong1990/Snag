@@ -5,6 +5,7 @@ enum SortOrder {
     case descending  // Newest first
 }
 
+@MainActor
 class PacketsViewModelWrapper: ObservableObject {
     @Published var items: [SnagPacket] = []
     @Published var selectedPacket: SnagPacket? = nil

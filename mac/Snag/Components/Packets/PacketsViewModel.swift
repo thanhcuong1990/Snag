@@ -15,7 +15,13 @@ enum PacketFilterCategory: String, CaseIterable {
     }
 }
 
+@MainActor
 class PacketsViewModel: BaseListViewModel<SnagPacket>  {
+    
+    // MARK: - Debouncing for Performance
+    private var isUpdatePending = false
+    private var lastUpdate: Date = .distantPast
+    private let updateRateLimit: TimeInterval = 0.15 // 150ms throttle
     
     private static let mediaPathExtensions: Set<String> = [
         "png", "jpg", "jpeg", "gif", "webp", "heic", "heif", "bmp", "tiff", "tif", "svg", "ico",
@@ -124,6 +130,30 @@ class PacketsViewModel: BaseListViewModel<SnagPacket>  {
     }
     
     @objc func refreshItems() {
+        // Skip if update already pending
+        if isUpdatePending { return }
+        
+        let now = Date()
+        let timeSinceLast = now.timeIntervalSince(lastUpdate)
+        
+        if timeSinceLast >= updateRateLimit {
+            // Update immediately
+            performRefresh()
+            lastUpdate = Date()
+        } else {
+            // Schedule for later (at the end of the throttle window)
+            isUpdatePending = true
+            let delay = updateRateLimit - timeSinceLast
+            DispatchQueue.main.asyncAfter(deadline: .now() + delay) { [weak self] in
+                guard let self = self else { return }
+                self.isUpdatePending = false
+                self.performRefresh()
+                self.lastUpdate = Date()
+            }
+        }
+    }
+    
+    private func performRefresh() {
         items = filter(items: allPackets)
         onChange?()
     }

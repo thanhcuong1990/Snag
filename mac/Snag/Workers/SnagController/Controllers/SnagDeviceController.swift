@@ -1,5 +1,6 @@
 import Cocoa
 
+@MainActor
 class SnagDeviceController: NSObject, ObservableObject {
 
     var deviceId: String?

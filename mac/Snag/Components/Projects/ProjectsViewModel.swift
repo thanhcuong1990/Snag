@@ -1,5 +1,6 @@
 import Cocoa
 
+@MainActor
 class ProjectsViewModel: BaseListViewModel<SnagProjectController> {
 
     func register() {

@@ -45,6 +45,7 @@ struct ProjectsView: View {
     }
 }
 
+@MainActor
 class ProjectsViewModelWrapper: ObservableObject {
     @Published var items: [SnagProjectController] = []
     @Published var selectedItemIndex: Int? = nil

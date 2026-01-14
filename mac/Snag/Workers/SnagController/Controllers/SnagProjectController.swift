@@ -1,5 +1,6 @@
 import Cocoa
 
+@MainActor
 class SnagProjectController: NSObject, ObservableObject {
     
     @Published var projectName: String?

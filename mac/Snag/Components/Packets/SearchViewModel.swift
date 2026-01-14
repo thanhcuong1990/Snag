@@ -1,6 +1,7 @@
 import SwiftUI
 import Combine
 
+@MainActor
 class SearchViewModel: ObservableObject {
     static let shared = SearchViewModel()
     

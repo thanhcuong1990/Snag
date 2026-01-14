@@ -123,6 +123,8 @@ class SnagPublisher: NSObject {
     private func removeConnection(_ connection: NWConnection) {
         queue.async {
             self.connections.removeAll { $0 === connection }
+            // Clean up deviceConnections to prevent stale connection references
+            self.deviceConnections = self.deviceConnections.filter { $0.value !== connection }
         }
     }
 

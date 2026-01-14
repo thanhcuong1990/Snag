@@ -1,6 +1,7 @@
 
 import SwiftUI
 
+@MainActor
 class DevicesViewModelWrapper: ObservableObject {
     @Published var items: [SnagDeviceController] = []
     @Published var selectedItemIndex: Int? = nil
