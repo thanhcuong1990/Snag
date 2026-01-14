@@ -7,6 +7,15 @@
         <language>en</language>
         <!-- The workflow will automatically append new releases here -->
         <item>
+            <title>1.0.14</title>
+            <pubDate>Wed, 14 Jan 2026 17:26:37 +0000</pubDate>
+            <link>https://github.com/thanhcuong1990/Snag/releases/tag/v1.0.14</link>
+            <sparkle:version>1.0.14</sparkle:version>
+            <sparkle:shortVersionString>1.0.14</sparkle:shortVersionString>
+            <sparkle:minimumSystemVersion>12.4</sparkle:minimumSystemVersion>
+            <enclosure url="https://github.com/thanhcuong1990/Snag/releases/download/v1.0.14/Snag.zip" length="3839671" type="application/octet-stream" sparkle:edSignature="tceNr1w1Dq8Hyz92f9as9hU9ISAH5vOOIxh/DTT2wCfcuNe0xzXCTA46qjjJoNP2NkpPXLbp4ivfs5gxVmEaDA=="/>
+        </item>
+        <item>
             <title>1.0.13</title>
             <pubDate>Sat, 10 Jan 2026 19:07:03 +0000</pubDate>
             <link>https://github.com/thanhcuong1990/Snag/releases/tag/v1.0.13</link>
@@ -23,15 +32,6 @@
             <sparkle:shortVersionString>1.0.12</sparkle:shortVersionString>
             <sparkle:minimumSystemVersion>12.4</sparkle:minimumSystemVersion>
             <enclosure url="https://github.com/thanhcuong1990/Snag/releases/download/v1.0.12/Snag.zip" length="3678269" type="application/octet-stream" sparkle:edSignature="tZhc7kEaRa1/dd45R7rW9i5LEGtVLheaex9ylTUm2RoQcJo6YEa5WOiSQIuTUB8pvxPs/pu8q4cdpwMaUbXcCA=="/>
-        </item>
-        <item>
-            <title>1.0.10</title>
-            <pubDate>Fri, 09 Jan 2026 06:33:15 +0000</pubDate>
-            <link>https://github.com/thanhcuong1990/Snag/releases/tag/v1.0.10</link>
-            <sparkle:version>1.0.10</sparkle:version>
-            <sparkle:shortVersionString>1.0.10</sparkle:shortVersionString>
-            <sparkle:minimumSystemVersion>12.4</sparkle:minimumSystemVersion>
-            <enclosure url="https://github.com/thanhcuong1990/Snag/releases/download/v1.0.10/Snag.zip" length="3678269" type="application/octet-stream" sparkle:edSignature="1RRCR9EgSOccfdRZlTsSVRiQfYtpqME6CVMYHBnBeMxMzAZqXBbZLpjzUkbOJ3jIBruV8GcEjEYUDEMIQNs7DA=="/>
         </item>
     </channel>
 </rss>
