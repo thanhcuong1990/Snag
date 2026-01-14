@@ -2,11 +2,12 @@ import SwiftUI
 
 struct TabToggleView: View {
     @ObservedObject var controller = SnagController.shared
+    @ObservedObject var languageManager = LanguageManager.shared
     
     var body: some View {
         Picker("", selection: $controller.selectedTab) {
-            Text("Network").tag(SnagController.MainTab.network)
-            Text("Logs").tag(SnagController.MainTab.logs)
+            Text("Network".localized).tag(SnagController.MainTab.network)
+            Text("Logs".localized).tag(SnagController.MainTab.logs)
         }
         .pickerStyle(SegmentedPickerStyle())
         .frame(width: 150)

@@ -13,7 +13,7 @@ struct SnagNotifications {
 }
 
 @MainActor
-class SnagController: NSObject, SnagPublisherDelegate, ObservableObject {
+class SnagController: NSObject, @MainActor SnagPublisherDelegate, ObservableObject {
     
     static let shared = SnagController()
     
@@ -79,7 +79,7 @@ class SnagController: NSObject, SnagPublisherDelegate, ObservableObject {
             return
         }
 
-        self.objectWillChange.send()
+        // self.objectWillChange.send()
 
         if self.addPacket(newPacket: packet) {
             NotificationCenter.default.post(name: SnagNotifications.didGetPacket, object: nil, userInfo: ["packet": packet])

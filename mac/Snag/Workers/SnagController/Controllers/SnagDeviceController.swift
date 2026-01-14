@@ -12,6 +12,9 @@ class SnagDeviceController: NSObject, ObservableObject {
     @Published var appInfo: SnagAppInfo?
     private var lastAppInfoRequest: Date = .distantPast
     
+    // Optimization: O(1) Lookup
+    private var packetIds = Set<String>()
+    
     @Published var isLogsPaused: Bool = true {
         didSet {
             self.sendStreamingControl()
@@ -52,7 +55,7 @@ class SnagDeviceController: NSObject, ObservableObject {
         }
         
         if let log = newPacket.log {
-            print("Snag: Log Received -> [\(log.tag)] \(log.message)")
+            print("Snag: Log Received -> [\(log.tag ?? "System")] \(log.message)")
             // Only collect logs if not paused
             if !self.isLogsPaused {
                 self.logs.append(log)
@@ -67,18 +70,26 @@ class SnagDeviceController: NSObject, ObservableObject {
             return true
         }
         
-        for packet in self.packets {
-            
-            if packet.packetId == newPacket.packetId {
-                
-                packet.requestInfo = newPacket.requestInfo
-                return false
+        if let packetId = newPacket.packetId {
+            if self.packetIds.contains(packetId) {
+                // Update existing
+                if let index = self.packets.firstIndex(where: { $0.packetId == packetId }) {
+                    self.packets[index].requestInfo = newPacket.requestInfo
+                    return false
+                }
             }
         }
         
         self.packets.append(newPacket)
+        if let packetId = newPacket.packetId {
+            self.packetIds.insert(packetId)
+        }
+        
         if self.packets.count > maxItems {
-            self.packets.removeFirst()
+            let removed = self.packets.removeFirst()
+            if let removedId = removed.packetId {
+                self.packetIds.remove(removedId)
+            }
         }
         
         if self.packets.count == 1 {
@@ -92,6 +103,7 @@ class SnagDeviceController: NSObject, ObservableObject {
     func clear() {
         
         self.packets.removeAll()
+        self.packetIds.removeAll()
         self.logs.removeAll()
         self.select(packet: nil)
     }
@@ -111,7 +123,7 @@ class SnagDeviceController: NSObject, ObservableObject {
     }
     
     func requestAppInfo() {
-        var control = SnagControl(type: "appInfoRequest")
+        let control = SnagControl(type: "appInfoRequest")
         self.sendControl(control)
     }
     

@@ -10,10 +10,11 @@ class SavedRequestsViewModel: ObservableObject {
     private let encoder: JSONEncoder
     private let decoder: JSONDecoder
     
-    // Directory: Documents/SavedRequests/
+    // Directory: Application Support/<BundleID>/SavedRequests/
     private var requestsDirectoryURL: URL? {
-        guard let documentsURL = fileManager.urls(for: .documentDirectory, in: .userDomainMask).first else { return nil }
-        return documentsURL.appendingPathComponent("SavedRequests")
+        guard let appSupportURL = fileManager.urls(for: .applicationSupportDirectory, in: .userDomainMask).first else { return nil }
+        let bundleID = Bundle.main.bundleIdentifier ?? "Snag"
+        return appSupportURL.appendingPathComponent(bundleID).appendingPathComponent("SavedRequests")
     }
     
     init() {

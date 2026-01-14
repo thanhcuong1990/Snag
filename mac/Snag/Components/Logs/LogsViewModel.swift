@@ -119,7 +119,7 @@ class LogsViewModel: ObservableObject {
     @Published var tags: [String] = []
     private var detectedAppTag: String? = nil
 
-    private func isSystemTag(_ tag: String) -> Bool {
+    private nonisolated func isSystemTag(_ tag: String) -> Bool {
         if tag.isEmpty || tag == "System" || tag == "logcat" || tag == "unknown" { return true }
         
         let lowerTag = tag.lowercased()
@@ -143,22 +143,24 @@ class LogsViewModel: ObservableObject {
             return true
         }
         
-        let androidSystemTags: Set<String> = [
-            "ApplicationLoaders", "HWUI", "ProfileInstaller", "chromium",
-            "Choreographer", "ActivityThread", "ViewRootImpl", "WindowManager",
-            "InputMethodManager", "AudioTrack", "OpenGLRenderer", "vndksupport",
-            "ServiceManager", "System.out", "System.err",
-            "DesktopExperienceFlags", "DesktopModeFlags", "GFXSTREAM",
-            "GraphicsEnvironment", "ImeTracker", "InsetsController",
-            "ResourcesManager", "SoLoader", "WebViewFactory",
-            "WindowOnBackDispatcher", "Zygote", "ashmem",
-            "jni_lib_merge", "nativeloader", "Process",
-            "StudioAgent", "TransportManager", "SurfaceControl",
-            "SurfaceFlavor", "InputTransport", "HostConnection",
-            "FrameEvents", "Chatty", "TetheringManager", "BatteryService"
-        ]
-        return androidSystemTags.contains(tag) || androidSystemTags.contains(lowerTag)
+        return LogsViewModel.androidSystemTags.contains(tag) || LogsViewModel.androidSystemTags.contains(lowerTag)
     }
+
+    private nonisolated static let androidSystemTags: Set<String> = [
+        "ApplicationLoaders", "HWUI", "ProfileInstaller", "chromium",
+        "Choreographer", "ActivityThread", "ViewRootImpl", "WindowManager",
+        "InputMethodManager", "AudioTrack", "OpenGLRenderer", "vndksupport",
+        "ServiceManager", "System.out", "System.err",
+        "DesktopExperienceFlags", "DesktopModeFlags", "GFXSTREAM",
+        "GraphicsEnvironment", "ImeTracker", "InsetsController",
+        "ResourcesManager", "SoLoader", "WebViewFactory",
+        "WindowOnBackDispatcher", "Zygote", "ashmem",
+        "jni_lib_merge", "nativeloader", "Process",
+        "StudioAgent", "TransportManager", "SurfaceControl",
+        "SurfaceFlavor", "InputTransport", "HostConnection",
+        "FrameEvents", "Chatty", "TetheringManager", "BatteryService"
+    ]
+
 
     enum LogFilterLevel: String, CaseIterable {
         case all = "All"
