@@ -5,7 +5,7 @@ ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 PROJECT_PATH="${PROJECT_PATH:-$ROOT_DIR/mac/Snag.xcodeproj}"
 SCHEME="${SCHEME:-Snag}"
 CONFIGURATION="${CONFIGURATION:-Release}"
-INFO_PLIST="${INFO_PLIST:-$ROOT_DIR/mac/Snag/Info.plist}"
+INFO_PLIST="${INFO_PLIST:-$ROOT_DIR/mac/Snag/App/Info.plist}"
 
 if [[ ! -f "$INFO_PLIST" ]]; then
   echo "Info.plist not found at $INFO_PLIST" >&2

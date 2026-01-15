@@ -59,7 +59,7 @@ chmod +x scripts/release_macos_dmg.sh
 ./scripts/release_macos_dmg.sh
 ```
 
-This builds `Snag.app` (Release, signing disabled), creates `dist/Snag_<version>.dmg`, then uploads it to the GitHub Release tag `v<version>` (derived from `mac/Snag/Info.plist`).
+This builds `Snag.app` (Release, signing disabled), creates `dist/Snag_<version>.dmg`, then uploads it to the GitHub Release tag `v<version>` (derived from `mac/Snag/App/Info.plist`).
 
 ---
 

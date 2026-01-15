@@ -25,7 +25,7 @@ jobs:
         run: |
           VERSION=${GITHUB_REF#refs/tags/v}
           # Update Info.plist version strings from tag
-          PLIST="mac/Snag/Info.plist"
+          PLIST="mac/Snag/App/Info.plist"
           plutil -replace CFBundleShortVersionString -string "$VERSION" "$PLIST"
           plutil -replace CFBundleVersion -string "$VERSION" "$PLIST"
 
