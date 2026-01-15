@@ -137,16 +137,23 @@ struct LogsView: View {
     }
     private func logLevelButton(_ level: LogsViewModel.LogFilterLevel) -> some View {
         let isSelected = viewModel.selectedLogLevel == level
-        return Text(level.localizedName)
-            .font(.system(size: 11, weight: isSelected ? .semibold : .regular))
-            .padding(.horizontal, 6)
-            .padding(.vertical, 2)
-            .background(isSelected ? Color.secondary.opacity(0.15) : Color.clear)
-            .cornerRadius(3)
-            .foregroundColor(isSelected ? .primary : .secondary)
-            .onTapGesture {
-                viewModel.selectedLogLevel = level
-            }
+        return ZStack {
+            // Reserve space
+            Text(level.localizedName)
+                .font(.system(size: 11, weight: .semibold))
+                .opacity(0)
+            
+            Text(level.localizedName)
+                .font(.system(size: 11, weight: isSelected ? .semibold : .regular))
+        }
+        .padding(.horizontal, 6)
+        .padding(.vertical, 2)
+        .background(isSelected ? Color.secondary.opacity(0.15) : Color.clear)
+        .cornerRadius(3)
+        .foregroundColor(isSelected ? .primary : .secondary)
+        .onTapGesture {
+            viewModel.selectedLogLevel = level
+        }
     }
 }
 
@@ -268,15 +275,22 @@ struct TagChip: View {
     let action: () -> Void
     
     var body: some View {
-        Text(tag)
-            .font(.system(size: 11, weight: isSelected ? .semibold : .regular))
-            .padding(.horizontal, 8)
-            .padding(.vertical, 3)
-            .background(Color.secondary.opacity(isSelected ? 0.18 : 0.08))
-            .cornerRadius(4)
-            .foregroundColor(isSelected ? .primary : .secondary)
-            .contentShape(Rectangle())
-            .onTapGesture(perform: action)
+        ZStack {
+            // Reserve space
+            Text(tag)
+                .font(.system(size: 11, weight: .semibold))
+                .opacity(0)
+            
+            Text(tag)
+                .font(.system(size: 11, weight: isSelected ? .semibold : .regular))
+        }
+        .padding(.horizontal, 8)
+        .padding(.vertical, 3)
+        .background(Color.secondary.opacity(isSelected ? 0.18 : 0.08))
+        .cornerRadius(4)
+        .foregroundColor(isSelected ? .primary : .secondary)
+        .contentShape(Rectangle())
+        .onTapGesture(perform: action)
     }
 }
 

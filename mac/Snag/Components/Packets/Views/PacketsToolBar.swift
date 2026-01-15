@@ -61,22 +61,29 @@ struct PacketsToolBar: View {
     
     private func domainChip(_ domain: String) -> some View {
         let isSelected = viewModelWrapper.addressFilter.lowercased() == domain.lowercased()
-        return Text(domain)
-            .font(.system(size: 11, weight: isSelected ? .semibold : .regular))
-            .padding(.horizontal, 8)
-            .padding(.vertical, 3)
-            .background(Color.secondary.opacity(isSelected ? 0.18 : 0.12))
-            .cornerRadius(4)
-            .foregroundColor(isSelected ? .primary : .secondary)
-            .contentShape(Rectangle())
-            .onTapGesture {
-                let text = domain.lowercased()
-                // Update SearchViewModel (which updates wrapper via binding/callback)
-                searchViewModel.searchText = text
-                // Force immediate update
-                searchViewModel.submitSearch()
-                isAddressFilterFocused = true
-            }
+        return ZStack {
+            // Reserve space
+            Text(domain)
+                .font(.system(size: 11, weight: .semibold))
+                .opacity(0)
+            
+            Text(domain)
+                .font(.system(size: 11, weight: isSelected ? .semibold : .regular))
+        }
+        .padding(.horizontal, 8)
+        .padding(.vertical, 3)
+        .background(Color.secondary.opacity(isSelected ? 0.18 : 0.12))
+        .cornerRadius(4)
+        .foregroundColor(isSelected ? .primary : .secondary)
+        .contentShape(Rectangle())
+        .onTapGesture {
+            let text = domain.lowercased()
+            // Update SearchViewModel (which updates wrapper via binding/callback)
+            searchViewModel.searchText = text
+            // Force immediate update
+            searchViewModel.submitSearch()
+            isAddressFilterFocused = true
+        }
     }
     
     private var domains: [String] {
@@ -186,16 +193,23 @@ struct PacketsToolBar: View {
     
     private func categoryButton(_ category: PacketFilterCategory) -> some View {
         let isSelected = viewModelWrapper.selectedCategory == category
-        return Text(category.localizedName)
-            .font(.system(size: 11, weight: isSelected ? .semibold : .regular))
-            .padding(.horizontal, 6)
-            .padding(.vertical, 2)
-            .background(isSelected ? Color.secondary.opacity(0.15) : Color.clear)
-            .cornerRadius(3)
-            .foregroundColor(isSelected ? .primary : .secondary)
-            .onTapGesture {
-                viewModelWrapper.selectedCategory = category
-                viewModelWrapper.updateFilters()
-            }
+        return ZStack {
+            // Reserve space for the boldest state
+            Text(category.localizedName)
+                .font(.system(size: 11, weight: .semibold))
+                .opacity(0)
+            
+            Text(category.localizedName)
+                .font(.system(size: 11, weight: isSelected ? .semibold : .regular))
+        }
+        .padding(.horizontal, 6)
+        .padding(.vertical, 2)
+        .background(isSelected ? Color.secondary.opacity(0.15) : Color.clear)
+        .cornerRadius(3)
+        .foregroundColor(isSelected ? .primary : .secondary)
+        .onTapGesture {
+            viewModelWrapper.selectedCategory = category
+            viewModelWrapper.updateFilters()
+        }
     }
 }

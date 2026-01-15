@@ -76,7 +76,7 @@ struct PacketRowView: View {
         } else if let start = start {
             // Live counting
             let ms = now.timeIntervalSince(start) * 1000
-            var str = formatMS(ms)
+            let str = formatMS(ms)
             // Ensure width stability if needed, or just return natural string
              return str
         }
