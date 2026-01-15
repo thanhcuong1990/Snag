@@ -8,7 +8,8 @@ class LanguageToggleViewController: NSTitlebarAccessoryViewController {
         let hostingView = NSHostingView(rootView: toggleView)
         
         // Ensure the hostingView doesn't have a background to blend into the title bar
-        hostingView.layer?.backgroundColor = .clear
+        hostingView.wantsLayer = true
+        hostingView.layer?.backgroundColor = NSColor.clear.cgColor
         
         self.view = hostingView
         

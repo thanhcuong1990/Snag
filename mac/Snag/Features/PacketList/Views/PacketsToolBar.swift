@@ -94,7 +94,7 @@ struct PacketsToolBar: View {
            let device = project.selectedDeviceController {
             sourceItems = device.packets
         } else {
-            sourceItems = SavedRequestsViewModel.shared.savedPackets
+            sourceItems = SavedPacketStore.shared.savedPackets
         }
         
         for item in sourceItems {

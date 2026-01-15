@@ -91,7 +91,7 @@ class PacketsViewModel: BaseListViewModel<SnagPacket>  {
            let device = project.selectedDeviceController {
             return device.packets
         } else {
-            return SavedRequestsViewModel.shared.savedPackets
+            return SavedPacketStore.shared.savedPackets
         }
     }
     
@@ -207,7 +207,7 @@ class PacketsViewModel: BaseListViewModel<SnagPacket>  {
            let device = project.selectedDeviceController {
             device.clear()
         } else {
-            SavedRequestsViewModel.shared.clearAll()
+            SavedPacketStore.shared.clearAll()
         }
         self.refreshItems()
     }
@@ -218,7 +218,7 @@ class PacketsViewModel: BaseListViewModel<SnagPacket>  {
     
     func deletePacket(_ packet: SnagPacket) {
         if isSavedMode {
-            SavedRequestsViewModel.shared.delete(packet: packet)
+            SavedPacketStore.shared.delete(packet: packet)
             // No need to manually refresh here as we observer didUpdateSavedPackets
         }
     }

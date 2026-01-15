@@ -61,7 +61,7 @@ struct PacketsView: View {
                                 }
                             } else {
                                 Button("Save Request") {
-                                    SavedRequestsViewModel.shared.save(packet: item)
+                                    SavedPacketStore.shared.save(packet: item)
                                 }
                             }
                         }

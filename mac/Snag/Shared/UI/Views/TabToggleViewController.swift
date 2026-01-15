@@ -7,7 +7,8 @@ class TabToggleViewController: NSTitlebarAccessoryViewController {
         let toggleView = TabToggleView()
         let hostingView = NSHostingView(rootView: toggleView)
         
-        hostingView.layer?.backgroundColor = .clear
+        hostingView.wantsLayer = true
+        hostingView.layer?.backgroundColor = NSColor.clear.cgColor
         
         self.view = hostingView
         self.view.translatesAutoresizingMaskIntoConstraints = false
