@@ -24,7 +24,8 @@ object AppMetadataProvider {
     fun getProject(context: Context, projectName: String): Project {
         return Project(
             projectName = projectName,
-            appIcon = getAppIconBase64(context)
+            appIcon = getAppIconBase64(context),
+            bundleId = context.packageName
         )
     }
 

@@ -22,6 +22,7 @@ public class SnagConfiguration {
         var project = SnagProject()
         project.name = SnagUtility.projectName()
         project.appIcon = SnagUtility.appIcon()
+        project.bundleId = SnagUtility.bundleId()
         
         var device = SnagDevice()
         device.id = SnagUtility.deviceId()

@@ -13,15 +13,28 @@ class SnagPublisher: NSObject {
     private var connections: [NWConnection] = []
     private var deviceConnections: [String: NWConnection] = [:]
     private let queue = DispatchQueue(label: "com.snag.publisher.queue")
+
+    private lazy var jsonEncoder: JSONEncoder = {
+        let encoder = JSONEncoder()
+        encoder.dateEncodingStrategy = .secondsSince1970
+        return encoder
+    }()
+
+    private lazy var jsonDecoder: JSONDecoder = {
+        let decoder = JSONDecoder()
+        decoder.dateDecodingStrategy = .secondsSince1970
+        return decoder
+    }()
     
     func startPublishing() {
-        queue.async {
+        queue.async { [weak self] in
+            guard let self = self else { return }
             self.stopPublishingLocked()
             
             do {
                 let tcpOptions = NWProtocolTCP.Options()
                 tcpOptions.enableKeepalive = true
-                tcpOptions.noDelay = true // Disable Nagle's algorithm for immediate sending
+                tcpOptions.noDelay = true
                 
                 let params = NWParameters(tls: nil, tcp: tcpOptions)
                 params.includePeerToPeer = true
@@ -80,7 +93,9 @@ class SnagPublisher: NSObject {
 
     private func receiveData(on connection: NWConnection) {
         // First, read the 8-byte length header
-        connection.receive(minimumIncompleteLength: 8, maximumLength: 8) { [weak self] data, context, isComplete, error in
+        connection.receive(minimumIncompleteLength: 8, maximumLength: 8) { [weak self] data, _, isComplete, error in
+            guard let self = self else { return }
+            
             if let error = error {
                 print("SnagPublisher: Receive header error: \(error)")
                 connection.cancel()
@@ -92,14 +107,16 @@ class SnagPublisher: NSObject {
                 return
             }
             
-            guard let length = self?.lengthOf(data: data) else {
+            guard let length = self.lengthOf(data: data) else {
                 print("SnagPublisher: Invalid length header")
                 connection.cancel()
                 return
             }
             
             // Now read the body of specified length
-            connection.receive(minimumIncompleteLength: length, maximumLength: length) { data, context, isComplete, error in
+            connection.receive(minimumIncompleteLength: length, maximumLength: length) { [weak self] data, _, isComplete, error in
+                guard let self = self else { return }
+                
                 if let error = error {
                     print("SnagPublisher: Receive body error: \(error)")
                     connection.cancel()
@@ -107,12 +124,12 @@ class SnagPublisher: NSObject {
                 }
                 
                 if let data = data {
-                    self?.parseBody(data: data, from: connection)
+                    self.parseBody(data: data, from: connection)
                 }
                 
                 // Continue reading next packet if not closed
                 if !isComplete {
-                    self?.receiveData(on: connection)
+                    self.receiveData(on: connection)
                 } else {
                     connection.cancel()
                 }
@@ -123,7 +140,6 @@ class SnagPublisher: NSObject {
     private func removeConnection(_ connection: NWConnection) {
         queue.async {
             self.connections.removeAll { $0 === connection }
-            // Clean up deviceConnections to prevent stale connection references
             self.deviceConnections = self.deviceConnections.filter { $0.value !== connection }
         }
     }
@@ -132,36 +148,22 @@ class SnagPublisher: NSObject {
         listener?.cancel()
         listener = nil
         
-        for connection in connections {
-            connection.cancel()
-        }
+        connections.forEach { $0.cancel() }
         connections.removeAll()
         deviceConnections.removeAll()
     }
     
     private func lengthOf(data: Data) -> Int? {
-        if data.count < MemoryLayout<UInt64>.stride {
-            return nil
-        }
-        var length: UInt64 = 0
-        data.withUnsafeBytes { bytes in
-            if let base = bytes.baseAddress {
-                memcpy(&length, base, MemoryLayout<UInt64>.stride)
-            }
-        }
-        if length == 0 || length > 50_000_000 {
-            return nil
-        }
-        if length > UInt64(Int.max) {
+        guard data.count >= 8 else { return nil }
+        let length = data.withUnsafeBytes { $0.load(as: UInt64.self) }
+        
+        guard length > 0 && length <= 50_000_000 else {
             return nil
         }
         return Int(length)
     }
     
     private func parseBody(data: Data, from connection: NWConnection) {
-        let jsonDecoder = JSONDecoder()
-        jsonDecoder.dateDecodingStrategy = .secondsSince1970
-        
         do {
             let snagPacket = try jsonDecoder.decode(SnagPacket.self, from: data)
             
@@ -178,32 +180,38 @@ class SnagPublisher: NSObject {
             print("SnagPublisher: Parse error: \(error)")
         }
     }
+
+    private func prepareFramedData(from packet: SnagPacket) throws -> Data {
+        let packetData = try jsonEncoder.encode(packet)
+        var headerLength = UInt64(packetData.count)
+        let headerData = Data(bytes: &headerLength, count: MemoryLayout<UInt64>.size)
+        
+        var buffer = Data(capacity: headerData.count + packetData.count)
+        buffer.append(headerData)
+        buffer.append(packetData)
+        return buffer
+    }
+
+    private func send(data: Data, to connection: NWConnection, deviceId: String) {
+        connection.send(content: data, completion: .contentProcessed { [weak connection] error in
+            if let error = error {
+                print("SnagPublisher: Send error to device \(deviceId): \(error)")
+                connection?.cancel()
+            }
+        })
+    }
     
     func send(packet: SnagPacket, toDeviceId deviceId: String) {
-        queue.async {
+        queue.async { [weak self] in
+            guard let self = self else { return }
             guard let connection = self.deviceConnections[deviceId], connection.state == .ready else {
                 print("SnagPublisher: No ready connection for device \(deviceId)")
                 return
             }
             
             do {
-                let encoder = JSONEncoder()
-                encoder.dateEncodingStrategy = .secondsSince1970
-                let packetData = try encoder.encode(packet)
-                
-                var headerLength = UInt64(packetData.count)
-                let headerData = Data(bytes: &headerLength, count: MemoryLayout<UInt64>.size)
-                
-                var buffer = Data()
-                buffer.append(headerData)
-                buffer.append(packetData)
-                
-                connection.send(content: buffer, completion: .contentProcessed { error in
-                    if let error = error {
-                        print("SnagPublisher: Send error to device \(deviceId): \(error)")
-                        connection.cancel()
-                    }
-                })
+                let framedData = try self.prepareFramedData(from: packet)
+                self.send(data: framedData, to: connection, deviceId: deviceId)
             } catch {
                 print("SnagPublisher: Encoding error for device \(deviceId): \(error)")
             }
@@ -211,29 +219,15 @@ class SnagPublisher: NSObject {
     }
     
     func broadcast(packet: SnagPacket) {
-        queue.async {
-            for connection in self.connections where connection.state == .ready {
-                do {
-                    let encoder = JSONEncoder()
-                    encoder.dateEncodingStrategy = .secondsSince1970
-                    let packetData = try encoder.encode(packet)
-                    
-                    var headerLength = UInt64(packetData.count)
-                    let headerData = Data(bytes: &headerLength, count: MemoryLayout<UInt64>.size)
-                    
-                    var buffer = Data()
-                    buffer.append(headerData)
-                    buffer.append(packetData)
-                    
-                    connection.send(content: buffer, completion: .contentProcessed { error in
-                        if let error = error {
-                            print("SnagPublisher: Broadcast send error: \(error)")
-                            connection.cancel()
-                        }
-                    })
-                } catch {
-                    print("SnagPublisher: Broadcast encoding error: \(error)")
+        queue.async { [weak self] in
+            guard let self = self else { return }
+            do {
+                let framedData = try self.prepareFramedData(from: packet)
+                for (deviceId, connection) in self.deviceConnections where connection.state == .ready {
+                    self.send(data: framedData, to: connection, deviceId: deviceId)
                 }
+            } catch {
+                print("SnagPublisher: Broadcast encoding error: \(error)")
             }
         }
     }
@@ -242,9 +236,10 @@ class SnagPublisher: NSObject {
     private func schedulePublishRetryLocked() {
         if publishRetryScheduled { return }
         publishRetryScheduled = true
-        queue.asyncAfter(deadline: .now() + 1.0) {
-            self.publishRetryScheduled = false
-            self.startPublishing()
+        queue.asyncAfter(deadline: .now() + 1.0) { [weak self] in
+            self?.publishRetryScheduled = false
+            self?.startPublishing()
         }
     }
 }
+

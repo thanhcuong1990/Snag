@@ -6,7 +6,9 @@ import kotlinx.serialization.Serializable
 @Serializable
 data class Project(
     @SerialName("projectName")
-    val projectName: String,
+    val projectName: String? = null,
     @SerialName("appIcon")
-    val appIcon: String? = null
+    val appIcon: String? = null,
+    @SerialName("bundleId")
+    val bundleId: String? = null
 )

@@ -13,6 +13,10 @@ class SnagUtility {
                Bundle.main.infoDictionary?[kCFBundleNameKey as String] as? String
     }
     
+    static func bundleId() -> String? {
+        return Bundle.main.bundleIdentifier
+    }
+    
     static func deviceId() -> String {
         return "\(self.deviceName())-\(self.deviceDescription())"
     }

@@ -11,9 +11,9 @@ data class Packet(
     @SerialName("requestInfo")
     val requestInfo: RequestInfo? = null,
     @SerialName("device")
-    val device: Device,
+    val device: Device? = null,
     @SerialName("project")
-    val project: Project,
+    val project: Project? = null,
     @SerialName("log")
     val log: SnagLog? = null,
     @SerialName("control")

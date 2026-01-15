@@ -10,6 +10,7 @@ struct SnagNotifications {
     static let didSelectPacket = NSNotification.Name("DidSelectPacket")
     static let didSelectSavedPacket = NSNotification.Name("DidSelectSavedPacket") // New notification for saved packets
     static let didUpdateSavedPackets = NSNotification.Name("DidUpdateSavedPackets") // New notification for list updates
+    static let didUpdateAppInfo = NSNotification.Name("DidUpdateAppInfo") // For bundleId propagation
 }
 
 @MainActor
@@ -24,14 +25,18 @@ class SnagController: NSObject, @MainActor SnagPublisherDelegate, ObservableObje
     
     @Published var selectedTab: MainTab = .network {
         didSet {
-            self.updateLogStreamingState()
+            DispatchQueue.main.async {
+                self.updateLogStreamingState()
+            }
         }
     }
     @Published var projectControllers: [SnagProjectController] = []
     @Published var selectedProjectController: SnagProjectController? {
         didSet {
             NotificationCenter.default.post(name: SnagNotifications.didSelectProject, object: nil)
-            self.updateLogStreamingState()
+            DispatchQueue.main.async {
+                self.updateLogStreamingState()
+            }
         }
     }
     // New property for saved request selection
@@ -90,7 +95,9 @@ class SnagController: NSObject, @MainActor SnagPublisherDelegate, ObservableObje
         
         // Ensure log streaming state is correct for new devices
         if packet.device != nil {
-             self.updateLogStreamingState()
+             DispatchQueue.main.async {
+                 self.updateLogStreamingState()
+             }
         }
     }
     
@@ -116,8 +123,9 @@ class SnagController: NSObject, @MainActor SnagPublisherDelegate, ObservableObje
         
         
         if self.projectControllers.count == 1 {
-            
-            self.selectedProjectController = self.projectControllers.first
+            DispatchQueue.main.async {
+                self.selectedProjectController = self.projectControllers.first
+            }
         }
         
         return true

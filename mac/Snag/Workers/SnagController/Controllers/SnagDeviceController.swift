@@ -36,6 +36,7 @@ class SnagDeviceController: NSObject, ObservableObject {
     
     @discardableResult
     func addPacket(newPacket: SnagPacket) -> Bool {
+
         
         if self.deviceName == nil {
             self.deviceName = newPacket.device?.deviceName
@@ -55,7 +56,7 @@ class SnagDeviceController: NSObject, ObservableObject {
         }
         
         if let log = newPacket.log {
-            print("Snag: Log Received -> [\(log.tag ?? "System")] \(log.message)")
+
             // Only collect logs if not paused
             if !self.isLogsPaused {
                 self.logs.append(log)
@@ -111,7 +112,15 @@ class SnagDeviceController: NSObject, ObservableObject {
     private func handleControl(_ control: SnagControl) {
         switch control.type {
         case "appInfoResponse":
-            self.appInfo = control.appInfo
+            if self.appInfo != control.appInfo {
+                self.appInfo = control.appInfo
+                // Notify parent project controller to propagate bundleId
+                NotificationCenter.default.post(
+                    name: SnagNotifications.didUpdateAppInfo,
+                    object: self,
+                    userInfo: ["bundleId": control.appInfo?.bundleId as Any]
+                )
+            }
         case "logStreamingStatusRequest":
             self.sendStreamingControl()
             if self.appInfo == nil {
@@ -123,6 +132,7 @@ class SnagDeviceController: NSObject, ObservableObject {
     }
     
     func requestAppInfo() {
+
         let control = SnagControl(type: "appInfoRequest")
         self.sendControl(control)
     }

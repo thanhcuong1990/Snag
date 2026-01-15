@@ -180,10 +180,13 @@ internal class ConnectionManager(
                     if (!readFully(inputStream, bodyBuffer)) break
                     
                     val packetString = String(bodyBuffer)
-                    val packet = json.decodeFromString<Packet>(packetString)
-                    
-                    withContext(Dispatchers.Main) {
-                        onPacketReceived(packet)
+                    try {
+                        val packet = json.decodeFromString<Packet>(packetString)
+                        withContext(Dispatchers.Main) {
+                            onPacketReceived(packet)
+                        }
+                    } catch (e: Exception) {
+                        Timber.e(e, "Snag: Failed to decode packet: $packetString")
                     }
                 } catch (e: Exception) {
                     Timber.w("Receive error: ${e.message}")

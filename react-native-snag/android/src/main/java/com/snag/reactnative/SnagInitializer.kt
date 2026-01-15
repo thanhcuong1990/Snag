@@ -13,6 +13,7 @@ import com.snag.Snag
  */
 class SnagInitializer : ContentProvider() {
     override fun onCreate(): Boolean {
+        android.util.Log.d("Snag", "SnagInitializer onCreate called")
         val context = context ?: return false
         
         // Only initialize if debuggable or running on emulator

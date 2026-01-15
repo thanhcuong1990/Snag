@@ -30,7 +30,7 @@ struct SidebarProjectHeader: View {
                     .font(.system(size: 12, weight: .bold))
                     .foregroundColor(.labelColor)
                 
-                Text(projectBundleId(for: project.projectName))
+                Text(project.bundleId ?? "")
                     .font(.system(size: 10))
                     .foregroundColor(.secondaryLabelColor)
                     .lineLimit(1)
@@ -45,10 +45,5 @@ struct SidebarProjectHeader: View {
             return nil
         }
         return NSImage(data: data)
-    }
-    
-    private func projectBundleId(for projectName: String?) -> String {
-        let name = projectName?.lowercased().replacingOccurrences(of: " ", with: ".") ?? "app"
-        return "com.\(name).bundle"
     }
 }
