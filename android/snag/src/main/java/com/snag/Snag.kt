@@ -97,7 +97,6 @@ object Snag {
     }
 
     private fun handleControl(control: Control) {
-        timber.log.Timber.d("Snag: handleControl received type=${control.type}")
         when (control.type) {
             "appInfoRequest" -> sendAppInfo()
             "logStreamingControl" -> {
@@ -108,7 +107,6 @@ object Snag {
 
     private fun sendAppInfo() {
         val bundleId = appContext.packageName
-        timber.log.Timber.d("Snag: sendAppInfo called with bundleId=$bundleId")
         
         val appInfo = AppInfo(
             bundleId = bundleId,
@@ -120,7 +118,6 @@ object Snag {
                 device = device,
                 project = project
             ))
-            timber.log.Timber.d("Snag: appInfoResponse sent successfully")
         } catch (e: Exception) {
             timber.log.Timber.e(e, "Snag: Failed to send appInfoResponse")
         }

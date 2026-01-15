@@ -28,7 +28,7 @@ struct PacketsToolBar: View {
             }
             .frame(width: geo.size.width, height: geo.size.height, alignment: .topLeading)
         }
-        .frame(height: domains.isEmpty ? 32 : 54)
+        .frame(height: domains.isEmpty ? 32 : 60)
         .padding(.horizontal, 12)
         .padding(.vertical, 4)
         .background(Color.controlBackgroundColor)
@@ -53,8 +53,10 @@ struct PacketsToolBar: View {
                     domainChip(domain)
                 }
             }
-            .padding(.vertical, 2)
+            .padding(.vertical, 4)
+            .padding(.horizontal, 2)
         }
+        .frame(height: 28)
     }
     
     private func domainChip(_ domain: String) -> some View {
