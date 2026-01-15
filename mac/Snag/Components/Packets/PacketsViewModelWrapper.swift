@@ -1,4 +1,5 @@
 import SwiftUI
+import Combine
 
 enum SortOrder {
     case ascending   // Oldest first
@@ -15,23 +16,39 @@ class PacketsViewModelWrapper: ObservableObject {
     @Published var isSavedMode: Bool = false
 
     private var viewModel: PacketsViewModel?
+    private var cancellables = Set<AnyCancellable>()
+    private let updateSignal = PassthroughSubject<Void, Never>()
 
     init(viewModel: PacketsViewModel?) {
         self.viewModel = viewModel
         self.addressFilter = viewModel?.addressFilterTerm ?? ""
         self.selectedCategory = viewModel?.categoryFilter ?? .all
-        self.update()
+        
+        // Initial sync
+        self.syncData()
+
+        // Throttled updates for performance
+        updateSignal
+            .throttle(for: .milliseconds(50), scheduler: RunLoop.main, latest: true)
+            .sink { [weak self] in
+                self?.syncData()
+            }
+            .store(in: &cancellables)
 
         viewModel?.onChange = { [weak self] in
-            self?.update()
+            self?.updateSignal.send()
         }
     }
 
-    func update() {
+    private func syncData() {
         let rawItems = viewModel?.items ?? []
         self.items = sortItems(rawItems)
         self.selectedPacket = viewModel?.selectedItem
         self.isSavedMode = viewModel?.isSavedMode ?? false
+    }
+
+    func update() {
+        updateSignal.send()
     }
     
     func updateFilters() {

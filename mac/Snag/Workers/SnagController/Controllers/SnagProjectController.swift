@@ -84,7 +84,8 @@ class SnagProjectController: NSObject, ObservableObject {
             queue: .main
         ) { [weak self] notification in
             guard let self = self else { return }
-            if let bundleId = notification.userInfo?["bundleId"] as? String {
+            let bundleId = notification.userInfo?["bundleId"] as? String
+            Task { @MainActor in
                 if self.bundleId != bundleId {
                     self.bundleId = bundleId
                 }

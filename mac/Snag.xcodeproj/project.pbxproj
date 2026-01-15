@@ -39,6 +39,7 @@
 		A53014672EFC5AB7008A8420 /* DetailsTopBar.swift in Sources */ = {isa = PBXBuildFile; fileRef = A53014572EFC5AB7008A8420 /* DetailsTopBar.swift */; };
 		A530146A2EFCE427008A8420 /* PacketRowView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A53014682EFCE427008A8420 /* PacketRowView.swift */; };
 		A530146B2EFCE427008A8420 /* PacketsViewModelWrapper.swift in Sources */ = {isa = PBXBuildFile; fileRef = A53014692EFCE427008A8420 /* PacketsViewModelWrapper.swift */; };
+		A5342D962F1897C9001B195F /* View+Extension.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5342D952F1897C9001B195F /* View+Extension.swift */; };
 		A54C27DF2EF71557000C8FD2 /* SnagController.swift in Sources */ = {isa = PBXBuildFile; fileRef = A54C27D12EF71557000C8FD2 /* SnagController.swift */; };
 		A54C27E02EF71557000C8FD2 /* KeyValue.swift in Sources */ = {isa = PBXBuildFile; fileRef = A54C27D52EF71557000C8FD2 /* KeyValue.swift */; };
 		A54C27E12EF71557000C8FD2 /* SnagPublisher.swift in Sources */ = {isa = PBXBuildFile; fileRef = A54C27DC2EF71557000C8FD2 /* SnagPublisher.swift */; };
@@ -157,6 +158,7 @@
 		A530145A2EFC5AB7008A8420 /* OverviewView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OverviewView.swift; sourceTree = "<group>"; };
 		A53014682EFCE427008A8420 /* PacketRowView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PacketRowView.swift; sourceTree = "<group>"; };
 		A53014692EFCE427008A8420 /* PacketsViewModelWrapper.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PacketsViewModelWrapper.swift; sourceTree = "<group>"; };
+		A5342D952F1897C9001B195F /* View+Extension.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "View+Extension.swift"; sourceTree = "<group>"; };
 		A54C27CF2EF71557000C8FD2 /* SnagExtensions.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SnagExtensions.swift; sourceTree = "<group>"; };
 		A54C27D12EF71557000C8FD2 /* SnagController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SnagController.swift; sourceTree = "<group>"; };
 		A54C27D22EF71557000C8FD2 /* SnagDeviceController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SnagDeviceController.swift; sourceTree = "<group>"; };
@@ -284,6 +286,7 @@
 		A50374E92EFDAA5300FA0067 /* Extensions */ = {
 			isa = PBXGroup;
 			children = (
+				A5342D952F1897C9001B195F /* View+Extension.swift */,
 				A50374E82EFDAA5300FA0067 /* NSWindow+Setup.swift */,
 			);
 			path = Extensions;
@@ -906,6 +909,7 @@
 				8A814D07229025FF0049A64E /* VerticallyCenteredTextFieldCell.swift in Sources */,
 				BCFC853E21384443001EC6D7 /* BaseTableView.swift in Sources */,
 				A556F10C2EF3B8C0004B8A98 /* ProjectsView.swift in Sources */,
+				A5342D962F1897C9001B195F /* View+Extension.swift in Sources */,
 				A530146A2EFCE427008A8420 /* PacketRowView.swift in Sources */,
 				A530146B2EFCE427008A8420 /* PacketsViewModelWrapper.swift in Sources */,
 				A556F1102EF3BDEF004B8A98 /* PacketsView.swift in Sources */,

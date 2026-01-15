@@ -5,7 +5,14 @@ struct PacketRowView: View {
     let isSelected: Bool
     let isAlternate: Bool
     
-    @State private var isSpinning: Bool = false
+    // MARK: - Static Formatters
+    private static let timeFormatter: DateFormatter = {
+        let formatter = DateFormatter()
+        formatter.dateFormat = "HH:mm:ss.SSS"
+        return formatter
+    }()
+    
+    // MARK: - Computed Properties
     
     private var isLoading: Bool {
         let code = packet.requestInfo?.statusCode ?? ""
@@ -47,17 +54,33 @@ struct PacketRowView: View {
         }
     }
     
+    private var responseSize: String {
+        formatSize(packet.requestInfo?.responseData)
+    }
+    
+    private var requestSize: String {
+        formatSize(packet.requestInfo?.requestBody)
+    }
+    
+    private var timeString: String {
+        guard let date = packet.requestInfo?.startDate else { return "" }
+        return Self.timeFormatter.string(from: date)
+    }
+
+    // MARK: - Helpers
+    
     private func formatDuration(from start: Date?, end: Date?, now: Date) -> String {
-        // Use device end date if available, otherwise use Mac's local relative time
         if let start = start, let end = end {
             let ms = end.timeIntervalSince(start) * 1000
             return formatMS(ms)
-        } else {
-            // Live counting: Use time since the Mac discovered the packet
-            // This prevents clock-skew jumps from different device clocks.
-            let ms = now.timeIntervalSince(packet.discoveryDate) * 1000
-            return formatMS(ms)
+        } else if let start = start {
+            // Live counting
+            let ms = now.timeIntervalSince(start) * 1000
+            var str = formatMS(ms)
+            // Ensure width stability if needed, or just return natural string
+             return str
         }
+        return ""
     }
     
     private func formatMS(_ ms: Double) -> String {
@@ -70,14 +93,6 @@ struct PacketRowView: View {
         return String(format: "%.2f s", ms / 1000)
     }
     
-    private var responseSize: String {
-        return formatSize(packet.requestInfo?.responseData)
-    }
-    
-    private var requestSize: String {
-        return formatSize(packet.requestInfo?.requestBody)
-    }
-    
     private func formatSize(_ base64String: String?) -> String {
         guard let dataStr = base64String, let data = Data(base64Encoded: dataStr) else { return "-" }
         let count = Double(data.count)
@@ -86,28 +101,38 @@ struct PacketRowView: View {
         return String(format: "%.1f MB", count / (1024 * 1024))
     }
     
-    private var timeString: String {
-        guard let date = packet.requestInfo?.startDate else { return "" }
-        let formatter = DateFormatter()
-        formatter.dateFormat = "HH:mm:ss.SSS"
-        return formatter.string(from: date)
+    // MARK: - Components
+    
+    @ViewBuilder
+    private var durationView: some View {
+        if let start = packet.requestInfo?.startDate, let end = packet.requestInfo?.endDate {
+            // Static view for finished packets
+            Text(formatDuration(from: start, end: end, now: Date()))
+        } else {
+            // Live view for active packets
+             TimelineView(.periodic(from: .now, by: 0.1)) { context in
+                Text(formatDuration(from: packet.requestInfo?.startDate, 
+                                    end: nil, 
+                                    now: context.date))
+            }
+        }
     }
 
     var body: some View {
         HStack(spacing: 0) {
             // Status Icon & Code
             HStack(spacing: 6) {
-                Image(systemName: statusIcon)
-                    .font(.system(size: 11))
-                    .id(statusIcon) // Force a new view when icon changes
-                    .rotationEffect(.degrees(isLoading && isSpinning ? 360 : 0))
-                    .onAppear {
-                        if isLoading {
-                            withAnimation(.linear(duration: 1).repeatForever(autoreverses: false)) {
-                                isSpinning = true
-                            }
-                        }
+                if isLoading {
+                    TimelineView(.animation(minimumInterval: 1/60)) { context in
+                        let rotation = (context.date.timeIntervalSinceReferenceDate * 360).remainder(dividingBy: 360)
+                        Image(systemName: statusIcon)
+                            .font(.system(size: 11))
+                            .rotationEffect(.degrees(rotation))
                     }
+                } else {
+                    Image(systemName: statusIcon)
+                        .font(.system(size: 11))
+                }
                 
                 Text(packet.requestInfo?.statusCode ?? "---")
                     .font(.system(size: 11, weight: .regular))
@@ -132,17 +157,12 @@ struct PacketRowView: View {
                 .frame(maxWidth: .infinity, alignment: .leading)
             
             // Duration
-            TimelineView(.periodic(from: .now, by: isLoading ? 0.1 : 1.0)) { context in
-                Text(formatDuration(from: packet.requestInfo?.startDate, 
-                                    end: packet.requestInfo?.endDate, 
-                                    now: context.date))
-                    .transaction { $0.animation = nil }
-            }
-            .font(.system(size: 11).monospacedDigit())
-            .padding(.leading, 8)
-            .foregroundColor(isSelected ? .white.opacity(0.8) : .secondaryLabelColor)
-            .frame(width: 70, alignment: .leading)
-            .transaction { $0.animation = nil }
+            durationView
+                .font(.system(size: 11).monospacedDigit())
+                .padding(.leading, 8)
+                .foregroundColor(isSelected ? .white.opacity(0.8) : .secondaryLabelColor)
+                .frame(width: 70, alignment: .leading)
+                .transaction { $0.animation = nil }
             
             // Req. Size
             Text(requestSize)

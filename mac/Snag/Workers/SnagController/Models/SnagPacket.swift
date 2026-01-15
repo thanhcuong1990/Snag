@@ -3,9 +3,7 @@ import Cocoa
 class SnagPacket: Codable, Identifiable, Equatable, ObservableObject {
     var packetId: String?
     
-    var id: String {
-        return packetId ?? UUID().uuidString
-    }
+    let id: String
     
     @Published var requestInfo: SnagRequestInfo?
     
@@ -28,12 +26,16 @@ class SnagPacket: Codable, Identifiable, Equatable, ObservableObject {
     }
     
     init() {
+        self.id = UUID().uuidString
         self.discoveryDate = Date()
     }
     
     required init(from decoder: Decoder) throws {
         let container = try decoder.container(keyedBy: CodingKeys.self)
-        self.packetId = try container.decodeIfPresent(String.self, forKey: .packetId)
+        let pId = try container.decodeIfPresent(String.self, forKey: .packetId)
+        self.packetId = pId
+        self.id = pId ?? UUID().uuidString
+        
         self.requestInfo = try container.decodeIfPresent(SnagRequestInfo.self, forKey: .requestInfo)
         self.project = try container.decodeIfPresent(SnagProjectModel.self, forKey: .project)
         self.device = try container.decodeIfPresent(SnagDeviceModel.self, forKey: .device)
