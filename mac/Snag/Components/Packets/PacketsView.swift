@@ -24,53 +24,51 @@ struct PacketsView: View {
     // MARK: - Subviews
     
     private var packetList: some View {
-        List {
-            Section(header: 
-                VStack(spacing: 0) {
-                    PacketsColumnHeaders(viewModelWrapper: viewModelWrapper)
-                    Divider()
-                }
-                .background(Color(nsColor: ThemeColor.packetListAndDetailBackgroundColor))
-            ) {
-                ForEach(Array(viewModelWrapper.items.enumerated()), id: \.element.id) { index, item in
-                    PacketRowView(
-                        packet: item,
-                        isSelected: viewModelWrapper.selectedPacket === item,
-                        isAlternate: index % 2 != 0
-                    )
-                    .listRowInsets(EdgeInsets())
-                    .listRowBackground(Color.clear)
-                    .hideListRowSeparator()
-                    .contentShape(Rectangle())
-                    .onTapGesture {
-                        onPacketSelect(item)
-                    }
-                    .onRightClick {
-                        onPacketSelect(item)
-                    }
-                    .contextMenu {
-                        Button(NSLocalizedString("Copy cURL", comment: "Copy cURL context menu item")) {
-                            if let curl = item.toCurlCommand() {
-                                NSPasteboard.general.clearContents()
-                                NSPasteboard.general.setString(curl, forType: .string)
-                            }
+        ScrollView {
+            LazyVStack(spacing: 0, pinnedViews: [.sectionHeaders]) {
+                Section(
+                    header:
+                        VStack(spacing: 0) {
+                            PacketsColumnHeaders(viewModelWrapper: viewModelWrapper)
+                            Divider()
                         }
-                        
-                        if viewModelWrapper.isSavedMode {
-                            Button("Delete") {
-                                viewModelWrapper.deletePacket(item)
+                        .background(Color(nsColor: ThemeColor.packetListAndDetailBackgroundColor))
+                ) {
+                    ForEach(Array(viewModelWrapper.items.enumerated()), id: \.element.id) { index, item in
+                        PacketRowView(
+                            packet: item,
+                            isSelected: viewModelWrapper.selectedPacket === item,
+                            isAlternate: index % 2 != 0
+                        )
+                        .contentShape(Rectangle())
+                        .onTapGesture {
+                            onPacketSelect(item)
+                        }
+                        .onRightClick {
+                            onPacketSelect(item)
+                        }
+                        .contextMenu {
+                            Button(NSLocalizedString("Copy cURL", comment: "Copy cURL context menu item")) {
+                                if let curl = item.toCurlCommand() {
+                                    NSPasteboard.general.clearContents()
+                                    NSPasteboard.general.setString(curl, forType: .string)
+                                }
                             }
-                        } else {
-                            Button("Save Request") {
-                                SavedRequestsViewModel.shared.save(packet: item)
+                            
+                            if viewModelWrapper.isSavedMode {
+                                Button("Delete") {
+                                    viewModelWrapper.deletePacket(item)
+                                }
+                            } else {
+                                Button("Save Request") {
+                                    SavedRequestsViewModel.shared.save(packet: item)
+                                }
                             }
                         }
                     }
                 }
             }
         }
-        .listStyle(.plain)
-        .padding(.vertical, 0)
         .background(Color(nsColor: ThemeColor.packetListAndDetailBackgroundColor))
     }
 }
