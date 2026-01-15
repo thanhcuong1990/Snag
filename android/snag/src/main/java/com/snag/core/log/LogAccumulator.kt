@@ -1,6 +1,5 @@
 package com.snag.core.log
 
-import com.snag.core.browser.Browser
 import com.snag.models.SnagLog
 
 class LogAccumulator(

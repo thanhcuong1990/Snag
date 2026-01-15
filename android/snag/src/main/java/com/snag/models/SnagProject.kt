@@ -4,7 +4,7 @@ import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 
 @Serializable
-data class Project(
+data class SnagProject(
     @SerialName("projectName")
     val projectName: String? = null,
     @SerialName("appIcon")

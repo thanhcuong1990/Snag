@@ -1,28 +1,28 @@
-package com.snag.core.browser
+package com.snag.network
 
 import android.content.Context
 import android.net.nsd.NsdServiceInfo
 import android.net.wifi.WifiManager
 import android.os.Build
-import com.snag.core.config.Config
-import com.snag.core.discovery.DiscoveryManager
-import com.snag.core.network.ConnectionManager
-import com.snag.models.Device
-import com.snag.models.Packet
-import com.snag.models.Project
-import com.snag.models.RequestInfo
+import com.snag.core.SnagConfiguration
+import com.snag.discovery.DiscoveryManager
+import com.snag.models.SnagDevice
+import com.snag.models.SnagPacket
+import com.snag.models.SnagProject
+import com.snag.models.SnagRequestInfo
+import com.snag.models.SnagLog
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.MainScope
 import kotlinx.coroutines.launch
 import kotlinx.serialization.json.Json
 import timber.log.Timber
 
-internal class BrowserImpl(
+internal class SnagBrowserImpl(
     private val context: Context,
-    private val config: Config,
-    private val project: Project,
-    private val device: Device
-) : Browser, DiscoveryManager.DiscoveryListener {
+    private val config: SnagConfiguration,
+    private val project: SnagProject,
+    private val device: SnagDevice
+) : SnagBrowser, DiscoveryManager.DiscoveryListener {
 
     private val snagScope = MainScope()
 
@@ -34,7 +34,7 @@ internal class BrowserImpl(
         }
     }
 
-    private val packetListeners = java.util.concurrent.CopyOnWriteArrayList<Browser.PacketListener>()
+    private val packetListeners = java.util.concurrent.CopyOnWriteArrayList<SnagBrowser.PacketListener>()
     
     private val connectionManager = ConnectionManager(
         scope = snagScope,
@@ -99,17 +99,17 @@ internal class BrowserImpl(
     }
 
     private fun sendHelloPacket() {
-        sendPacket(Packet(device = device, project = project))
+        sendPacket(SnagPacket(device = device, project = project))
     }
 
-    override fun sendPacket(requestInfo: RequestInfo) {
+    override fun sendPacket(requestInfo: SnagRequestInfo) {
         sendPacket(requestInfo, java.util.UUID.randomUUID().toString())
     }
 
-    override fun sendPacket(requestInfo: RequestInfo, packetId: String) {
+    override fun sendPacket(requestInfo: SnagRequestInfo, packetId: String) {
         sendPacket(
-            Packet(
-                packetId = packetId,
+            SnagPacket(
+                id = packetId,
                 requestInfo = requestInfo,
                 project = project,
                 device = device
@@ -117,9 +117,9 @@ internal class BrowserImpl(
         )
     }
 
-    override fun sendLog(log: com.snag.models.SnagLog) {
+    override fun sendLog(log: SnagLog) {
         sendPacket(
-            Packet(
+            SnagPacket(
                 project = project,
                 device = device,
                 log = log
@@ -127,15 +127,15 @@ internal class BrowserImpl(
         )
     }
 
-    override fun sendPacket(packet: Packet) {
+    override fun sendPacket(packet: SnagPacket) {
         connectionManager.send(packet)
     }
 
-    override fun addPacketListener(listener: Browser.PacketListener) {
+    override fun addPacketListener(listener: SnagBrowser.PacketListener) {
         packetListeners.add(listener)
     }
 
-    override fun removePacketListener(listener: Browser.PacketListener) {
+    override fun removePacketListener(listener: SnagBrowser.PacketListener) {
         packetListeners.remove(listener)
     }
 }

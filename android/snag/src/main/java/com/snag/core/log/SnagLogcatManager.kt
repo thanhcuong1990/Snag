@@ -1,10 +1,10 @@
 package com.snag.core.log
 
-import com.snag.core.browser.Browser
+import com.snag.network.SnagBrowser
 import com.snag.models.SnagLog
 import kotlinx.coroutines.*
 
-object LogcatManager {
+object SnagLogcatManager {
     private var isStreamingLogs = false
     private var captureJob: Job? = null
     private val scope = MainScope()
@@ -50,7 +50,7 @@ object LogcatManager {
         details: Map<String, String>? = null
     ) {
         try {
-            Browser.getInstance().sendLog(
+            SnagBrowser.getInstance().sendLog(
                 SnagLog(
                     level = level,
                     message = message,

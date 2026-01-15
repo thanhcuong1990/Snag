@@ -4,7 +4,7 @@ import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 
 @Serializable
-data class RequestInfo(
+data class SnagRequestInfo(
     @SerialName("url")
     val url: String,
     @SerialName("requestMethod")

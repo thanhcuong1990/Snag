@@ -1,9 +1,9 @@
-package com.snag.core.config
+package com.snag.core
 
 import android.content.Context
 import android.os.Build
 
-data class Config(
+data class SnagConfiguration(
     val projectName: String,
     val netServiceType: String = "_Snag._tcp",
     val debugHost: String? = null,
@@ -11,7 +11,7 @@ data class Config(
     val enableLogs: Boolean = true
 ) {
     companion object {
-        fun getDefault(context: Context): Config {
+        fun getDefault(context: Context): SnagConfiguration {
             val isEmulator = Build.PRODUCT.contains("sdk") ||
                     Build.PRODUCT.contains("emulator") ||
                     Build.DEVICE.contains("generic") ||
@@ -24,7 +24,7 @@ data class Config(
                     Build.MODEL.contains("Android SDK built for x86") ||
                     Build.MANUFACTURER.contains("Genymotion")
 
-            return Config(
+            return SnagConfiguration(
                 projectName = context.applicationInfo.loadLabel(context.packageManager).toString(),
                 debugHost = if (isEmulator) "10.0.2.2" else null
             )

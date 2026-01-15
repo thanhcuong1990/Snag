@@ -2,9 +2,9 @@ import Foundation
 import OSLog
 
 @available(iOS 15.0, *)
-actor LogInterceptor {
+actor SnagLogInterceptor {
     
-    static let shared = LogInterceptor()
+    static let shared = SnagLogInterceptor()
     
     private let pipe = Pipe()
     private var isCapturing = false
@@ -80,7 +80,7 @@ actor LogInterceptor {
                 
                 while !Task.isCancelled {
                     // Check capturing state from the actor
-                    let active = await LogInterceptor.shared.getIsCapturing()
+                    let active = await SnagLogInterceptor.shared.getIsCapturing()
                     if !active { break }
                     
                     do {
@@ -92,7 +92,7 @@ actor LogInterceptor {
                             
                             if let logEntry = entry as? OSLogEntryLog {
                                 let message = logEntry.composedMessage
-                                let level = LogInterceptor.levelString(for: logEntry.level)
+                                let level = SnagLogInterceptor.levelString(for: logEntry.level)
                                 let tag = logEntry.subsystem.isEmpty ? logEntry.category : "\(logEntry.subsystem)/\(logEntry.category)"
                                 
                                 Snag.log(message, level: level, tag: tag)

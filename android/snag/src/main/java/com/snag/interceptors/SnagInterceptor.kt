@@ -1,8 +1,8 @@
-package com.snag
+package com.snag.interceptors
 
 import android.util.Base64
-import com.snag.core.browser.Browser
-import com.snag.models.RequestInfo
+import com.snag.network.SnagBrowser
+import com.snag.models.SnagRequestInfo
 import okhttp3.Interceptor
 import okhttp3.RequestBody
 import okhttp3.Response
@@ -20,7 +20,7 @@ import java.util.UUID
 class SnagInterceptor private constructor() : Interceptor {
 
     private val browser by lazy {
-        Browser.getInstance()
+        SnagBrowser.getInstance()
     }
 
     override fun intercept(chain: Interceptor.Chain): Response {
@@ -31,7 +31,7 @@ class SnagInterceptor private constructor() : Interceptor {
         // PHASE 1: Send initial packet with metadata only (NO body read here!)
         // This ensures we don't consume any streams before OkHttp sends the request
         browser.sendPacket(
-            requestInfo = RequestInfo(
+            requestInfo = SnagRequestInfo(
                 url = request.url.toString(),
                 requestMethod = request.method,
                 requestHeaders = request.headers.toMap(),
@@ -57,7 +57,7 @@ class SnagInterceptor private constructor() : Interceptor {
         } catch (e: Exception) {
             // On error, send what we have (still no body - can't safely read it)
             browser.sendPacket(
-                requestInfo = RequestInfo(
+                requestInfo = SnagRequestInfo(
                     url = request.url.toString(),
                     requestMethod = request.method,
                     requestHeaders = request.headers.toMap(),
@@ -76,8 +76,8 @@ class SnagInterceptor private constructor() : Interceptor {
      * Converts the Response to RequestInfo, including the request body.
      * This is called AFTER the response is received, so it's safe to read the body.
      */
-    private fun Response.toRequestInfo(packetId: String, startDateSeconds: Double): RequestInfo = 
-        RequestInfo(
+    private fun Response.toRequestInfo(packetId: String, startDateSeconds: Double): SnagRequestInfo = 
+        SnagRequestInfo(
             url = request.url.toString(),
             requestMethod = request.method,
             requestHeaders = request.headers.toMap(),

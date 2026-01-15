@@ -2,6 +2,7 @@ package com.snag
 
 import android.content.Context
 import androidx.startup.Initializer
+import com.snag.interceptors.SnagInterceptor
 
 /**
  * Automatically initializes Snag and registers the OkHttp client factory for React Native if present.

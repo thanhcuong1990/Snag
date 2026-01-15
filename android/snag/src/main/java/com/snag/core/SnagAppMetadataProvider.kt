@@ -1,4 +1,4 @@
-package com.snag.core.utils
+package com.snag.core
 
 import android.content.Context
 import android.graphics.Bitmap
@@ -7,22 +7,22 @@ import android.graphics.drawable.BitmapDrawable
 import android.os.Build
 import android.util.Base64
 import androidx.core.graphics.createBitmap
-import com.snag.models.Device
-import com.snag.models.Project
+import com.snag.models.SnagDevice
+import com.snag.models.SnagProject
 import java.io.ByteArrayOutputStream
 
-object AppMetadataProvider {
+object SnagAppMetadataProvider {
 
-    fun getDevice(): Device {
-        return Device(
+    fun getDevice(): SnagDevice {
+        return SnagDevice(
             deviceName = Build.MODEL,
             deviceDescription = "Android ${Build.VERSION.RELEASE}",
             deviceId = "${Build.MANUFACTURER}-${Build.MODEL}-android-${Build.VERSION.RELEASE}"
         )
     }
 
-    fun getProject(context: Context, projectName: String): Project {
-        return Project(
+    fun getProject(context: Context, projectName: String): SnagProject {
+        return SnagProject(
             projectName = projectName,
             appIcon = getAppIconBase64(context),
             bundleId = context.packageName

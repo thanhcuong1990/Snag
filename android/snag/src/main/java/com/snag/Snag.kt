@@ -1,43 +1,44 @@
 package com.snag
 
 import android.content.Context
-import com.snag.core.browser.Browser
-import com.snag.core.browser.BrowserImpl
-import com.snag.core.config.Config
-import com.snag.core.log.LogcatManager
-import com.snag.core.utils.AppMetadataProvider
+import com.snag.core.SnagConfiguration
+import com.snag.core.log.SnagLogcatManager
+import com.snag.core.SnagAppMetadataProvider
+import com.snag.interceptors.SnagInterceptor
 import com.snag.models.*
+import com.snag.network.SnagBrowser
+import com.snag.network.SnagBrowserImpl
 
 object Snag {
     private lateinit var appContext: Context
-    private lateinit var device: Device
-    private lateinit var project: Project
+    private lateinit var device: SnagDevice
+    private lateinit var project: SnagProject
 
     @JvmStatic
     @JvmOverloads
     fun start(
         context: Context,
-        config: Config = Config.getDefault(context)
+        config: SnagConfiguration = SnagConfiguration.getDefault(context)
     ) {
         this.appContext = context.applicationContext
-        this.device = AppMetadataProvider.getDevice()
-        this.project = AppMetadataProvider.getProject(context, config.projectName)
+        this.device = SnagAppMetadataProvider.getDevice()
+        this.project = SnagAppMetadataProvider.getProject(context, config.projectName)
 
-        val browser = BrowserImpl(
+        val browser = SnagBrowserImpl(
             context = appContext,
             config = config,
             project = project,
             device = device
         )
-        Browser.initialize(browser)
+        SnagBrowser.initialize(browser)
 
         browser.addPacketListener { packet ->
             packet.control?.let { handleControl(it) }
         }
 
         // Request initial log streaming status
-        browser.sendPacket(Packet(
-            control = Control(type = "logStreamingStatusRequest"),
+        browser.sendPacket(SnagPacket(
+            control = SnagControl(type = "logStreamingStatusRequest"),
             device = device,
             project = project
         ))
@@ -50,7 +51,7 @@ object Snag {
     @JvmStatic
     fun isEnabled(): Boolean {
         return try {
-            Browser.getInstance()
+            SnagBrowser.getInstance()
             true
         } catch (_: Exception) {
             false
@@ -78,7 +79,7 @@ object Snag {
         details: Map<String, String>? = null
     ) {
         try {
-            Browser.getInstance().sendLog(
+            SnagBrowser.getInstance().sendLog(
                 SnagLog(
                     level = level,
                     message = message,
@@ -93,14 +94,14 @@ object Snag {
 
     @JvmStatic
     fun enableAutoLogCapture() {
-        LogcatManager.startAutoLogCapture()
+        SnagLogcatManager.startAutoLogCapture()
     }
 
-    private fun handleControl(control: Control) {
+    private fun handleControl(control: SnagControl) {
         when (control.type) {
             "appInfoRequest" -> sendAppInfo()
             "logStreamingControl" -> {
-                LogcatManager.setStreamingEnabled(control.shouldStreamLogs ?: false)
+                SnagLogcatManager.setStreamingEnabled(control.shouldStreamLogs ?: false)
             }
         }
     }
@@ -108,13 +109,13 @@ object Snag {
     private fun sendAppInfo() {
         val bundleId = appContext.packageName
         
-        val appInfo = AppInfo(
+        val appInfo = SnagAppInfo(
             bundleId = bundleId,
-            isReactNative = AppMetadataProvider.isReactNative()
+            isReactNative = SnagAppMetadataProvider.isReactNative()
         )
         try {
-            Browser.getInstance().sendPacket(Packet(
-                control = Control(type = "appInfoResponse", appInfo = appInfo),
+            SnagBrowser.getInstance().sendPacket(SnagPacket(
+                control = SnagControl(type = "appInfoResponse", appInfo = appInfo),
                 device = device,
                 project = project
             ))

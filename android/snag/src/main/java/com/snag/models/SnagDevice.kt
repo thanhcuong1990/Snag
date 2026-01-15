@@ -4,7 +4,7 @@ import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 
 @Serializable
-data class Device(
+data class SnagDevice(
     @SerialName("deviceDescription")
     val deviceDescription: String? = null,
     @SerialName("deviceName")

@@ -1,6 +1,6 @@
-package com.snag.core.network
+package com.snag.network
 
-import com.snag.models.Packet
+import com.snag.models.SnagPacket
 import kotlinx.coroutines.*
 import kotlinx.coroutines.channels.BufferOverflow
 import kotlinx.coroutines.channels.Channel
@@ -19,14 +19,14 @@ import java.util.concurrent.atomic.AtomicLong
 internal class ConnectionManager(
     private val scope: CoroutineScope,
     private val json: Json,
-    private val onPacketReceived: (Packet) -> Unit
+    private val onPacketReceived: (SnagPacket) -> Unit
 ) {
     private val socketConnections = ConcurrentHashMap<String, MutableMap<String, Socket>>()
     private val pendingBuffers = LinkedBlockingQueue<ByteArray>(MAX_OFFLINE_BUFFER)
     private val lastReconnectAttempt = AtomicLong(0)
 
     // Packet ingestion channel
-    private val packetChannel = Channel<Packet>(
+    private val packetChannel = Channel<SnagPacket>(
         capacity = MAX_PACKET_BUFFER,
         onBufferOverflow = BufferOverflow.DROP_OLDEST
     )
@@ -39,7 +39,7 @@ internal class ConnectionManager(
         }
     }
 
-    fun send(packet: Packet) {
+    fun send(packet: SnagPacket) {
         packetChannel.trySend(packet)
     }
 
@@ -86,7 +86,7 @@ internal class ConnectionManager(
         }
     }
 
-    private fun processPacket(packet: Packet) {
+    private fun processPacket(packet: SnagPacket) {
         val payload = try {
             json.encodeToString(packet).toByteArray()
         } catch (e: Exception) {
@@ -181,7 +181,7 @@ internal class ConnectionManager(
                     
                     val packetString = String(bodyBuffer)
                     try {
-                        val packet = json.decodeFromString<Packet>(packetString)
+                        val packet = json.decodeFromString<SnagPacket>(packetString)
                         withContext(Dispatchers.Main) {
                             onPacketReceived(packet)
                         }

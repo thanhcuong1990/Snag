@@ -5,17 +5,17 @@ import kotlinx.serialization.Serializable
 import java.util.UUID
 
 @Serializable
-data class Packet(
+data class SnagPacket(
     @SerialName("packetId")
-    val packetId: String = UUID.randomUUID().toString(),
+    val id: String = UUID.randomUUID().toString(),
     @SerialName("requestInfo")
-    val requestInfo: RequestInfo? = null,
+    val requestInfo: SnagRequestInfo? = null,
     @SerialName("device")
-    val device: Device? = null,
+    val device: SnagDevice? = null,
     @SerialName("project")
-    val project: Project? = null,
+    val project: SnagProject? = null,
     @SerialName("log")
     val log: SnagLog? = null,
     @SerialName("control")
-    val control: Control? = null
+    val control: SnagControl? = null
 )

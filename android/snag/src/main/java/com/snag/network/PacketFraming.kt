@@ -1,4 +1,4 @@
-package com.snag.core.network
+package com.snag.network
 
 import java.nio.ByteBuffer
 import java.nio.ByteOrder

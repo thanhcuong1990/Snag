@@ -245,9 +245,9 @@ class SnagController: SnagSessionInjectorDelegate, SnagConnectionInjectorDelegat
                 if #available(iOS 15.0, *) {
                     Task {
                         if shouldStream {
-                            await LogInterceptor.shared.startCapturing()
+                            await SnagLogInterceptor.shared.startCapturing()
                         } else {
-                            await LogInterceptor.shared.stopCapturing()
+                            await SnagLogInterceptor.shared.stopCapturing()
                         }
                     }
                 }

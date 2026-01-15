@@ -4,7 +4,7 @@ import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 
 @Serializable
-data class AppInfo(
+data class SnagAppInfo(
     @SerialName("bundleId")
     val bundleId: String? = null,
     @SerialName("isReactNative")

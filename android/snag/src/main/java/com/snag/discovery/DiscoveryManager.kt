@@ -1,11 +1,11 @@
-package com.snag.core.discovery
+package com.snag.discovery
 
 import android.content.Context
 import android.net.nsd.NsdManager
 import android.net.nsd.NsdServiceInfo
 import android.os.Build
 import androidx.annotation.RequiresApi
-import com.snag.core.config.Config
+import com.snag.core.SnagConfiguration
 import timber.log.Timber
 import java.util.concurrent.Executor
 import java.util.concurrent.Executors
@@ -15,7 +15,7 @@ import java.util.concurrent.Executors
  */
 internal class DiscoveryManager(
     private val context: Context,
-    private val config: Config,
+    private val config: SnagConfiguration,
     private val listener: DiscoveryListener
 ) {
     private val nsdManager by lazy {
