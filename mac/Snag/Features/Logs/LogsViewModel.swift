@@ -62,7 +62,7 @@ class LogsViewModel: ObservableObject {
         if let selected = selectedTag, let packet = notification.userInfo?["packet"] as? SnagPacket, let log = packet.log {
             let logTag = log.tag ?? ""
             if selected == "System" {
-                if !isSystemTag(logTag) { return }
+                if !SnagLog.isSystemTag(logTag) { return }
             } else if selected == "React Native" {
                 if !logTag.starts(with: "com.facebook.react.log") && logTag != "React Native" { return }
             } else if selected == "App" {
@@ -119,48 +119,6 @@ class LogsViewModel: ObservableObject {
     @Published var tags: [String] = []
     private var detectedAppTag: String? = nil
 
-    private nonisolated func isSystemTag(_ tag: String) -> Bool {
-        if tag.isEmpty || tag == "System" || tag == "logcat" || tag == "unknown" { return true }
-        
-        let lowerTag = tag.lowercased()
-        
-        // Match common system prefixes/patterns
-        if lowerTag.starts(with: "android.") || 
-           lowerTag.starts(with: "com.android.") ||
-           lowerTag.starts(with: "com.google.") ||
-           lowerTag.starts(with: "com.apple.") ||
-           lowerTag.starts(with: "libc") ||
-           lowerTag.starts(with: "art") ||
-           lowerTag.starts(with: "gralloc") ||
-           lowerTag.starts(with: "egl_") ||
-           lowerTag.contains("emulator") ||
-           lowerTag.contains("vulkan") {
-            return true
-        }
-        
-        // Match specific patterns often seen in logs
-        if tag.starts(with: "cr_") || tag.starts(with: "VRI[") || tag.starts(with: "Netd") || tag.contains("Compatibility") {
-            return true
-        }
-        
-        return LogsViewModel.androidSystemTags.contains(tag) || LogsViewModel.androidSystemTags.contains(lowerTag)
-    }
-
-    private nonisolated static let androidSystemTags: Set<String> = [
-        "ApplicationLoaders", "HWUI", "ProfileInstaller", "chromium",
-        "Choreographer", "ActivityThread", "ViewRootImpl", "WindowManager",
-        "InputMethodManager", "AudioTrack", "OpenGLRenderer", "vndksupport",
-        "ServiceManager", "System.out", "System.err",
-        "DesktopExperienceFlags", "DesktopModeFlags", "GFXSTREAM",
-        "GraphicsEnvironment", "ImeTracker", "InsetsController",
-        "ResourcesManager", "SoLoader", "WebViewFactory",
-        "WindowOnBackDispatcher", "Zygote", "ashmem",
-        "jni_lib_merge", "nativeloader", "Process",
-        "StudioAgent", "TransportManager", "SurfaceControl",
-        "SurfaceFlavor", "InputTransport", "HostConnection",
-        "FrameEvents", "Chatty", "TetheringManager", "BatteryService"
-    ]
-
 
     enum LogFilterLevel: String, CaseIterable {
         case all = "All"
@@ -197,18 +155,18 @@ class LogsViewModel: ObservableObject {
             var uniqueTags = Set<String>()
             
             for log in logs {
-                if let tag = log.tag {
-                    let isRNLog = tag.starts(with: "com.facebook.react.log") || tag == "React Native"
-                    let isBundleLog = appInfo?.bundleId != nil && tag == appInfo?.bundleId
-                    
-                    if isRNLog {
-                        uniqueTags.insert("React Native")
-                    } else if isBundleLog {
-                        uniqueTags.insert("App")
-                        tagCounts[tag, default: 0] += 1
-                    } else if self.isSystemTag(tag) {
-                        uniqueTags.insert("System")
-                    } else {
+                let category = log.getCategory(detectedAppTag: appInfo?.bundleId)
+                
+                switch category {
+                case .rn:
+                    uniqueTags.insert("React Native")
+                case .app:
+                    uniqueTags.insert("App")
+                    if let tag = log.tag { tagCounts[tag, default: 0] += 1 }
+                case .system:
+                    uniqueTags.insert("System")
+                case .other:
+                    if let tag = log.tag {
                         uniqueTags.insert(tag)
                         tagCounts[tag, default: 0] += 1
                     }
@@ -248,14 +206,15 @@ class LogsViewModel: ObservableObject {
                 
                 // Filter by Tag
                 if let selected = selectedTag {
-                    let logTag = log.tag ?? ""
+                    let category = log.getCategory(detectedAppTag: appInfo?.bundleId)
+                    
                     if selected == "System" {
-                         if !self.isSystemTag(logTag) { return false }
+                        if category != .system { return false }
                     } else if selected == "React Native" {
-                        if !logTag.starts(with: "com.facebook.react.log") && logTag != "React Native" { return false }
+                        if category != .rn { return false }
                     } else if selected == "App" {
-                        if logTag != detectedAppTag { return false }
-                    } else if logTag != selected {
+                        if category != .app { return false }
+                    } else if log.tag != selected {
                         return false
                     }
                 }

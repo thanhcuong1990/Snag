@@ -8,7 +8,17 @@ class SnagDeviceController: NSObject, ObservableObject {
     var deviceDescription: String?
     
     @Published var packets: [SnagPacket] = []
-    @Published var logs: [SnagLog] = []
+    @Published var rnLogs: [SnagLog] = []
+    @Published var appLogs: [SnagLog] = []
+    @Published var systemLogs: [SnagLog] = []
+    @Published var otherLogs: [SnagLog] = []
+    
+    var logs: [SnagLog] {
+        // Combined logs for UI or general access, sorted by timestamp
+        // This is a computed property, but we might want to cache it or use individual arrays in the view model
+        return (rnLogs + appLogs + systemLogs + otherLogs).sorted { $0.timestamp < $1.timestamp }
+    }
+    
     @Published var appInfo: SnagAppInfo?
     @Published var hostName: String?
     @Published var ipAddress: String?
@@ -34,7 +44,11 @@ class SnagDeviceController: NSObject, ObservableObject {
         NotificationCenter.default.post(name: SnagNotifications.didSelectPacket, object: nil)
     }
     
-    private let maxItems = 2_000
+    private let maxRNItems = 2_000
+    private let maxAppItems = 2_000
+    private let maxSystemItems = 1_000
+    private let maxOtherItems = 1_000
+    private let maxPackets = 2_000
     
     @discardableResult
     func addPacket(newPacket: SnagPacket) -> Bool {
@@ -64,12 +78,31 @@ class SnagDeviceController: NSObject, ObservableObject {
         }
         
         if let log = newPacket.log {
-
             // Only collect logs if not paused
             if !self.isLogsPaused {
-                self.logs.append(log)
-                if self.logs.count > maxItems {
-                    self.logs.removeFirst()
+                let category = log.getCategory(detectedAppTag: self.appInfo?.bundleId)
+                
+                switch category {
+                case .rn:
+                    self.rnLogs.append(log)
+                    if self.rnLogs.count > maxRNItems {
+                        self.rnLogs.removeFirst()
+                    }
+                case .app:
+                    self.appLogs.append(log)
+                    if self.appLogs.count > maxAppItems {
+                        self.appLogs.removeFirst()
+                    }
+                case .system:
+                    self.systemLogs.append(log)
+                    if self.systemLogs.count > maxSystemItems {
+                        self.systemLogs.removeFirst()
+                    }
+                case .other:
+                    self.otherLogs.append(log)
+                    if self.otherLogs.count > maxOtherItems {
+                        self.otherLogs.removeFirst()
+                    }
                 }
             }
             return true
@@ -94,7 +127,7 @@ class SnagDeviceController: NSObject, ObservableObject {
             self.packetIds.insert(packetId)
         }
         
-        if self.packets.count > maxItems {
+        if self.packets.count > maxPackets {
             let removed = self.packets.removeFirst()
             if let removedId = removed.packetId {
                 self.packetIds.remove(removedId)
@@ -113,7 +146,10 @@ class SnagDeviceController: NSObject, ObservableObject {
         
         self.packets.removeAll()
         self.packetIds.removeAll()
-        self.logs.removeAll()
+        self.rnLogs.removeAll()
+        self.appLogs.removeAll()
+        self.systemLogs.removeAll()
+        self.otherLogs.removeAll()
         self.select(packet: nil)
     }
     
