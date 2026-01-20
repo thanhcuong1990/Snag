@@ -40,7 +40,7 @@ Verify the artifacts locally before pushing to remote.
 ./gradlew :snag:publishToMavenLocal
 ```
 
-Artifacts will be available at `~/.m2/repository/io/github/thanhcuong1990/snag/1.0.17/`.
+Artifacts will be available at `~/.m2/repository/io/github/thanhcuong1990/snag/1.0.18/`.
 
 ### Publish to Maven Central
 
@@ -59,5 +59,5 @@ Log in to the [Sonatype Central Portal](https://central.sonatype.com/) to releas
 Once published and synced (can take up to 30 mins), users can add it to their `build.gradle`:
 
 ```kotlin
-implementation("io.github.thanhcuong1990:snag:1.0.17")
+implementation("io.github.thanhcuong1990:snag:1.0.18")
 ```
