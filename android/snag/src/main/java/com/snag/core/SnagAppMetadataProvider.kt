@@ -47,12 +47,12 @@ object SnagAppMetadataProvider {
 
     private fun getIpAddress(): String? {
         try {
-            val interfaces = java.net.NetworkInterface.getNetworkInterfaces()
+            val interfaces = java.net.NetworkInterface.getNetworkInterfaces() ?: return null
             val interfaceList = interfaces.toList()
             
             // First pass: look for IPv4 on wifi or ethernet
             for (networkInterface in interfaceList) {
-                val name = networkInterface.name.lowercase()
+                val name = (networkInterface.name ?: "").lowercase()
                 if (name.contains("wlan") || name.contains("eth") || name.contains("en0") || name.contains("en1")) {
                     val addresses = networkInterface.inetAddresses
                     while (addresses.hasMoreElements()) {
@@ -92,11 +92,15 @@ object SnagAppMetadataProvider {
     }
 
     private fun getDeviceName(context: Context): String {
-        val model = Build.MODEL
+        val model = Build.MODEL ?: "Unknown"
         val isEmulator = isEmulator()
         
         // Try to get user-assigned name first
-        val deviceName = android.provider.Settings.Global.getString(context.contentResolver, "device_name")
+        val deviceName = try {
+            android.provider.Settings.Global.getString(context.contentResolver, "device_name")
+        } catch (_: Exception) {
+            null
+        }
         
         // On real devices, if the user assigned a name (different from the model name), use it.
         if (!isEmulator && !deviceName.isNullOrBlank() && deviceName.caseInsensitiveCompare(model) != 0) {
@@ -119,29 +123,37 @@ object SnagAppMetadataProvider {
     }
 
     private fun isEmulator(): Boolean {
-        return (Build.BRAND.startsWith("generic") && Build.DEVICE.startsWith("generic"))
-                || Build.FINGERPRINT.startsWith("generic")
-                || Build.FINGERPRINT.startsWith("unknown")
-                || Build.HARDWARE.contains("goldfish")
-                || Build.HARDWARE.contains("ranchu")
-                || Build.MODEL.contains("google_sdk")
-                || Build.MODEL.contains("Emulator")
-                || Build.MODEL.contains("Android SDK built for x86")
-                || Build.MANUFACTURER.contains("Genymotion")
-                || Build.PRODUCT.contains("sdk_google")
-                || Build.PRODUCT.contains("google_sdk")
-                || Build.PRODUCT.contains("sdk")
-                || Build.PRODUCT.contains("sdk_x86")
-                || Build.PRODUCT.contains("vbox86p")
-                || Build.PRODUCT.contains("emulator")
-                || Build.PRODUCT.contains("simulator")
+        val brand = Build.BRAND ?: ""
+        val device = Build.DEVICE ?: ""
+        val fingerprint = Build.FINGERPRINT ?: ""
+        val hardware = Build.HARDWARE ?: ""
+        val model = Build.MODEL ?: ""
+        val manufacturer = Build.MANUFACTURER ?: ""
+        val product = Build.PRODUCT ?: ""
+
+        return (brand.startsWith("generic") && device.startsWith("generic"))
+                || fingerprint.startsWith("generic")
+                || fingerprint.startsWith("unknown")
+                || hardware.contains("goldfish")
+                || hardware.contains("ranchu")
+                || model.contains("google_sdk")
+                || model.contains("Emulator")
+                || model.contains("Android SDK built for x86")
+                || manufacturer.contains("Genymotion")
+                || product.contains("sdk_google")
+                || product.contains("google_sdk")
+                || product.contains("sdk")
+                || product.contains("sdk_x86")
+                || product.contains("vbox86p")
+                || product.contains("emulator")
+                || product.contains("simulator")
     }
 
     fun getProject(context: Context, projectName: String): SnagProject {
         return SnagProject(
             projectName = projectName,
             appIcon = getAppIconBase64(context),
-            bundleId = context.packageName
+            bundleId = context.packageName ?: "unknown"
         )
     }
 
@@ -181,3 +193,4 @@ object SnagAppMetadataProvider {
         }
     }
 }
+

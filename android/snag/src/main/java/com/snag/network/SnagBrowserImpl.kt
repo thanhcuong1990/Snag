@@ -58,10 +58,14 @@ internal class SnagBrowserImpl(
 
     private fun start() {
         // Acquire multicast lock for NSD discovery
-        val wifiManager = context.applicationContext.getSystemService(Context.WIFI_SERVICE) as WifiManager
-        multicastLock = wifiManager.createMulticastLock("SnagMulticastLock").apply {
-            setReferenceCounted(true)
-            acquire()
+        try {
+            val wifiManager = context.applicationContext.getSystemService(Context.WIFI_SERVICE) as? WifiManager
+            multicastLock = wifiManager?.createMulticastLock("SnagMulticastLock")?.apply {
+                setReferenceCounted(true)
+                acquire()
+            }
+        } catch (e: Exception) {
+            Timber.e(e, "Snag: Failed to acquire multicast lock")
         }
 
         // Start discovery
@@ -76,6 +80,7 @@ internal class SnagBrowserImpl(
             }
         }
     }
+
 
     override fun onServiceFound(serviceInfo: NsdServiceInfo) {
         val addresses = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {

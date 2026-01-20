@@ -10,7 +10,7 @@ import com.snag.network.SnagBrowser
 import com.snag.network.SnagBrowserImpl
 
 object Snag {
-    private lateinit var appContext: Context
+    private var appContext: Context? = null
     private lateinit var device: SnagDevice
     private lateinit var project: SnagProject
 
@@ -20,42 +20,42 @@ object Snag {
         context: Context,
         config: SnagConfiguration = SnagConfiguration.getDefault(context)
     ) {
-        this.appContext = context.applicationContext
-        this.device = SnagAppMetadataProvider.getDevice(context)
-        this.project = SnagAppMetadataProvider.getProject(context, config.projectName)
+        try {
+            val appCtx = context.applicationContext ?: context
+            this.appContext = appCtx
+            this.device = SnagAppMetadataProvider.getDevice(appCtx)
+            this.project = SnagAppMetadataProvider.getProject(appCtx, config.projectName)
 
-        val browser = SnagBrowserImpl(
-            context = appContext,
-            config = config,
-            project = project,
-            device = device
-        )
-        SnagBrowser.initialize(browser)
+            val browser = SnagBrowserImpl(
+                context = appCtx,
+                config = config,
+                project = project,
+                device = device
+            )
+            SnagBrowser.initialize(browser)
 
-        browser.addPacketListener { packet ->
-            packet.control?.let { handleControl(it) }
-        }
+            browser.addPacketListener { packet ->
+                packet.control?.let { handleControl(it) }
+            }
 
-        // Request initial log streaming status
-        browser.sendPacket(SnagPacket(
-            control = SnagControl(type = "logStreamingStatusRequest"),
-            device = device,
-            project = project
-        ))
-        
-        if (config.enableLogs) {
-            enableAutoLogCapture()
+            // Request initial log streaming status
+            browser.sendPacket(SnagPacket(
+                control = SnagControl(type = "logStreamingStatusRequest"),
+                device = device,
+                project = project
+            ))
+            
+            if (config.enableLogs) {
+                enableAutoLogCapture()
+            }
+        } catch (e: Exception) {
+            android.util.Log.e("Snag", "Failed to start Snag", e)
         }
     }
 
     @JvmStatic
     fun isEnabled(): Boolean {
-        return try {
-            SnagBrowser.getInstance()
-            true
-        } catch (_: Exception) {
-            false
-        }
+        return SnagBrowser.isInitialized()
     }
 
     /**
@@ -64,10 +64,12 @@ object Snag {
      */
     @JvmStatic
     fun addInterceptor(builder: okhttp3.OkHttpClient.Builder) {
-        // Prevent duplicate interceptors
-        if (builder.interceptors().none { it is SnagInterceptor }) {
-            builder.addInterceptor(SnagInterceptor.getInstance())
-        }
+        try {
+            // Prevent duplicate interceptors
+            if (builder.interceptors().none { it is SnagInterceptor }) {
+                builder.addInterceptor(SnagInterceptor.getInstance())
+            }
+        } catch (_: Exception) { }
     }
 
     @JvmStatic
@@ -94,10 +96,14 @@ object Snag {
 
     @JvmStatic
     fun enableAutoLogCapture() {
-        SnagLogcatManager.startAutoLogCapture()
+        try {
+            SnagLogcatManager.startAutoLogCapture()
+        } catch (_: Exception) { }
     }
 
     private fun handleControl(control: SnagControl) {
+        if (!::device.isInitialized || !::project.isInitialized) return
+        
         when (control.type) {
             "appInfoRequest" -> sendAppInfo()
             "logStreamingControl" -> {
@@ -107,7 +113,10 @@ object Snag {
     }
 
     private fun sendAppInfo() {
-        val bundleId = appContext.packageName
+        val ctx = appContext ?: return
+        if (!::device.isInitialized || !::project.isInitialized) return
+
+        val bundleId = ctx.packageName ?: "unknown"
         
         val appInfo = SnagAppInfo(
             bundleId = bundleId,

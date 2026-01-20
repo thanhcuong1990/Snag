@@ -18,13 +18,24 @@ interface SnagBrowser {
 
     companion object {
         private var instance: SnagBrowser? = null
+        private val noOpInstance by lazy { NoOpSnagBrowser() }
 
         internal fun initialize(instance: SnagBrowser) {
             this.instance = instance
         }
 
-        fun getInstance(): SnagBrowser = instance ?: throw IllegalStateException("Snag is not started")
+        fun getInstance(): SnagBrowser = instance ?: noOpInstance
 
         fun isInitialized(): Boolean = instance != null
     }
 }
+
+private class NoOpSnagBrowser : SnagBrowser {
+    override fun sendPacket(requestInfo: SnagRequestInfo) {}
+    override fun sendPacket(requestInfo: SnagRequestInfo, packetId: String) {}
+    override fun sendLog(log: SnagLog) {}
+    override fun sendPacket(packet: SnagPacket) {}
+    override fun addPacketListener(listener: SnagBrowser.PacketListener) {}
+    override fun removePacketListener(listener: SnagBrowser.PacketListener) {}
+}
+

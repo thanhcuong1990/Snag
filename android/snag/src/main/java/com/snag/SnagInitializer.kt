@@ -9,12 +9,13 @@ import com.snag.interceptors.SnagInterceptor
  */
 class SnagInitializer : Initializer<Unit> {
     override fun create(context: Context) {
+        val appInfo = context.applicationInfo ?: return
         // Only initialize if debuggable or running on emulator
-        val isDebuggable = (context.applicationInfo.flags and android.content.pm.ApplicationInfo.FLAG_DEBUGGABLE) != 0
+        val isDebuggable = (appInfo.flags and android.content.pm.ApplicationInfo.FLAG_DEBUGGABLE) != 0
         val isEmulator = isEmulator()
         val isEnabledInManifest = try {
-            val appInfo = context.packageManager.getApplicationInfo(context.packageName, android.content.pm.PackageManager.GET_META_DATA)
-            appInfo.metaData?.getBoolean("com.snag.ENABLED", false) ?: false
+            val metaData = context.packageManager.getApplicationInfo(context.packageName, android.content.pm.PackageManager.GET_META_DATA).metaData
+            metaData?.getBoolean("com.snag.ENABLED", false) ?: false
         } catch (e: Exception) {
             false
         }
@@ -24,7 +25,11 @@ class SnagInitializer : Initializer<Unit> {
         }
 
         // Initialize native Snag
-        Snag.start(context)
+        try {
+            Snag.start(context)
+        } catch (e: Exception) {
+            android.util.Log.e("Snag", "Failed to start Snag during initialization", e)
+        }
 
         // Try to hook React Native logs if present
         try {
@@ -35,8 +40,8 @@ class SnagInitializer : Initializer<Unit> {
         try {
             Class.forName("com.facebook.react.modules.network.OkHttpClientProvider")
             registerReactNativeFactory()
-        } catch (_: ClassNotFoundException) {
-            // React Native not present, skipping
+        } catch (_: Exception) {
+            // React Native not present or failure, skipping
         }
     }
 
@@ -49,23 +54,25 @@ class SnagInitializer : Initializer<Unit> {
                 loggingDelegateInterface.classLoader,
                 arrayOf(loggingDelegateInterface)
             ) { _, method, args ->
-                if (args != null && args.size >= 2 && args[0] is String && args[1] is String) {
-                    val tag = args[0] as String
-                    val msg = args[1] as String
-                    
-                    val level = when (method.name) {
-                        "v", "verbose" -> "verbose"
-                        "d", "debug" -> "debug"
-                        "i", "info" -> "info"
-                        "w", "warn" -> "warn"
-                        "e", "error", "wtf" -> "error"
-                        else -> "info"
+                try {
+                    if (args != null && args.size >= 2 && args[0] is String && args[1] is String) {
+                        val tag = args[0] as String
+                        val msg = args[1] as String
+                        
+                        val level = when (method.name) {
+                            "v", "verbose" -> "verbose"
+                            "d", "debug" -> "debug"
+                            "i", "info" -> "info"
+                            "w", "warn" -> "warn"
+                            "e", "error", "wtf" -> "error"
+                            else -> "info"
+                        }
+                        
+                        if (!msg.contains("Snag:") && !tag.contains("Snag")) {
+                            Snag.log(msg, level, tag)
+                        }
                     }
-                    
-                    if (!msg.contains("Snag:") && !tag.contains("Snag")) {
-                        Snag.log(msg, level, tag)
-                    }
-                }
+                } catch (_: Exception) { }
                 
                 // Return default values for primitive return types to avoid NPE on unboxing
                 when (method.returnType) {
@@ -84,11 +91,13 @@ class SnagInitializer : Initializer<Unit> {
 
     private fun registerReactNativeFactory() {
         try {
+            // Use reflection or ensure proper class availability
             com.facebook.react.modules.network.OkHttpClientProvider.setOkHttpClientFactory(SnagOkHttpClientFactory())
         } catch (e: Throwable) {
             android.util.Log.e("Snag", "Failed to register SnagOkHttpClientFactory", e)
         }
     }
+
 
     private fun isEmulator(): Boolean {
         return (android.os.Build.BRAND.startsWith("generic") && android.os.Build.DEVICE.startsWith("generic")) ||

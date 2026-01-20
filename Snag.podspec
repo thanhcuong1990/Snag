@@ -17,10 +17,16 @@ Pod::Spec.new do |s|
 
   s.ios.deployment_target = '15.0'
   
-  # Updated source files to Swift and ObjC
+  # Source files for Swift and ObjC support
   s.source_files = 'ios/Snag/**/*', 'ios/SnagObjC/**/*'
+  s.public_header_files = 'ios/SnagObjC/include/**/*.h'
 
   s.swift_version = '5.0'
   s.requires_arc = true
 
+  s.pod_target_xcconfig = {
+    'ENABLE_APP_INTENTS_METADATA_EXTRACTION' => 'NO'
+  }
+
 end
+

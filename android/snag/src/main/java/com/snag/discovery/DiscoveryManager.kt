@@ -19,8 +19,9 @@ internal class DiscoveryManager(
     private val listener: DiscoveryListener
 ) {
     private val nsdManager by lazy {
-        context.getSystemService(Context.NSD_SERVICE) as NsdManager
+        context.getSystemService(Context.NSD_SERVICE) as? NsdManager
     }
+
 
     private val discoverExecutor = Executors.newSingleThreadExecutor()
 
@@ -38,7 +39,13 @@ internal class DiscoveryManager(
                 registerServiceInfoCallback(serviceInfo)
             } else {
                 @Suppress("DEPRECATION")
-                nsdManager.resolveService(serviceInfo, nsdResolveListener)
+                nsdManager?.resolveService(serviceInfo, object : NsdResolveListener {
+                    override fun onServiceResolved(serviceInfo: NsdServiceInfo?) {
+                        serviceInfo ?: return
+                        Timber.d("Service resolved: ${serviceInfo.serviceName} at ${serviceInfo.host}:${serviceInfo.port}")
+                        listener.onServiceFound(serviceInfo)
+                    }
+                })
             }
         }
 
@@ -61,22 +68,15 @@ internal class DiscoveryManager(
                 // Handled by discovery listener primarily
             }
         }
-        nsdManager.registerServiceInfoCallback(serviceInfo, discoverExecutor, callback)
+        nsdManager?.registerServiceInfoCallback(serviceInfo, discoverExecutor, callback)
     }
 
-    private val nsdResolveListener = object : NsdResolveListener {
-        override fun onServiceResolved(serviceInfo: NsdServiceInfo?) {
-            serviceInfo ?: return
-            Timber.d("Service resolved: ${serviceInfo.serviceName} at ${serviceInfo.host}:${serviceInfo.port}")
-            listener.onServiceFound(serviceInfo)
-        }
-    }
 
     fun startDiscovery() {
         Timber.d("Starting NSD discovery for ${config.netServiceType}")
         try {
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-                nsdManager.discoverServices(
+                nsdManager?.discoverServices(
                     config.netServiceType,
                     NsdManager.PROTOCOL_DNS_SD,
                     null,
@@ -84,7 +84,7 @@ internal class DiscoveryManager(
                     nsdDiscoveryListener
                 )
             } else {
-                nsdManager.discoverServices(
+                nsdManager?.discoverServices(
                     config.netServiceType,
                     NsdManager.PROTOCOL_DNS_SD,
                     nsdDiscoveryListener
@@ -98,7 +98,7 @@ internal class DiscoveryManager(
     fun stopDiscovery() {
         Timber.d("Stopping NSD discovery")
         try {
-            nsdManager.stopServiceDiscovery(nsdDiscoveryListener)
+            nsdManager?.stopServiceDiscovery(nsdDiscoveryListener)
         } catch (e: Exception) {
             Timber.e(e, "Failed to stop discovery")
         }
