@@ -160,6 +160,7 @@ struct LogsView: View {
 struct LogRowView: View {
     let log: SnagLog
     @State private var isExpanded: Bool = false
+    @State private var isHovered: Bool = false
     
     struct Constants {
         static let verticalPadding: CGFloat = 4
@@ -177,7 +178,7 @@ struct LogRowView: View {
     
     private var isMultiLine: Bool {
         let trimmed = log.message.trimmingCharacters(in: .whitespacesAndNewlines)
-        return trimmed.contains("\n") || trimmed.count > 200
+        return trimmed.contains("\n") || trimmed.count > 120
     }
     
     var backgroundColor: Color {
@@ -231,20 +232,36 @@ struct LogRowView: View {
                 .foregroundColor(.primary)
                 .textSelection(.enabled)
                 .lineLimit(isExpanded ? nil : 1)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .fixedSize(horizontal: false, vertical: isExpanded)
+                .layoutPriority(1)
                 .padding(.leading, Constants.messageIndent)
                 .padding(.trailing, 16)
         }
         .padding(.vertical, Constants.verticalPadding)
         .padding(.horizontal, Constants.horizontalPadding)
-        .background(backgroundColor)
+        .background(
+            ZStack {
+                backgroundColor
+                if isHovered && isMultiLine {
+                    Color.primary.opacity(0.03)
+                }
+            }
+        )
         .cornerRadius(Constants.cornerRadius)
         .contentShape(Rectangle())
-        .animation(.spring(response: 0.35, dampingFraction: 0.85), value: isExpanded)
-        .onTapGesture {
-            if isMultiLine {
-                isExpanded.toggle()
-            }
+        .onHover { hovering in
+            isHovered = hovering
         }
+        .simultaneousGesture(
+            TapGesture().onEnded {
+                if isMultiLine {
+                    withAnimation(.spring(response: 0.35, dampingFraction: 0.85)) {
+                        isExpanded.toggle()
+                    }
+                }
+            }
+        )
     }
 }
 
@@ -293,4 +310,3 @@ struct TagChip: View {
         .onTapGesture(perform: action)
     }
 }
-
