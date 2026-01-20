@@ -48,12 +48,39 @@ object SnagAppMetadataProvider {
     private fun getIpAddress(): String? {
         try {
             val interfaces = java.net.NetworkInterface.getNetworkInterfaces()
-            while (interfaces.hasMoreElements()) {
-                val networkInterface = interfaces.nextElement()
+            val interfaceList = interfaces.toList()
+            
+            // First pass: look for IPv4 on wifi or ethernet
+            for (networkInterface in interfaceList) {
+                val name = networkInterface.name.lowercase()
+                if (name.contains("wlan") || name.contains("eth") || name.contains("en0") || name.contains("en1")) {
+                    val addresses = networkInterface.inetAddresses
+                    while (addresses.hasMoreElements()) {
+                        val address = addresses.nextElement()
+                        if (!address.isLoopbackAddress && address is java.net.Inet4Address) {
+                            return address.hostAddress
+                        }
+                    }
+                }
+            }
+            
+            // Second pass: any IPv4
+            for (networkInterface in interfaceList) {
                 val addresses = networkInterface.inetAddresses
                 while (addresses.hasMoreElements()) {
                     val address = addresses.nextElement()
                     if (!address.isLoopbackAddress && address is java.net.Inet4Address) {
+                        return address.hostAddress
+                    }
+                }
+            }
+            
+            // Third pass: any IPv6 as last resort
+            for (networkInterface in interfaceList) {
+                val addresses = networkInterface.inetAddresses
+                while (addresses.hasMoreElements()) {
+                    val address = addresses.nextElement()
+                    if (!address.isLoopbackAddress) {
                         return address.hostAddress
                     }
                 }

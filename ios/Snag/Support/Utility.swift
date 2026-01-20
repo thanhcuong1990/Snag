@@ -27,7 +27,8 @@ class SnagUtility {
     }
     
     static func ipAddress() -> String? {
-        var address: String?
+        var ipv4Address: String?
+        var ipv6Address: String?
         var ifaddr: UnsafeMutablePointer<ifaddrs>?
         
         guard getifaddrs(&ifaddr) == 0 else { return nil }
@@ -39,17 +40,29 @@ class SnagUtility {
             
             if addrFamily == UInt8(AF_INET) || addrFamily == UInt8(AF_INET6) {
                 let name = String(cString: interface.ifa_name)
+                // Focus on common network interfaces (en0/en1 for WiFi/Ethernet, pdp_ip0 for Cellular)
                 if name == "en0" || name == "en1" || name == "pdp_ip0" {
                     var hostname = [CChar](repeating: 0, count: Int(NI_MAXHOST))
                     getnameinfo(interface.ifa_addr, socklen_t(interface.ifa_addr.pointee.sa_len),
                                 &hostname, socklen_t(hostname.count),
                                 nil, socklen_t(0), NI_NUMERICHOST)
-                    address = String(cString: hostname)
+                    let address = String(cString: hostname)
+                    
+                    if addrFamily == UInt8(AF_INET) {
+                        // Prioritize WiFi (en0, en1) over cellular (pdp_ip0) for IPv4
+                        if ipv4Address == nil || name.hasPrefix("en") {
+                            ipv4Address = address
+                        }
+                    } else if ipv6Address == nil {
+                        ipv6Address = address
+                    }
                 }
             }
         }
         freeifaddrs(ifaddr)
-        return address
+        
+        // Prefer IPv4, fallback to IPv6
+        return ipv4Address ?? ipv6Address
     }
     
     static func deviceName() -> String {
