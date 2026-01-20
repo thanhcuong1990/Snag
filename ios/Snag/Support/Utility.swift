@@ -18,7 +18,38 @@ class SnagUtility {
     }
     
     static func deviceId() -> String {
-        return "\(self.deviceName())-\(self.deviceDescription())"
+        let ip = ipAddress() ?? "unknown"
+        return "\(self.hostName())-\(self.deviceName())-\(self.deviceDescription())-\(ip)"
+    }
+    
+    static func hostName() -> String {
+        return ProcessInfo.processInfo.hostName
+    }
+    
+    static func ipAddress() -> String? {
+        var address: String?
+        var ifaddr: UnsafeMutablePointer<ifaddrs>?
+        
+        guard getifaddrs(&ifaddr) == 0 else { return nil }
+        guard let firstAddr = ifaddr else { return nil }
+        
+        for ifptr in sequence(first: firstAddr, next: { $0.pointee.ifa_next }) {
+            let interface = ifptr.pointee
+            let addrFamily = interface.ifa_addr.pointee.sa_family
+            
+            if addrFamily == UInt8(AF_INET) || addrFamily == UInt8(AF_INET6) {
+                let name = String(cString: interface.ifa_name)
+                if name == "en0" || name == "en1" || name == "pdp_ip0" {
+                    var hostname = [CChar](repeating: 0, count: Int(NI_MAXHOST))
+                    getnameinfo(interface.ifa_addr, socklen_t(interface.ifa_addr.pointee.sa_len),
+                                &hostname, socklen_t(hostname.count),
+                                nil, socklen_t(0), NI_NUMERICHOST)
+                    address = String(cString: hostname)
+                }
+            }
+        }
+        freeifaddrs(ifaddr)
+        return address
     }
     
     static func deviceName() -> String {
@@ -27,15 +58,20 @@ class SnagUtility {
         let model = UIDevice.current.model.trimmingCharacters(in: .whitespacesAndNewlines)
         let modelName = self.deviceModelName() ?? model
         
-        if explicitName.isEmpty {
-            return modelName
-        }
-        
+        #if targetEnvironment(simulator)
+        // For simulators, if the name is just "iPhone" or "iPad", return the descriptive model name
         if explicitName.caseInsensitiveCompare(model) == .orderedSame {
             return modelName
         }
-        
+        // If user has a specific name for the simulator, use it
         return explicitName
+        #else
+        // On real devices, if the user assigned a name (different from "iPhone"/"iPad"), use it.
+        if explicitName.isEmpty || explicitName.caseInsensitiveCompare(model) == .orderedSame {
+            return modelName
+        }
+        return explicitName
+        #endif
         #else
         return Host.current().name ?? "Unknown Device"
         #endif
@@ -47,10 +83,21 @@ class SnagUtility {
         guard let identifier, !identifier.isEmpty else { return nil }
         
         let map: [String: String] = [
+            // iPhone 15
             "iPhone15,4": "iPhone 15",
             "iPhone15,5": "iPhone 15 Plus",
             "iPhone16,1": "iPhone 15 Pro",
-            "iPhone16,2": "iPhone 15 Pro Max"
+            "iPhone16,2": "iPhone 15 Pro Max",
+            // iPhone 16
+            "iPhone17,1": "iPhone 16 Pro",
+            "iPhone17,2": "iPhone 16 Pro Max",
+            "iPhone17,3": "iPhone 16",
+            "iPhone17,4": "iPhone 16 Plus",
+            // iPhone 17 (Future/Projected)
+            "iPhone18,1": "iPhone 17 Pro",
+            "iPhone18,2": "iPhone 17 Pro Max",
+            "iPhone18,3": "iPhone 17",
+            "iPhone18,4": "iPhone 17 Plus"
         ]
         
         return map[identifier] ?? identifier

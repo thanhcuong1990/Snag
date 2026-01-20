@@ -203,9 +203,9 @@ Snag is **zero-config** on Android. Just add the dependency and it will automati
  
  ```kotlin
  import com.snag.Snag
- import com.snag.core.config.Config
+ import com.snag.core.SnagConfiguration
  
- val config = Config(
+ val config = SnagConfiguration(
      projectName = "Custom Project Name",
      enableLogs = true
  )
@@ -223,7 +223,7 @@ Snag is **zero-config** on Android. Just add the dependency and it will automati
  
  ```kotlin
  // In your initialization logic
- val config = Config.getDefault(context).copy(enableLogs = false)
+ val config = SnagConfiguration.getDefault(context).copy(enableLogs = false)
  Snag.start(context, config)
  ```
 

@@ -28,6 +28,8 @@ public class SnagConfiguration {
         device.id = SnagUtility.deviceId()
         device.name = SnagUtility.deviceName()
         device.description = SnagUtility.deviceDescription()
+        device.hostName = SnagUtility.hostName()
+        device.ipAddress = SnagUtility.ipAddress()
         
         config.project = project
         config.device = device

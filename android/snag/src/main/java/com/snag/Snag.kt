@@ -21,7 +21,7 @@ object Snag {
         config: SnagConfiguration = SnagConfiguration.getDefault(context)
     ) {
         this.appContext = context.applicationContext
-        this.device = SnagAppMetadataProvider.getDevice()
+        this.device = SnagAppMetadataProvider.getDevice(context)
         this.project = SnagAppMetadataProvider.getProject(context, config.projectName)
 
         val browser = SnagBrowserImpl(

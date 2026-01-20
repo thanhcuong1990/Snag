@@ -13,12 +13,101 @@ import java.io.ByteArrayOutputStream
 
 object SnagAppMetadataProvider {
 
-    fun getDevice(): SnagDevice {
+    fun getDevice(context: Context): SnagDevice {
+        val deviceName = getDeviceName(context)
+        val model = Build.MODEL
+        
+        // Use model as hostName for Android to avoid build hash, 
+        // but only if it's different from the device name to avoid redundancy.
+        val hostName = if (deviceName.caseInsensitiveCompare(model) != 0) {
+            model
+        } else {
+            // If they are the same, try to use the product or brand for some distinction
+            "${Build.MANUFACTURER} ${Build.PRODUCT}"
+        }
+        
+        val ip = getIpAddress() ?: "unknown"
+        val deviceDescription = "Android ${Build.VERSION.RELEASE}"
+        
         return SnagDevice(
-            deviceName = Build.MODEL,
-            deviceDescription = "Android ${Build.VERSION.RELEASE}",
-            deviceId = "${Build.MANUFACTURER}-${Build.MODEL}-android-${Build.VERSION.RELEASE}"
+            deviceName = deviceName,
+            deviceDescription = deviceDescription,
+            deviceId = "$hostName-$deviceName-$deviceDescription-$ip",
+            hostName = hostName,
+            ip = ip
         )
+    }
+
+    private fun getHostName(): String {
+        // Build.HOST usually returns the build machine name or a hash.
+        // On Android, we don't have a reliable user-facing "hostname" like iOS,
+        // so we use Build properties that are more readable.
+        return Build.MODEL
+    }
+
+    private fun getIpAddress(): String? {
+        try {
+            val interfaces = java.net.NetworkInterface.getNetworkInterfaces()
+            while (interfaces.hasMoreElements()) {
+                val networkInterface = interfaces.nextElement()
+                val addresses = networkInterface.inetAddresses
+                while (addresses.hasMoreElements()) {
+                    val address = addresses.nextElement()
+                    if (!address.isLoopbackAddress && address is java.net.Inet4Address) {
+                        return address.hostAddress
+                    }
+                }
+            }
+        } catch (e: Exception) {
+            // Ignore
+        }
+        return null
+    }
+
+    private fun getDeviceName(context: Context): String {
+        val model = Build.MODEL
+        val isEmulator = isEmulator()
+        
+        // Try to get user-assigned name first
+        val deviceName = android.provider.Settings.Global.getString(context.contentResolver, "device_name")
+        
+        // On real devices, if the user assigned a name (different from the model name), use it.
+        if (!isEmulator && !deviceName.isNullOrBlank() && deviceName.caseInsensitiveCompare(model) != 0) {
+            return deviceName
+        }
+        
+        // For emulators or if custom name is same as model/missing
+        if (isEmulator) {
+            // If the model is a generic "sdk_gphone...", provide a friendlier name
+            if (model.startsWith("sdk_gphone") || model.contains("Emulator") || model.contains("Android SDK")) {
+                return "Android Emulator"
+            }
+        }
+        
+        return model
+    }
+
+    private fun String.caseInsensitiveCompare(other: String): Int {
+        return this.lowercase().compareTo(other.lowercase())
+    }
+
+    private fun isEmulator(): Boolean {
+        return (Build.BRAND.startsWith("generic") && Build.DEVICE.startsWith("generic"))
+                || Build.FINGERPRINT.startsWith("generic")
+                || Build.FINGERPRINT.startsWith("unknown")
+                || Build.HARDWARE.contains("goldfish")
+                || Build.HARDWARE.contains("ranchu")
+                || Build.MODEL.contains("google_sdk")
+                || Build.MODEL.contains("Emulator")
+                || Build.MODEL.contains("Android SDK built for x86")
+                || Build.MANUFACTURER.contains("Genymotion")
+                || Build.PRODUCT.contains("sdk_google")
+                || Build.PRODUCT.contains("google_sdk")
+                || Build.PRODUCT.contains("sdk")
+                || Build.PRODUCT.contains("sdk_x86")
+                || Build.PRODUCT.contains("vbox86p")
+                || Build.PRODUCT.contains("emulator")
+                || Build.PRODUCT.contains("simulator")
     }
 
     fun getProject(context: Context, projectName: String): SnagProject {

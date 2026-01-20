@@ -10,6 +10,8 @@ class SnagDeviceController: NSObject, ObservableObject {
     @Published var packets: [SnagPacket] = []
     @Published var logs: [SnagLog] = []
     @Published var appInfo: SnagAppInfo?
+    @Published var hostName: String?
+    @Published var ipAddress: String?
     private var lastAppInfoRequest: Date = .distantPast
     
     // Optimization: O(1) Lookup
@@ -43,6 +45,12 @@ class SnagDeviceController: NSObject, ObservableObject {
         }
         if self.deviceDescription == nil {
             self.deviceDescription = newPacket.device?.deviceDescription
+        }
+        if self.hostName == nil {
+            self.hostName = newPacket.device?.hostName
+        }
+        if self.ipAddress == nil {
+            self.ipAddress = newPacket.device?.ipAddress
         }
         
         if self.appInfo == nil && newPacket.control == nil && Date().timeIntervalSince(lastAppInfoRequest) > 5.0 {

@@ -10,5 +10,9 @@ data class SnagDevice(
     @SerialName("deviceName")
     val deviceName: String? = null,
     @SerialName("deviceId")
-    val deviceId: String? = null
+    val deviceId: String? = null,
+    @SerialName("hostName")
+    val hostName: String? = null,
+    @SerialName("ipAddress")
+    val ip: String? = null
 )

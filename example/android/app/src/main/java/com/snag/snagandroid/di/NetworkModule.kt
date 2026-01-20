@@ -1,7 +1,7 @@
 package com.snag.snagandroid.di
 
 import com.jakewharton.retrofit2.converter.kotlinx.serialization.asConverterFactory
-import com.snag.SnagInterceptor
+import com.snag.interceptors.SnagInterceptor
 import com.snag.snagandroid.remote.NetworkService
 import dagger.Module
 import dagger.Provides

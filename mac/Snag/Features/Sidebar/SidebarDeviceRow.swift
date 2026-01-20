@@ -12,16 +12,34 @@ struct SidebarDeviceRow: View {
                 .frame(width: 16)
                 .foregroundColor(isSelected ? .white : .secondaryLabelColor)
             
-            Text(device.deviceName ?? "Unknown Device".localized)
-                .font(.system(size: 11, weight: isSelected ? .semibold : .regular))
-                .foregroundColor(isSelected ? .white : .labelColor)
+            VStack(alignment: .leading, spacing: 0) {
+                Text(device.deviceName ?? "Unknown Device".localized)
+                    .font(.system(size: 11, weight: isSelected ? .semibold : .regular))
+                    .foregroundColor(isSelected ? .white : .labelColor)
+                
+                if let host = device.hostName {
+                    Text(host)
+                        .font(.system(size: 9))
+                        .foregroundColor(isSelected ? .white.opacity(0.7) : .secondaryLabelColor.opacity(0.6))
+                        .padding(.top, 2)
+                }
+            }
             
             Spacer()
             
-            Text(deviceOSVersion(for: device.deviceDescription))
-                .font(.system(size: 10))
-                .foregroundColor(isSelected ? .white.opacity(0.8) : .secondaryLabelColor.opacity(0.7))
-                .padding(.trailing, 8)
+            VStack(alignment: .trailing, spacing: 0) {
+                Text(deviceOSVersion(for: device.deviceDescription))
+                    .font(.system(size: 10))
+                    .foregroundColor(isSelected ? .white.opacity(0.8) : .secondaryLabelColor.opacity(0.7))
+                
+                if let ip = device.ipAddress {
+                    Text(ip)
+                        .font(.system(size: 9))
+                        .foregroundColor(isSelected ? .white.opacity(0.7) : .secondaryLabelColor.opacity(0.6))
+                        .padding(.top, 2)
+                }
+            }
+            .padding(.trailing, 8)
         }
         .padding(.leading, 4) // Align icon with the App Icon in header (16 + 4 = 20)
         .padding(.trailing, 0) // Container has 16 padding, so 16 + 0 = 16
