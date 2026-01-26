@@ -9,7 +9,12 @@ struct OverviewView: View {
     
     var body: some View {
         VStack(spacing: 0) {
-            if isCurl {
+            if viewModel.isLoading {
+                Spacer()
+                ProgressView()
+                    .controlSize(.small)
+                Spacer()
+            } else if isCurl {
                 CurlHighlightedTextView(text: viewModel.curlRepresentation?.rawString ?? "")
                     .padding(.vertical, 8)
                     .padding(.leading, 4)

@@ -91,8 +91,10 @@ class DataRepresentationParser {
                 return imageData
             }
             
-            // Check for HTML/Rich Text
-            if let htmlString = NSMutableAttributedString(html: data, documentAttributes: nil) {
+            // Check for HTML/Rich Text - but only if it's not too large
+            // Expensive for large binary data
+            if data.count < 1024 * 1024,
+               let htmlString = NSMutableAttributedString(html: data, documentAttributes: nil) {
                 let textData = DataTextRepresentation(data: data)
                 textData.rawString = htmlString.string
                 textData.attributedString = htmlString

@@ -23,6 +23,8 @@ class DetailViewModelWrapper: ObservableObject {
 class OverviewViewModel: BaseViewModel {
     @Published var overviewRepresentation: ContentRepresentation?
     @Published var curlRepresentation: ContentRepresentation?
+    @Published var isLoading: Bool = false
+    private var parseTask: Task<Void, Never>?
     
     func register() {
          NotificationCenter.default.addObserver(self, selector: #selector(self.didSelectPacket), name: SnagNotifications.didSelectPacket, object: nil)
@@ -31,23 +33,49 @@ class OverviewViewModel: BaseViewModel {
     }
     
     @objc func didSelectPacket() {
-        if let packet = SnagController.shared.currentSelectedPacket {
-            self.overviewRepresentation = ContentRepresentationParser.overviewRepresentation(requestInfo: packet.requestInfo!)
-            self.curlRepresentation = CURLRepresentation(requestInfo: packet.requestInfo)
-        } else {
-            self.overviewRepresentation = nil
-            self.curlRepresentation = nil
-        }
-        self.onChange?()
+        self.update()
     }
     
     @objc func didUpdatePacket(notification: Notification) {
         if let packet = notification.userInfo?["packet"] as? SnagPacket,
            let selectedPacket = SnagController.shared.currentSelectedPacket,
            packet.packetId == selectedPacket.packetId {
-            self.overviewRepresentation = ContentRepresentationParser.overviewRepresentation(requestInfo: packet.requestInfo!)
-            self.curlRepresentation = CURLRepresentation(requestInfo: packet.requestInfo)
+            self.update()
+        }
+    }
+    
+    func update() {
+        parseTask?.cancel()
+        
+        guard let packet = SnagController.shared.currentSelectedPacket,
+              let requestInfo = packet.requestInfo else {
+            self.overviewRepresentation = nil
+            self.curlRepresentation = nil
+            self.isLoading = false
             self.onChange?()
+            return
+        }
+        
+        self.isLoading = true
+        
+        parseTask = Task {
+            if Task.isCancelled { return }
+            
+            // Move expensive generation to detached task
+            let (overview, curl) = await Task.detached(priority: .userInitiated) {
+                let overview = ContentRepresentationParser.overviewRepresentation(requestInfo: requestInfo)
+                let curl = CURLRepresentation(requestInfo: requestInfo)
+                return (overview, curl)
+            }.value
+            
+            if !Task.isCancelled {
+                await MainActor.run {
+                    self.overviewRepresentation = overview
+                    self.curlRepresentation = curl
+                    self.isLoading = false
+                    self.onChange?()
+                }
+            }
         }
     }
     
@@ -131,13 +159,6 @@ class DataViewModel: BaseViewModel {
     private var parseTask: Task<Void, Never>?
     
     func performUpdate(with data: Data?) {
-        if !Thread.isMainThread {
-            DispatchQueue.main.async {
-                self.performUpdate(with: data)
-            }
-            return
-        }
-
         // Cancel any existing task
         parseTask?.cancel()
         
@@ -156,6 +177,42 @@ class DataViewModel: BaseViewModel {
             if Task.isCancelled { return }
             
             let result = await ContentRepresentationParser.dataRepresentationAsync(data: data)
+            
+            if !Task.isCancelled {
+                await MainActor.run {
+                    self.dataRepresentation = result
+                    self.isLoading = false
+                    // Force UI refresh if needed
+                    self.objectWillChange.send()
+                    self.onChange?()
+                }
+            }
+        }
+    }
+
+    func performUpdate(withBase64 base64String: String?) {
+        // Cancel any existing task
+        parseTask?.cancel()
+        
+        guard let base64String = base64String, !base64String.isEmpty else {
+            self.dataRepresentation = nil
+            self.isLoading = false
+            return
+        }
+        
+        // Start loading
+        self.isLoading = true
+        self.dataRepresentation = nil
+        
+        parseTask = Task {
+            // Check if task was cancelled before starting work
+            if Task.isCancelled { return }
+            
+            // Move Base64 decoding off the main thread
+            let result = await Task.detached(priority: .userInitiated) { () -> DataRepresentation? in
+                guard let data = base64String.base64Data else { return nil }
+                return await DataRepresentationParser.parseAsync(data: data)
+            }.value
             
             if !Task.isCancelled {
                 await MainActor.run {
@@ -198,22 +255,20 @@ class DataViewModel: BaseViewModel {
 
 class RequestBodyViewModel: DataViewModel {
     override func update() {
-        if let packet = SnagController.shared.currentSelectedPacket,
-           let data = packet.requestInfo?.requestBody?.base64Data {
-            self.performUpdate(with: data)
+        if let packet = SnagController.shared.currentSelectedPacket {
+            self.performUpdate(withBase64: packet.requestInfo?.requestBody)
         } else {
-            self.performUpdate(with: nil)
+            self.performUpdate(withBase64: nil)
         }
     }
 }
 
 class ResponseDataViewModel: DataViewModel {
     override func update() {
-        if let packet = SnagController.shared.currentSelectedPacket,
-           let data = packet.requestInfo?.responseData?.base64Data {
-            self.performUpdate(with: data)
+        if let packet = SnagController.shared.currentSelectedPacket {
+            self.performUpdate(withBase64: packet.requestInfo?.responseData)
         } else {
-            self.performUpdate(with: nil)
+            self.performUpdate(withBase64: nil)
         }
     }
 }
