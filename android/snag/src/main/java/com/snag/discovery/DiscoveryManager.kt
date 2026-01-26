@@ -38,14 +38,7 @@ internal class DiscoveryManager(
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
                 registerServiceInfoCallback(serviceInfo)
             } else {
-                @Suppress("DEPRECATION")
-                nsdManager?.resolveService(serviceInfo, object : NsdResolveListener {
-                    override fun onServiceResolved(serviceInfo: NsdServiceInfo?) {
-                        serviceInfo ?: return
-                        Timber.d("Service resolved: ${serviceInfo.serviceName} at ${serviceInfo.host}:${serviceInfo.port}")
-                        listener.onServiceFound(serviceInfo)
-                    }
-                })
+                resolveServiceWithRetry(serviceInfo)
             }
         }
 
@@ -54,6 +47,39 @@ internal class DiscoveryManager(
             Timber.d("Service lost: ${serviceInfo.serviceName}")
             listener.onServiceLost(serviceInfo)
         }
+    }
+    
+    private fun resolveServiceWithRetry(serviceInfo: NsdServiceInfo, attempt: Int = 0) {
+        @Suppress("DEPRECATION")
+        nsdManager?.resolveService(serviceInfo, object : NsdResolveListener {
+            override fun onServiceResolved(resolvedInfo: NsdServiceInfo?) {
+                resolvedInfo ?: return
+                Timber.d("Service resolved: ${resolvedInfo.serviceName} at ${resolvedInfo.host}:${resolvedInfo.port}")
+                listener.onServiceFound(resolvedInfo)
+            }
+
+            override fun onResolveFailed(failedInfo: NsdServiceInfo?, errorCode: Int) {
+                Timber.w("Resolve failed for ${failedInfo?.serviceName} with error: $errorCode. Attempt: $attempt")
+                
+                if (errorCode == NsdManager.FAILURE_ALREADY_ACTIVE) {
+                    // Just wait a bit and retry, likely collision
+                     discoverExecutor.execute {
+                        try { Thread.sleep(500) } catch (_: Exception) {}
+                        resolveServiceWithRetry(serviceInfo, attempt + 1)
+                    }
+                } else {
+                    // Other failures, retry with backoff up to a limit
+                    if (attempt < 5) {
+                        discoverExecutor.execute {
+                            try { Thread.sleep((1000 * (attempt + 1)).toLong()) } catch (_: Exception) {}
+                             resolveServiceWithRetry(serviceInfo, attempt + 1)
+                        }
+                    } else {
+                        Timber.e("Service resolution failed after $attempt attempts. Giving up on ${failedInfo?.serviceName}")
+                    }
+                }
+            }
+        })
     }
 
     @RequiresApi(Build.VERSION_CODES.UPSIDE_DOWN_CAKE)
