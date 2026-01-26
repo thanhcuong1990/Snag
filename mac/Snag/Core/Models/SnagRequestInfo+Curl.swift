@@ -29,9 +29,17 @@ extension SnagRequestInfo {
         
         // Body
         if let body = self.requestBody, !body.isEmpty {
+            var displayBody = body
+            
+            // Try to decode Base64 if it looks like it's encoded
+            if let decodedData = body.base64Data,
+               let decodedString = String(data: decodedData, encoding: .utf8) {
+                displayBody = decodedString
+            }
+            
             // Escape single quotes for shell safety
             // Strategy: -d 'data' and escape ' as '\''
-            let escapedBody = body.replacingOccurrences(of: "'", with: "'\\''")
+            let escapedBody = displayBody.replacingOccurrences(of: "'", with: "'\\''")
             parts.append("--data-raw '\(escapedBody)'")
         }
         
