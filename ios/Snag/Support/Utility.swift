@@ -18,12 +18,23 @@ class SnagUtility {
     }
     
     static func deviceId() -> String {
+        #if canImport(UIKit)
+        return UIDevice.current.identifierForVendor?.uuidString ?? uuid()
+        #else
         let ip = ipAddress() ?? "unknown"
         return "\(self.hostName())-\(self.deviceName())-\(self.deviceDescription())-\(ip)"
+        #endif
     }
     
     static func hostName() -> String {
+        #if canImport(UIKit)
+        // ProcessInfo.processInfo.hostName can trigger a blocking DNS lookup on iOS, 
+        // leading to watchdog timeouts if called on the main thread during launch.
+        // We use the device name as a safer alternative if available.
+        return UIDevice.current.name
+        #else
         return ProcessInfo.processInfo.hostName
+        #endif
     }
     
     static func ipAddress() -> String? {
