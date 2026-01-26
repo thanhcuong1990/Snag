@@ -52,10 +52,24 @@ internal class SnagBrowserImpl(
     )
 
     private var multicastLock: WifiManager.MulticastLock? = null
+    
+    private val pendingPackets = java.util.Collections.synchronizedList(mutableListOf<SnagPacket>())
 
     fun start(project: SnagProject, device: SnagDevice) {
         this.project = project
         this.device = device
+        
+        // Flush pending packets with new metadata
+        synchronized(pendingPackets) {
+            val iterator = pendingPackets.iterator()
+            while (iterator.hasNext()) {
+                val packet = iterator.next()
+                // Update packet with metadata before sending
+                val enrichedPacket = packet.copy(project = project, device = device)
+                connectionManager.send(enrichedPacket)
+                iterator.remove()
+            }
+        }
         
         // Acquire multicast lock for NSD discovery
         try {
@@ -117,31 +131,46 @@ internal class SnagBrowserImpl(
         val proj = project
         val dev = device
         
-        sendPacket(
-            SnagPacket(
-                id = packetId,
-                requestInfo = requestInfo,
-                project = proj,
-                device = dev
-            )
+        val packet = SnagPacket(
+            id = packetId,
+            requestInfo = requestInfo,
+            project = proj,
+            device = dev
         )
+        
+        if (proj == null || dev == null) {
+            pendingPackets.add(packet)
+        } else {
+            connectionManager.send(packet)
+        }
     }
 
     override fun sendLog(log: SnagLog) {
         val proj = project
         val dev = device
         
-        sendPacket(
-            SnagPacket(
-                project = proj,
-                device = dev,
-                log = log
-            )
+        val packet = SnagPacket(
+            project = proj,
+            device = dev,
+            log = log
         )
+        
+        if (proj == null || dev == null) {
+            pendingPackets.add(packet)
+        } else {
+            connectionManager.send(packet)
+        }
     }
 
     override fun sendPacket(packet: SnagPacket) {
-        connectionManager.send(packet)
+         val proj = project
+         val dev = device
+         
+         if (proj == null || dev == null) {
+             pendingPackets.add(packet)
+         } else {
+             connectionManager.send(packet)
+         }
     }
 
     override fun addPacketListener(listener: SnagBrowser.PacketListener) {

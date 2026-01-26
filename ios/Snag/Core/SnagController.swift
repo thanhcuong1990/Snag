@@ -46,6 +46,7 @@ class SnagController: SnagSessionInjectorDelegate, SnagConnectionInjectorDelegat
     }
     
     private func sendHelloPacket() {
+        // Ensure we are using the latest metadata which might have been updated in the background
         let packet = SnagPacket(
             id: UUID().uuidString,
             requestInfo: nil,
