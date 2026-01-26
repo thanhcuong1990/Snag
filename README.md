@@ -75,7 +75,7 @@ Add the package URL to your project:
 #### CocoaPods
 
 ```ruby
-pod 'Snag', '~> 1.0.18'
+pod 'Snag', '~> 1.0.19'
 ```
 
 ### Usage
