@@ -1,10 +1,8 @@
 import SwiftUI
 
-struct OverviewView: View {
-    let packet: SnagPacket?
-    @ObservedObject var languageManager = LanguageManager.shared
+struct CurlView: View {
+    @StateObject private var viewModel = CurlViewModel()
     @Environment(\.colorScheme) var colorScheme
-    @StateObject private var viewModel = OverviewViewModel()
     
     var body: some View {
         VStack(spacing: 0) {
@@ -14,7 +12,7 @@ struct OverviewView: View {
                     .controlSize(.small)
                 Spacer()
             } else {
-                CodeTextView(text: viewModel.overviewRepresentation?.rawString ?? "")
+                CurlHighlightedTextView(text: viewModel.curlRepresentation?.rawString ?? "")
                     .padding(.vertical, 8)
                     .padding(.leading, 4)
             }
@@ -22,7 +20,7 @@ struct OverviewView: View {
             HStack(spacing: 8) {
                 Spacer()
                 DetailActionButton(title: "Copy".localized, iconName: "doc.on.doc") {
-                    viewModel.copyTextToClipboard()
+                    viewModel.copyCURLToClipboard()
                 }
             }
             .padding(.horizontal, 8)
@@ -31,7 +29,7 @@ struct OverviewView: View {
         }
         .onAppear {
             viewModel.register()
-            viewModel.didSelectPacket()
+            viewModel.update()
         }
     }
 }

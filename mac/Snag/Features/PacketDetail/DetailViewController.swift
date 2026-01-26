@@ -8,6 +8,7 @@ enum DetailType: Int {
     case requestBody = 3
     case responseHeaders = 4
     case responseBody = 5
+    case curl = 6
 }
 
 class DetailViewController: BaseViewController {

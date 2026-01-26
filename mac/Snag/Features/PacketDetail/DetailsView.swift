@@ -79,6 +79,9 @@ struct DetailsView: View {
                     TabButton(title: "Body".localized, isSelected: requestTab == .requestBody) {
                         requestTab = .requestBody
                     }
+                    TabButton(title: "cURL".localized, isSelected: requestTab == .curl) {
+                        requestTab = .curl
+                    }
                 }
                 
                 Spacer()
@@ -99,6 +102,8 @@ struct DetailsView: View {
                     KeyValueListView(viewModel: requestParametersViewModel)
                 case .requestBody:
                     DataDetailView(viewModel: requestBodyViewModel)
+                case .curl:
+                    CurlView()
                 default:
                     EmptyView()
                 }

@@ -22,7 +22,6 @@ class DetailViewModelWrapper: ObservableObject {
 
 class OverviewViewModel: BaseViewModel {
     @Published var overviewRepresentation: ContentRepresentation?
-    @Published var curlRepresentation: ContentRepresentation?
     @Published var isLoading: Bool = false
     private var parseTask: Task<Void, Never>?
     
@@ -50,6 +49,62 @@ class OverviewViewModel: BaseViewModel {
         guard let packet = SnagController.shared.currentSelectedPacket,
               let requestInfo = packet.requestInfo else {
             self.overviewRepresentation = nil
+            self.isLoading = false
+            self.onChange?()
+            return
+        }
+        
+        self.isLoading = true
+        
+        parseTask = Task {
+            if Task.isCancelled { return }
+            
+            // Move expensive generation to detached task
+            let overview = await Task.detached(priority: .userInitiated) {
+                return ContentRepresentationParser.overviewRepresentation(requestInfo: requestInfo)
+            }.value
+            
+            if !Task.isCancelled {
+                await MainActor.run {
+                    self.overviewRepresentation = overview
+                    self.isLoading = false
+                    self.onChange?()
+                }
+            }
+        }
+    }
+    
+    func copyTextToClipboard() { overviewRepresentation?.copyToClipboard() }
+}
+
+class CurlViewModel: BaseViewModel {
+    @Published var curlRepresentation: ContentRepresentation?
+    @Published var isLoading: Bool = false
+    private var parseTask: Task<Void, Never>?
+    
+    func register() {
+         NotificationCenter.default.addObserver(self, selector: #selector(self.didSelectPacket), name: SnagNotifications.didSelectPacket, object: nil)
+         NotificationCenter.default.addObserver(self, selector: #selector(self.didUpdatePacket), name: SnagNotifications.didUpdatePacket, object: nil)
+         NotificationCenter.default.addObserver(self, selector: #selector(self.didSelectPacket), name: SnagNotifications.didSelectSavedPacket, object: nil)
+    }
+    
+    @objc func didSelectPacket() {
+        self.update()
+    }
+    
+    @objc func didUpdatePacket(notification: Notification) {
+        if let packet = notification.userInfo?["packet"] as? SnagPacket,
+           let selectedPacket = SnagController.shared.currentSelectedPacket,
+           packet.packetId == selectedPacket.packetId {
+            self.update()
+        }
+    }
+    
+    func update() {
+        parseTask?.cancel()
+        
+        guard let packet = SnagController.shared.currentSelectedPacket,
+              let requestInfo = packet.requestInfo else {
             self.curlRepresentation = nil
             self.isLoading = false
             self.onChange?()
@@ -62,15 +117,12 @@ class OverviewViewModel: BaseViewModel {
             if Task.isCancelled { return }
             
             // Move expensive generation to detached task
-            let (overview, curl) = await Task.detached(priority: .userInitiated) {
-                let overview = ContentRepresentationParser.overviewRepresentation(requestInfo: requestInfo)
-                let curl = CURLRepresentation(requestInfo: requestInfo)
-                return (overview, curl)
+            let curl = await Task.detached(priority: .userInitiated) {
+                return CURLRepresentation(requestInfo: requestInfo)
             }.value
             
             if !Task.isCancelled {
                 await MainActor.run {
-                    self.overviewRepresentation = overview
                     self.curlRepresentation = curl
                     self.isLoading = false
                     self.onChange?()
@@ -79,7 +131,6 @@ class OverviewViewModel: BaseViewModel {
         }
     }
     
-    func copyTextToClipboard() { overviewRepresentation?.copyToClipboard() }
     func copyCURLToClipboard() { curlRepresentation?.copyToClipboard() }
 }
 
