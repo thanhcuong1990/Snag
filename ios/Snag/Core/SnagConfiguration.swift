@@ -21,15 +21,15 @@ public class SnagConfiguration {
         
         var project = SnagProject()
         project.name = SnagUtility.projectName()
-        project.appIcon = SnagUtility.appIcon()
         project.bundleId = SnagUtility.bundleId()
+        // project.appIcon -> Defer to background
         
         var device = SnagDevice()
         device.id = SnagUtility.deviceId()
         device.name = SnagUtility.deviceName()
         device.description = SnagUtility.deviceDescription()
         device.hostName = SnagUtility.hostName()
-        device.ipAddress = SnagUtility.ipAddress()
+        // device.ipAddress -> Defer to background
         
         config.project = project
         config.device = device

@@ -21,9 +21,21 @@ class SnagController: SnagSessionInjectorDelegate, SnagConnectionInjectorDelegat
         
         self.carriers = []
         
+        // Defer heavy metadata calls to background queue
+        self.queue.async {
+            if self.configuration.project?.appIcon == nil {
+                self.configuration.project?.appIcon = SnagUtility.appIcon()
+            }
+            if self.configuration.device?.ipAddress == nil {
+                self.configuration.device?.ipAddress = SnagUtility.ipAddress()
+            }
+        }
+        
         self.browser.didConnect = { [weak self] in
-            self?.sendHelloPacket()
-            self?.sendHandshakePackets()
+            self?.performBlock {
+                self?.sendHelloPacket()
+                self?.sendHandshakePackets()
+            }
         }
         
         self.browser.didReceivePacket = { [weak self] packet in

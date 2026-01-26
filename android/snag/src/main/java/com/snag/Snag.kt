@@ -8,6 +8,10 @@ import com.snag.interceptors.SnagInterceptor
 import com.snag.models.*
 import com.snag.network.SnagBrowser
 import com.snag.network.SnagBrowserImpl
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.MainScope
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 object Snag {
     private var appContext: Context? = null
@@ -23,14 +27,10 @@ object Snag {
         try {
             val appCtx = context.applicationContext ?: context
             this.appContext = appCtx
-            this.device = SnagAppMetadataProvider.getDevice(appCtx)
-            this.project = SnagAppMetadataProvider.getProject(appCtx, config.projectName)
 
             val browser = SnagBrowserImpl(
                 context = appCtx,
-                config = config,
-                project = project,
-                device = device
+                config = config
             )
             SnagBrowser.initialize(browser)
 
@@ -38,15 +38,29 @@ object Snag {
                 packet.control?.let { handleControl(it) }
             }
 
-            // Request initial log streaming status
-            browser.sendPacket(SnagPacket(
-                control = SnagControl(type = "logStreamingStatusRequest"),
-                device = device,
-                project = project
-            ))
-            
             if (config.enableLogs) {
                 enableAutoLogCapture()
+            }
+            
+            // Fetch heavy metadata asynchronously
+            MainScope().launch(Dispatchers.IO) {
+                val fetchedDevice = SnagAppMetadataProvider.getDevice(appCtx)
+                val fetchedProject = SnagAppMetadataProvider.getProject(appCtx, config.projectName)
+
+                withContext(Dispatchers.Main) {
+                    this@Snag.device = fetchedDevice
+                    this@Snag.project = fetchedProject
+                    
+                    // Now that metadata is ready, start discovery and handshake
+                    browser.start(fetchedProject, fetchedDevice)
+                    
+                    // Request initial log streaming status
+                    browser.sendPacket(SnagPacket(
+                        control = SnagControl(type = "logStreamingStatusRequest"),
+                        device = fetchedDevice,
+                        project = fetchedProject
+                    ))
+                }
             }
         } catch (e: Exception) {
             android.util.Log.e("Snag", "Failed to start Snag", e)

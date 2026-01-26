@@ -19,12 +19,13 @@ import timber.log.Timber
 
 internal class SnagBrowserImpl(
     private val context: Context,
-    private val config: SnagConfiguration,
-    private val project: SnagProject,
-    private val device: SnagDevice
+    private val config: SnagConfiguration
 ) : SnagBrowser, DiscoveryManager.DiscoveryListener {
 
     private val snagScope = MainScope()
+
+    private var project: SnagProject? = null
+    private var device: SnagDevice? = null
 
     private val json by lazy {
         Json {
@@ -52,11 +53,10 @@ internal class SnagBrowserImpl(
 
     private var multicastLock: WifiManager.MulticastLock? = null
 
-    init {
-        start()
-    }
-
-    private fun start() {
+    fun start(project: SnagProject, device: SnagDevice) {
+        this.project = project
+        this.device = device
+        
         // Acquire multicast lock for NSD discovery
         try {
             val wifiManager = context.applicationContext.getSystemService(Context.WIFI_SERVICE) as? WifiManager
@@ -104,7 +104,9 @@ internal class SnagBrowserImpl(
     }
 
     private fun sendHelloPacket() {
-        sendPacket(SnagPacket(device = device, project = project))
+        val proj = project ?: return
+        val dev = device ?: return
+        sendPacket(SnagPacket(device = dev, project = proj))
     }
 
     override fun sendPacket(requestInfo: SnagRequestInfo) {
@@ -112,21 +114,27 @@ internal class SnagBrowserImpl(
     }
 
     override fun sendPacket(requestInfo: SnagRequestInfo, packetId: String) {
+        val proj = project
+        val dev = device
+        
         sendPacket(
             SnagPacket(
                 id = packetId,
                 requestInfo = requestInfo,
-                project = project,
-                device = device
+                project = proj,
+                device = dev
             )
         )
     }
 
     override fun sendLog(log: SnagLog) {
+        val proj = project
+        val dev = device
+        
         sendPacket(
             SnagPacket(
-                project = project,
-                device = device,
+                project = proj,
+                device = dev,
                 log = log
             )
         )
