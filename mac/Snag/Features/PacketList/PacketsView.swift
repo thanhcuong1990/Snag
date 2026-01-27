@@ -12,13 +12,9 @@ struct PacketsView: View {
             PacketsToolBar(viewModelWrapper: viewModelWrapper, isAddressFilterFocused: $isAddressFilterFocused)
             packetList
         }
-        .background(
-            Button("") {
-                isAddressFilterFocused = true
-            }
-            .keyboardShortcut("f", modifiers: .command)
-            .opacity(0)
-        )
+        .onReceive(NotificationCenter.default.publisher(for: .focusPacketSearch)) { _ in
+            isAddressFilterFocused = true
+        }
     }
     
     // MARK: - Subviews

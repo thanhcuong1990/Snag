@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+<!doctype html>
 <html>
   <head>
     <meta charset="UTF-8" />
@@ -21,6 +21,12 @@
         --fold-icon-hover: #666666;
         --hover-line-bg: rgba(0, 0, 0, 0.03);
         --indent-guide-color: #e0e0e0;
+        --search-bg: #f3f3f3;
+        --search-border: #d1d1d1;
+        --search-input-bg: #ffffff;
+        --search-text: #333333;
+        --highlight-bg: #ffdf33;
+        --highlight-current-bg: #ff9632;
       }
 
       @media (prefers-color-scheme: dark) {
@@ -40,6 +46,12 @@
           --fold-icon-hover: #ffffff;
           --hover-line-bg: rgba(255, 255, 255, 0.04);
           --indent-guide-color: #404040;
+          --search-bg: #3c3c3c;
+          --search-border: #555555;
+          --search-input-bg: #2d2d2d;
+          --search-text: #cccccc;
+          --highlight-bg: #63440d;
+          --highlight-current-bg: #a16b0b;
         }
       }
 
@@ -63,6 +75,12 @@
         height: 100vh;
         overflow: auto;
         background: var(--bg-color);
+        padding-bottom: 0px; /* Space for search bar when visible */
+        transition: padding-bottom 0.2s ease;
+      }
+
+      .json-viewer.search-visible {
+        padding-bottom: 40px;
       }
 
       .gutter {
@@ -100,7 +118,9 @@
         justify-content: center;
         cursor: pointer;
         color: var(--fold-icon-color);
-        transition: transform 0.12s ease, color 0.1s ease;
+        transition:
+          transform 0.12s ease,
+          color 0.1s ease;
       }
 
       .fold-icon::before {
@@ -222,6 +242,155 @@
         font-family: inherit;
       }
 
+      /* Search Styles */
+      .search-bar {
+        position: fixed;
+        bottom: -50px;
+        left: 0;
+        right: 0;
+        height: 38px;
+        background: var(--search-bg);
+        border-top: 1px solid var(--search-border);
+        display: flex;
+        align-items: center;
+        padding: 0 10px;
+        z-index: 1000;
+        transition: bottom 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+        box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.1);
+      }
+
+      .search-bar.visible {
+        bottom: 0;
+      }
+
+      .search-input-wrapper {
+        flex: 1;
+        display: flex;
+        align-items: center;
+        background: var(--search-input-bg);
+        border: 1px solid var(--search-border);
+        border-radius: 6px;
+        padding: 0 8px;
+        height: 24px;
+        transition:
+          border-color 0.2s,
+          box-shadow 0.2s;
+      }
+
+      .search-input-wrapper:focus-within {
+        border-color: #007aff;
+        box-shadow: 0 0 0 2px rgba(0, 122, 255, 0.25);
+      }
+
+      .search-icon {
+        display: flex;
+        align-items: center;
+        color: var(--line-number-color);
+        margin-right: 6px;
+      }
+
+      .search-icon svg {
+        width: 13px;
+        height: 13px;
+        fill: none;
+        stroke: currentColor;
+        stroke-width: 2.2;
+      }
+
+      #search-input {
+        flex: 1;
+        border: none;
+        background: transparent;
+        color: var(--search-text);
+        font-family: inherit;
+        font-size: 11px;
+        outline: none;
+        padding: 0;
+      }
+
+      #search-input::placeholder {
+        color: var(--line-number-color);
+        opacity: 0.7;
+      }
+
+      .search-stats {
+        margin: 0 10px;
+        color: var(--line-number-color);
+        font-size: 11px;
+        white-space: nowrap;
+        min-width: 45px;
+        text-align: right;
+        font-variant-numeric: tabular-nums;
+      }
+
+      .search-actions {
+        display: flex;
+        align-items: center;
+        gap: 2px;
+      }
+
+      .search-btn {
+        width: 26px;
+        height: 26px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 4px;
+        cursor: pointer;
+        color: var(--search-text);
+        transition:
+          background 0.15s,
+          color 0.15s;
+        opacity: 0.8;
+      }
+
+      .search-btn:hover {
+        background: rgba(128, 128, 128, 0.15);
+        opacity: 1;
+      }
+
+      .search-btn:active {
+        background: rgba(128, 128, 128, 0.25);
+      }
+
+      .search-btn svg {
+        width: 14px;
+        height: 14px;
+        fill: none;
+        stroke: currentColor;
+        stroke-width: 2;
+        stroke-linecap: round;
+        stroke-linejoin: round;
+      }
+
+      .search-divider {
+        width: 1px;
+        height: 20px;
+        background: var(--search-border);
+        margin: 0 8px;
+        opacity: 0.8;
+      }
+
+      .search-close {
+        opacity: 0.7;
+      }
+
+      .search-close:hover {
+        opacity: 1;
+      }
+
+      mark.search-match {
+        background-color: var(--highlight-bg);
+        color: inherit;
+        border-radius: 2px;
+        box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.1);
+      }
+
+      mark.search-match.current {
+        background-color: var(--highlight-current-bg);
+        box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.2);
+      }
+
       ::-webkit-scrollbar {
         width: 10px;
         height: 10px;
@@ -256,6 +425,45 @@
       <div class="json-content" id="json-content"></div>
     </div>
 
+    <!-- Custom Search Bar -->
+    <div id="search-bar" class="search-bar">
+      <div class="search-input-wrapper">
+        <span class="search-icon">
+          <svg viewBox="0 0 24 24">
+            <circle cx="11" cy="11" r="8"></circle>
+            <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+          </svg>
+        </span>
+        <input
+          type="text"
+          id="search-input"
+          placeholder="Find"
+          autocomplete="off"
+          spellcheck="false"
+        />
+      </div>
+      <div id="search-stats" class="search-stats">0 of 0</div>
+      <div class="search-actions">
+        <div id="search-prev" class="search-btn" title="Previous match">
+          <svg viewBox="0 0 24 24">
+            <polyline points="18 15 12 9 6 15"></polyline>
+          </svg>
+        </div>
+        <div id="search-next" class="search-btn" title="Next match">
+          <svg viewBox="0 0 24 24">
+            <polyline points="6 9 12 15 18 9"></polyline>
+          </svg>
+        </div>
+        <div class="search-divider"></div>
+        <div id="search-close" class="search-btn search-close" title="Close (Esc)">
+          <svg viewBox="0 0 24 24">
+            <line x1="18" y1="6" x2="6" y2="18"></line>
+            <line x1="6" y1="6" x2="18" y2="18"></line>
+          </svg>
+        </div>
+      </div>
+    </div>
+
     <script>
       /* INJECTED_SCRIPT */
     </script>
@@ -280,6 +488,9 @@
             content.innerHTML = this.lines.map((l) => l.html).join("");
             this.updateGutter();
             this.attachEventListeners();
+
+            // Clear search when rendering new content
+            searchManager.clear();
           } catch (e) {
             content.innerHTML =
               '<div class="json-error">Failed to parse JSON:\n' +
@@ -296,7 +507,7 @@
               depth,
               keyPrefix +
                 '<span class="json-null">null</span>' +
-                (isLast ? "" : '<span class="json-comma">,</span>')
+                (isLast ? "" : '<span class="json-comma">,</span>'),
             );
             return;
           }
@@ -310,7 +521,7 @@
                 '<span class="json-string">"' +
                 this.escapeHtml(value) +
                 '"</span>' +
-                (isLast ? "" : '<span class="json-comma">,</span>')
+                (isLast ? "" : '<span class="json-comma">,</span>'),
             );
             return;
           }
@@ -322,7 +533,7 @@
                 '<span class="json-number">' +
                 value +
                 "</span>" +
-                (isLast ? "" : '<span class="json-comma">,</span>')
+                (isLast ? "" : '<span class="json-comma">,</span>'),
             );
             return;
           }
@@ -334,7 +545,7 @@
                 '<span class="json-boolean">' +
                 value +
                 "</span>" +
-                (isLast ? "" : '<span class="json-comma">,</span>')
+                (isLast ? "" : '<span class="json-comma">,</span>'),
             );
             return;
           }
@@ -355,7 +566,7 @@
               '<span class="json-string">"' +
               this.escapeHtml(String(value)) +
               '"</span>' +
-              (isLast ? "" : '<span class="json-comma">,</span>')
+              (isLast ? "" : '<span class="json-comma">,</span>'),
           );
         }
 
@@ -367,7 +578,7 @@
               depth,
               keyPrefix +
                 '<span class="json-bracket">{}</span>' +
-                (isLast ? "" : '<span class="json-comma">,</span>')
+                (isLast ? "" : '<span class="json-comma">,</span>'),
             );
             return;
           }
@@ -384,7 +595,7 @@
               itemCount +
               (itemCount === 1 ? " item" : " items") +
               " }</span>",
-            sectionId
+            sectionId,
           );
 
           this.lines.push({
@@ -409,7 +620,7 @@
           this.addLine(
             depth,
             '<span class="json-bracket">}</span>' +
-              (isLast ? "" : '<span class="json-comma">,</span>')
+              (isLast ? "" : '<span class="json-comma">,</span>'),
           );
 
           this.lines.push({
@@ -425,7 +636,7 @@
               depth,
               keyPrefix +
                 '<span class="json-bracket">[]</span>' +
-                (isLast ? "" : '<span class="json-comma">,</span>')
+                (isLast ? "" : '<span class="json-comma">,</span>'),
             );
             return;
           }
@@ -442,7 +653,7 @@
               itemCount +
               (itemCount === 1 ? " item" : " items") +
               " ]</span>",
-            sectionId
+            sectionId,
           );
 
           this.lines.push({
@@ -462,7 +673,7 @@
           this.addLine(
             depth,
             '<span class="json-bracket">]</span>' +
-              (isLast ? "" : '<span class="json-comma">,</span>')
+              (isLast ? "" : '<span class="json-comma">,</span>'),
           );
 
           this.lines.push({
@@ -519,7 +730,7 @@
                   originalIndex: idx,
                 });
               }
-            }.bind(this)
+            }.bind(this),
           );
 
           // Build line numbers
@@ -548,7 +759,7 @@
 
               if (sectionId) {
                 var content = document.querySelector(
-                  '[data-content="' + sectionId + '"]'
+                  '[data-content="' + sectionId + '"]',
                 );
                 var isCollapsed =
                   content && content.classList.contains("collapsed");
@@ -561,7 +772,7 @@
               } else {
                 foldHtml += '<div class="fold-row"></div>';
               }
-            }.bind(this)
+            }.bind(this),
           );
 
           document.getElementById("fold-column").innerHTML = foldHtml;
@@ -603,10 +814,10 @@
                 e.stopPropagation();
                 var sectionId = icon.dataset.section;
                 var content = document.querySelector(
-                  '[data-content="' + sectionId + '"]'
+                  '[data-content="' + sectionId + '"]',
                 );
                 var indicators = document.querySelectorAll(
-                  '[data-indicator="' + sectionId + '"]'
+                  '[data-indicator="' + sectionId + '"]',
                 );
 
                 if (content) {
@@ -627,13 +838,223 @@
                   }
 
                   self.updateGutter();
+                  // Re-search to update highlight positions on visible content if needed
+                  // searchManager.performSearch(document.getElementById('search-input').value);
                 }
               });
             });
         }
       }
 
+      class SearchManager {
+        constructor() {
+          this.matches = [];
+          this.currentIndex = -1;
+          this.isVisible = false;
+
+          this.setupUI();
+        }
+
+        setupUI() {
+          this.input = document.getElementById("search-input");
+          this.bar = document.getElementById("search-bar");
+          this.stats = document.getElementById("search-stats");
+          this.nextBtn = document.getElementById("search-next");
+          this.prevBtn = document.getElementById("search-prev");
+          this.closeBtn = document.getElementById("search-close");
+          this.viewer = document.getElementById("json-viewer");
+
+          this.input.addEventListener("input", (e) =>
+            this.performSearch(e.target.value),
+          );
+          this.input.addEventListener("keydown", (e) => {
+            if (e.key === "Enter") {
+              if (e.shiftKey) this.prev();
+              else this.next();
+            }
+            if (e.key === "Escape") this.hide();
+          });
+
+          this.nextBtn.addEventListener("click", () => this.next());
+          this.prevBtn.addEventListener("click", () => this.prev());
+          this.closeBtn.addEventListener("click", () => this.hide());
+
+          window.addEventListener("keydown", (e) => {
+            if ((e.metaKey || e.ctrlKey) && e.key === "f") {
+              e.preventDefault();
+              this.show();
+            }
+            if (e.key === "Escape" && this.isVisible) {
+              this.hide();
+            }
+          });
+        }
+
+        show() {
+          this.isVisible = true;
+          this.bar.classList.add("visible");
+          this.viewer.classList.add("search-visible");
+          this.input.focus();
+          this.input.select();
+        }
+
+        hide() {
+          this.isVisible = false;
+          this.bar.classList.remove("visible");
+          this.viewer.classList.remove("search-visible");
+          this.clear();
+        }
+
+        clear() {
+          this.matches = [];
+          this.currentIndex = -1;
+          this.updateStats();
+          this.removeHighlights();
+        }
+
+        performSearch(query) {
+          this.removeHighlights();
+          if (!query) {
+            this.clear();
+            return;
+          }
+
+          const content = document.getElementById("json-content");
+          this.matches = [];
+
+          this.highlightMatches(content, query);
+
+          this.matches = Array.from(
+            content.querySelectorAll("mark.search-match"),
+          );
+          this.currentIndex = this.matches.length > 0 ? 0 : -1;
+
+          this.updateCurrentMatch();
+          this.updateStats();
+        }
+
+        highlightMatches(node, query) {
+          const walker = document.createTreeWalker(
+            node,
+            NodeFilter.SHOW_TEXT,
+            null,
+            false,
+          );
+          const nodesToReplace = [];
+
+          let textNode;
+          while ((textNode = walker.nextNode())) {
+            const text = textNode.nodeValue;
+            if (text.toLowerCase().includes(query.toLowerCase())) {
+              nodesToReplace.push(textNode);
+            }
+          }
+
+          nodesToReplace.forEach((node) => {
+            const parent = node.parentNode;
+            const text = node.nodeValue;
+            const regex = new RegExp(`(${this.escapeRegExp(query)})`, "gi");
+            const parts = text.split(regex);
+
+            const fragment = document.createDocumentFragment();
+            parts.forEach((part) => {
+              if (part.toLowerCase() === query.toLowerCase()) {
+                const mark = document.createElement("mark");
+                mark.className = "search-match";
+                mark.textContent = part;
+                fragment.appendChild(mark);
+              } else if (part) {
+                fragment.appendChild(document.createTextNode(part));
+              }
+            });
+
+            parent.replaceChild(fragment, node);
+          });
+        }
+
+        removeHighlights() {
+          const content = document.getElementById("json-content");
+          const marks = content.querySelectorAll("mark.search-match");
+          marks.forEach((mark) => {
+            const parent = mark.parentNode;
+            parent.replaceChild(
+              document.createTextNode(mark.textContent),
+              mark,
+            );
+            parent.normalize();
+          });
+        }
+
+        escapeRegExp(string) {
+          return string.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+        }
+
+        next() {
+          if (this.matches.length === 0) return;
+          this.currentIndex = (this.currentIndex + 1) % this.matches.length;
+          this.updateCurrentMatch();
+          this.updateStats();
+        }
+
+        prev() {
+          if (this.matches.length === 0) return;
+          this.currentIndex =
+            (this.currentIndex - 1 + this.matches.length) % this.matches.length;
+          this.updateCurrentMatch();
+          this.updateStats();
+        }
+
+        updateCurrentMatch() {
+          this.matches.forEach((m) => m.classList.remove("current"));
+          if (
+            this.currentIndex >= 0 &&
+            this.currentIndex < this.matches.length
+          ) {
+            const match = this.matches[this.currentIndex];
+            match.classList.add("current");
+
+            // Auto expand if hidden
+            this.ensureMatchVisible(match);
+
+            match.scrollIntoView({ behavior: "smooth", block: "center" });
+          }
+        }
+
+        ensureMatchVisible(match) {
+          let parent = match.parentElement;
+          let changed = false;
+          while (parent && parent.id !== "json-content") {
+            if (
+              parent.classList.contains("collapsible-content") &&
+              parent.classList.contains("collapsed")
+            ) {
+              parent.classList.remove("collapsed");
+              const sectionId = parent.dataset.content;
+              const indicator = document.querySelector(
+                `[data-indicator="${sectionId}"]`,
+              );
+              if (indicator) indicator.classList.add("hidden");
+              changed = true;
+            }
+            parent = parent.parentElement;
+          }
+          if (changed) {
+            viewer.updateGutter();
+            // Re-fetch matches as expanding might have changed DOM slightly (though here it shouldn't)
+          }
+        }
+
+        updateStats() {
+          if (this.matches.length === 0) {
+            this.stats.textContent = "0 of 0";
+          } else {
+            this.stats.textContent = `${this.currentIndex + 1} of ${this.matches.length}`;
+          }
+        }
+      }
+
       var viewer = new ProxymanJsonViewer();
+      var searchManager = new SearchManager();
 
       function renderJSONString(jsonString) {
         viewer.render(jsonString);
@@ -677,6 +1098,10 @@
         root.style.setProperty("--fold-icon-hover", "#666666");
         root.style.setProperty("--hover-line-bg", "rgba(0, 0, 0, 0.03)");
         root.style.setProperty("--indent-guide-color", "#e0e0e0");
+        root.style.setProperty("--search-bg", "#f3f3f3");
+        root.style.setProperty("--search-border", "#d1d1d1");
+        root.style.setProperty("--search-input-bg", "#ffffff");
+        root.style.setProperty("--search-text", "#333333");
       }
 
       function changeThemeToDark() {
@@ -696,6 +1121,10 @@
         root.style.setProperty("--fold-icon-hover", "#ffffff");
         root.style.setProperty("--hover-line-bg", "rgba(255, 255, 255, 0.04)");
         root.style.setProperty("--indent-guide-color", "#404040");
+        root.style.setProperty("--search-bg", "#3c3c3c");
+        root.style.setProperty("--search-border", "#555555");
+        root.style.setProperty("--search-input-bg", "#2d2d2d");
+        root.style.setProperty("--search-text", "#cccccc");
       }
 
       function expandAll() {

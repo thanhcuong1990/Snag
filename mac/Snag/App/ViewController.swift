@@ -22,6 +22,10 @@ class ViewController: BaseViewController {
         
         self.hostingView = hostingView
     }
+    
+    @objc func performFindPanelAction(_ sender: Any?) {
+        NotificationCenter.default.post(name: .focusPacketSearch, object: nil)
+    }
 }
 
 

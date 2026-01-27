@@ -65,6 +65,8 @@ class SnagMenu {
         editMenu.addItem(withTitle: "Copy".localized, action: #selector(NSText.copy(_:)), keyEquivalent: "c")
         editMenu.addItem(withTitle: "Paste".localized, action: #selector(NSText.paste(_:)), keyEquivalent: "v")
         editMenu.addItem(withTitle: "Select All".localized, action: #selector(NSText.selectAll(_:)), keyEquivalent: "a")
+        editMenu.addItem(NSMenuItem.separator())
+        editMenu.addItem(withTitle: "Find...".localized, action: #selector(FindActionResponder.performFindPanelAction(_:)), keyEquivalent: "f")
 
         NSApp.mainMenu = mainMenu
     }
@@ -76,4 +78,8 @@ extension NSMenuItem {
         self.keyEquivalentModifierMask = mask
         return self
     }
+}
+
+@objc protocol FindActionResponder {
+    func performFindPanelAction(_ sender: Any?)
 }

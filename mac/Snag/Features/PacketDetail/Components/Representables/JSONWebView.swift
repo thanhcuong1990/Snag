@@ -11,7 +11,7 @@ struct JSONWebView: NSViewRepresentable {
     
     func makeNSView(context: Context) -> WKWebView {
         let configuration = WKWebViewConfiguration()
-        let webView = WKWebView(frame: .zero, configuration: configuration)
+        let webView = SearchableWebView(frame: .zero, configuration: configuration)
         webView.navigationDelegate = context.coordinator
         webView.setValue(false, forKey: "drawsBackground")
         webView.wantsLayer = true
@@ -77,5 +77,16 @@ struct JSONWebView: NSViewRepresentable {
             
             webView.evaluateJavaScript(jsCode)
         }
+    }
+}
+
+class SearchableWebView: WKWebView {
+    @objc func performFindPanelAction(_ sender: Any?) {
+        // Trigger the custom JS search UI
+        self.evaluateJavaScript("searchManager.show()")
+    }
+    
+    override var acceptsFirstResponder: Bool {
+        return true
     }
 }
