@@ -1,5 +1,6 @@
 import Cocoa
 
+@MainActor
 protocol ContentRepresentable {
 
     var rawString: String? {get}
@@ -8,6 +9,7 @@ protocol ContentRepresentable {
     func copyToClipboard()
 }
 
+@MainActor
 class ContentRepresentation: ContentRepresentable {
     
     var rawString: String?
@@ -23,6 +25,7 @@ class ContentRepresentation: ContentRepresentable {
     }
 }
 
+@MainActor
 class ContentRepresentationParser {
     
     static func dataRepresentation(data: Data) -> DataRepresentation? {
@@ -35,6 +38,7 @@ class ContentRepresentationParser {
         return await DataRepresentationParser.parseAsync(data: data)
     }
     
+    @MainActor
     static func keyValueRepresentation(dictionary: Dictionary<String,String>) -> KeyValueRepresentation {
         
         let keyValueRepresentation = KeyValueRepresentation(keyValues: dictionary.toKeyValueArray())
@@ -42,6 +46,7 @@ class ContentRepresentationParser {
         return keyValueRepresentation
     }
     
+    @MainActor
     static func keyValueRepresentation(url: URL) -> KeyValueRepresentation {
         
         let keyValueRepresentation = KeyValueRepresentation(keyValues: url.toKeyValueArray())
@@ -49,6 +54,7 @@ class ContentRepresentationParser {
         return keyValueRepresentation
     }
     
+    @MainActor
     static func overviewRepresentation(requestInfo: SnagRequestInfo) -> ContentRepresentation {
         
         let overviewRepresentation = OverviewRepresentation(requestInfo: requestInfo)

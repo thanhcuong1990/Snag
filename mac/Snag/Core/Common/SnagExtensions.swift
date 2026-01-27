@@ -5,6 +5,11 @@ extension String {
     var base64Data: Data? {
         return Data(base64Encoded: self, options: .ignoreUnknownCharacters)
     }
+
+    var base64DecodedSize: Int {
+        let paddingCount = self.suffix(2).filter { $0 == "=" }.count
+        return (self.count * 3 / 4) - paddingCount
+    }
     
     func extractDomain() -> String? {
         let s = self.trimmingCharacters(in: .whitespacesAndNewlines)

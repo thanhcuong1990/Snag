@@ -17,6 +17,7 @@ class DataRepresentation: ContentRepresentation {
     }
 }
 
+@MainActor
 class DataRepresentationParser {
     
     static func parse(data: Data) -> DataRepresentation? {
@@ -65,52 +66,74 @@ class DataRepresentationParser {
 
     @MainActor
     static func parseAsync(data: Data) async -> DataRepresentation? {
-        // Move ALL parsing logic to a detached task to avoid blocking the main thread
-        return await Task.detached(priority: .userInitiated) {
+        
+        enum InternalResult {
+            case json(String)
+            case image(CGImage, NSSize)
+            case text(String)
+        }
+        
+        // Background Work
+        let result: InternalResult? = await Task.detached(priority: .userInitiated) {
             // Check for JSON first
             if let jsonObject = try? JSONSerialization.jsonObject(with: data, options: .mutableContainers),
                let jsonData = try? JSONSerialization.data(withJSONObject: jsonObject, options: .prettyPrinted),
                let str = String(data: jsonData, encoding: .utf8) {
-                let representation = DataJSONRepresentation(data: data)
-                representation.rawString = str.replacingOccurrences(of: "\\/", with: "/")
-                representation.type = .json
-                return representation
+                return .json(str.replacingOccurrences(of: "\\/", with: "/"))
             }
             
             // Check for Images
-            if let image = NSImage(data: data) {
-                let textAttachmentCell = await NSTextAttachmentCell(imageCell: image)
-                let textAttachment = NSTextAttachment()
-                textAttachment.attachmentCell = textAttachmentCell
-                
-                let attributedString = NSMutableAttributedString(attachment: textAttachment)
-                
-                let imageData = DataImageRepresentation(data: data)
-                imageData.attributedString = attributedString
-                imageData.type = .image
-                return imageData
-            }
-            
-            // Check for HTML/Rich Text - but only if it's not too large
-            // Expensive for large binary data
-            if data.count < 1024 * 1024,
-               let htmlString = NSMutableAttributedString(html: data, documentAttributes: nil) {
-                let textData = DataTextRepresentation(data: data)
-                textData.rawString = htmlString.string
-                textData.attributedString = htmlString
-                textData.type = .text
-                return textData
+            if let image = NSImage(data: data),
+               let cgImage = image.cgImage(forProposedRect: nil, context: nil, hints: nil) {
+                return .image(cgImage, image.size)
             }
             
             // Plain Text fallback
             if let dataString = String(data: data, encoding: .utf8) {
-                let textData = DataTextRepresentation(data: data)
-                textData.rawString = dataString
-                textData.type = .text
-                return textData
+                return .text(dataString)
             }
             
             return nil
         }.value
+        
+        // Assemble on MainActor
+        switch result {
+        case .json(let str):
+            let representation = DataJSONRepresentation(data: data)
+            representation.rawString = str
+            representation.type = .json
+            return representation
+            
+        case .image(let cgImage, let size):
+            let image = NSImage(cgImage: cgImage, size: size)
+            let imageData = DataImageRepresentation(data: data)
+            imageData.image = image
+            imageData.type = .image
+            
+            let textAttachmentCell = NSTextAttachmentCell(imageCell: image)
+            let textAttachment = NSTextAttachment()
+            textAttachment.attachmentCell = textAttachmentCell
+            imageData.attributedString = NSMutableAttributedString(attachment: textAttachment)
+            
+            return imageData
+            
+        case .text(let str):
+            let textData = DataTextRepresentation(data: data)
+            textData.rawString = str
+            textData.type = .text
+            return textData
+            
+        case .none:
+            // Check for HTML if everything else failed
+            if data.count < 1024 * 1024,
+               let attributedString = NSMutableAttributedString(html: data, documentAttributes: nil) {
+                let textData = DataTextRepresentation(data: data)
+                textData.rawString = attributedString.string
+                textData.attributedString = attributedString
+                textData.type = .text
+                return textData
+            }
+            return nil
+        }
     }
 }

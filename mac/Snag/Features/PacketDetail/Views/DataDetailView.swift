@@ -19,8 +19,12 @@ struct DataDetailView: View {
                 Spacer()
             } else if let data = viewModel.dataRepresentation {
                 if data.type == .image {
-                    // Image display
-                    ImageContentView(data: data.originalData)
+                    // Image display - use pre-decoded image if available
+                    if let imageData = data as? DataImageRepresentation, let image = imageData.image {
+                        ImageContentView(image: image)
+                    } else {
+                        ImageContentView(data: data.originalData)
+                    }
                 } else if data.type == .json && !isRaw {
                     let size = data.originalData?.count ?? 0
                     if size > 500 * 1024 { // 500KB threshold for pretty viewer

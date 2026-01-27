@@ -1,6 +1,7 @@
 import Cocoa
 
 class DataImageRepresentation: DataRepresentation {
+    var image: NSImage?
 
     override init(data: Data) {
         

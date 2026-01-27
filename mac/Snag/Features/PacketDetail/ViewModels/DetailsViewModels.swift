@@ -60,13 +60,13 @@ class OverviewViewModel: BaseViewModel {
             if Task.isCancelled { return }
             
             // Move expensive generation to detached task
-            let overview = await Task.detached(priority: .userInitiated) {
-                return ContentRepresentationParser.overviewRepresentation(requestInfo: requestInfo)
+            let overviewText = await Task.detached(priority: .userInitiated) {
+                return OverviewRepresentation.generateOverviewText(requestInfo: requestInfo)
             }.value
             
             if !Task.isCancelled {
                 await MainActor.run {
-                    self.overviewRepresentation = overview
+                    self.overviewRepresentation = OverviewRepresentation(overviewString: overviewText)
                     self.isLoading = false
                     self.onChange?()
                 }
@@ -117,13 +117,13 @@ class CurlViewModel: BaseViewModel {
             if Task.isCancelled { return }
             
             // Move expensive generation to detached task
-            let curl = await Task.detached(priority: .userInitiated) {
-                return CURLRepresentation(requestInfo: requestInfo)
+            let curlText = await Task.detached(priority: .userInitiated) {
+                return requestInfo.toCurlCommand(pretty: true) ?? ""
             }.value
             
             if !Task.isCancelled {
                 await MainActor.run {
-                    self.curlRepresentation = curl
+                    self.curlRepresentation = CURLRepresentation(curlString: curlText)
                     self.isLoading = false
                     self.onChange?()
                 }
@@ -259,11 +259,17 @@ class DataViewModel: BaseViewModel {
             // Check if task was cancelled before starting work
             if Task.isCancelled { return }
             
-            // Move Base64 decoding off the main thread
-            let result = await Task.detached(priority: .userInitiated) { () -> DataRepresentation? in
-                guard let data = base64String.base64Data else { return nil }
-                return await DataRepresentationParser.parseAsync(data: data)
-            }.value
+            // Decoding and parsing happens in background
+            guard let data = base64String.base64Data else {
+                await MainActor.run {
+                    self.dataRepresentation = nil
+                    self.isLoading = false
+                    self.onChange?()
+                }
+                return
+            }
+            
+            let result = await DataRepresentationParser.parseAsync(data: data)
             
             if !Task.isCancelled {
                 await MainActor.run {

@@ -3,10 +3,16 @@ import AppKit
 
 struct ImageContentView: View {
     let data: Data?
+    let image: NSImage?
     @Environment(\.colorScheme) var colorScheme
     
+    init(data: Data? = nil, image: NSImage? = nil) {
+        self.data = data
+        self.image = image
+    }
+    
     var body: some View {
-        if let data = data, let nsImage = NSImage(data: data) {
+        if let nsImage = image ?? (data != nil ? NSImage(data: data!) : nil) {
             GeometryReader { geometry in
                 VStack {
                     Spacer()
