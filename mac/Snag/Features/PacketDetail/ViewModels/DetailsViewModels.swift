@@ -233,7 +233,7 @@ class DataViewModel: BaseViewModel {
     @Published var isLoading: Bool = false
     private var parseTask: Task<Void, Never>?
     
-    func performUpdate(with data: Data?) {
+    func performUpdate(with data: Data?, contentType: String? = nil) {
         // Cancel any existing task
         parseTask?.cancel()
         
@@ -251,7 +251,7 @@ class DataViewModel: BaseViewModel {
             // Check if task was cancelled before starting work
             if Task.isCancelled { return }
             
-            let result = await ContentRepresentationParser.dataRepresentationAsync(data: data)
+            let result = await ContentRepresentationParser.dataRepresentationAsync(data: data, contentType: contentType)
             
             if !Task.isCancelled {
                 await MainActor.run {
@@ -265,7 +265,7 @@ class DataViewModel: BaseViewModel {
         }
     }
 
-    func performUpdate(withBase64 base64String: String?) {
+    func performUpdate(withBase64 base64String: String?, contentType: String? = nil) {
         // Cancel any existing task
         parseTask?.cancel()
         
@@ -337,7 +337,7 @@ class DataViewModel: BaseViewModel {
 class RequestBodyViewModel: DataViewModel {
     override func update() {
         if let packet = SnagController.shared.currentSelectedPacket {
-            self.performUpdate(withBase64: packet.requestInfo?.requestBody)
+            self.performUpdate(withBase64: packet.requestInfo?.requestBody, contentType: packet.requestInfo?.requestContentType)
         } else {
             self.performUpdate(withBase64: nil)
         }
@@ -347,7 +347,7 @@ class RequestBodyViewModel: DataViewModel {
 class ResponseDataViewModel: DataViewModel {
     override func update() {
         if let packet = SnagController.shared.currentSelectedPacket {
-            self.performUpdate(withBase64: packet.requestInfo?.responseData)
+            self.performUpdate(withBase64: packet.requestInfo?.responseData, contentType: packet.requestInfo?.responseContentType)
         } else {
             self.performUpdate(withBase64: nil)
         }

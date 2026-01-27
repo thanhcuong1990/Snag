@@ -28,14 +28,14 @@ class ContentRepresentation: ContentRepresentable {
 @MainActor
 class ContentRepresentationParser {
     
-    static func dataRepresentation(data: Data) -> DataRepresentation? {
+    static func dataRepresentation(data: Data, contentType: String? = nil) -> DataRepresentation? {
         
-        return DataRepresentationParser.parse(data: data)
+        return DataRepresentationParser.parse(data: data, contentType: contentType)
     }
     
     @MainActor
-    static func dataRepresentationAsync(data: Data) async -> DataRepresentation? {
-        return await DataRepresentationParser.parseAsync(data: data)
+    static func dataRepresentationAsync(data: Data, contentType: String? = nil) async -> DataRepresentation? {
+        return await DataRepresentationParser.parseAsync(data: data, contentType: contentType)
     }
     
     @MainActor

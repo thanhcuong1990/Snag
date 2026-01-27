@@ -28,6 +28,10 @@ class SnagRequestInfo: Codable {
         return responseHeaders?["Content-Type"] ?? responseHeaders?["content-type"]
     }
 
+    var requestContentType: String? {
+        return requestHeaders?["Content-Type"] ?? requestHeaders?["content-type"]
+    }
+
     enum CodingKeys: String, CodingKey {
         case url
         case requestHeaders

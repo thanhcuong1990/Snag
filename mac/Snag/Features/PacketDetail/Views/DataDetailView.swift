@@ -51,6 +51,26 @@ struct DataDetailView: View {
                     } else {
                         JSONWebView(jsonString: data.rawString ?? "")
                     }
+                } else if data.type == .binary {
+                    VStack {
+                        Spacer()
+                        Image(systemName: "doc.zipper")
+                            .font(.system(size: 30))
+                            .foregroundColor(.secondary)
+                            .padding(.bottom, 6)
+                        Text("Binary Data".localized)
+                            .font(.system(size: 13, weight: .semibold))
+                        Text(String(format: "Size: %@".localized, formatBytes(data.originalData?.count ?? 0)))
+                            .font(.system(size: 11))
+                            .foregroundColor(.secondary)
+                            .padding(.bottom, 16)
+                        
+                        Button("Copy to Clipboard") {
+                            viewModel.copyToClipboard()
+                        }
+                        .buttonStyle(.bordered)
+                        Spacer()
+                    }
                 } else {
                     let text = data.rawString ?? ""
                     let size = text.data(using: .utf8)?.count ?? 0
