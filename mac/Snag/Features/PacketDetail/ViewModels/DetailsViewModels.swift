@@ -80,6 +80,8 @@ class OverviewViewModel: BaseViewModel {
 class CurlViewModel: BaseViewModel {
     @Published var curlRepresentation: ContentRepresentation?
     @Published var isLoading: Bool = false
+    @Published var isTruncated: Bool = false
+    @Published var forceFullBody: Bool = false
     private var parseTask: Task<Void, Never>?
     
     func register() {
@@ -107,18 +109,24 @@ class CurlViewModel: BaseViewModel {
               let requestInfo = packet.requestInfo else {
             self.curlRepresentation = nil
             self.isLoading = false
+            self.isTruncated = false
             self.onChange?()
             return
         }
         
         self.isLoading = true
         
+        // Check if it's going to be truncated
+        let bodySize = requestInfo.requestBody?.count ?? 0
+        self.isTruncated = bodySize > 50 * 1024 && !forceFullBody
+        
         parseTask = Task {
             if Task.isCancelled { return }
             
             // Move expensive generation to detached task
+            let forceFull = self.forceFullBody
             let curlText = await Task.detached(priority: .userInitiated) {
-                return requestInfo.toCurlCommand(pretty: true) ?? ""
+                return requestInfo.toCurlCommand(pretty: true, limitBody: !forceFull) ?? ""
             }.value
             
             if !Task.isCancelled {
@@ -131,7 +139,23 @@ class CurlViewModel: BaseViewModel {
         }
     }
     
-    func copyCURLToClipboard() { curlRepresentation?.copyToClipboard() }
+    func toggleFullBody() {
+        self.forceFullBody.toggle()
+        self.update()
+    }
+    
+    func copyCURLToClipboard() {
+        guard let packet = SnagController.shared.currentSelectedPacket,
+              let requestInfo = packet.requestInfo else {
+            return
+        }
+        
+        // Always copy the full version to clipboard
+        let fullCurl = requestInfo.toCurlCommand(pretty: true, limitBody: false) ?? ""
+        
+        NSPasteboard.general.clearContents()
+        NSPasteboard.general.setString(fullCurl, forType: .string)
+    }
 }
 
 class KeyValueViewModel: BaseViewModel {

@@ -1,7 +1,7 @@
 import Foundation
 
 extension SnagRequestInfo {
-    func toCurlCommand(pretty: Bool = false) -> String? {
+    func toCurlCommand(pretty: Bool = false, limitBody: Bool = true) -> String? {
         guard let urlString = self.url,
               let url = URL(string: urlString) else {
             return nil
@@ -29,12 +29,18 @@ extension SnagRequestInfo {
         
         // Body
         if let body = self.requestBody, !body.isEmpty {
+            let threshold = 50 * 1024 // 50KB
+            
             var displayBody = body
             
-            // Try to decode Base64 if it looks like it's encoded
-            if let decodedData = body.base64Data,
-               let decodedString = String(data: decodedData, encoding: .utf8) {
-                displayBody = decodedString
+            if limitBody && body.count > threshold {
+                displayBody = "[BODY TOO LARGE TO DISPLAY]"
+            } else {
+                // Try to decode Base64 if it looks like it's encoded
+                if let decodedData = body.base64Data,
+                   let decodedString = String(data: decodedData, encoding: .utf8) {
+                    displayBody = decodedString
+                }
             }
             
             // Escape single quotes for shell safety

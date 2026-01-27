@@ -43,6 +43,11 @@ struct CurlHighlightedTextView: NSViewRepresentable {
             .font: NSFont.monospacedSystemFont(ofSize: 12, weight: .regular)
         ])
         
+        // Safety check: skip complex highlighting for very large text to avoid UI freeze
+        if content.count > 100 * 1024 { // 100KB threshold
+            return attributedString
+        }
+        
         func applyRegex(_ pattern: String, color: NSColor, bold: Bool = false) {
             guard let regex = try? NSRegularExpression(pattern: pattern, options: []) else { return }
             let range = NSRange(content.startIndex..., in: content)

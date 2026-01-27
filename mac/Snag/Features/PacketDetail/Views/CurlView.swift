@@ -12,6 +12,25 @@ struct CurlView: View {
                     .controlSize(.small)
                 Spacer()
             } else {
+                if viewModel.isTruncated {
+                    HStack(spacing: 8) {
+                        Image(systemName: "info.circle")
+                            .foregroundColor(.blue)
+                        Text("cURL body is large. Truncated for performance.".localized)
+                            .font(.system(size: 11))
+                            .foregroundColor(.secondary)
+                        Spacer()
+                        Button("Show Full".localized) {
+                            viewModel.toggleFullBody()
+                        }
+                        .buttonStyle(.link)
+                        .font(.system(size: 11))
+                    }
+                    .padding(.horizontal, 10)
+                    .padding(.vertical, 8)
+                    .background(Color.blue.opacity(0.1))
+                }
+                
                 CurlHighlightedTextView(text: viewModel.curlRepresentation?.rawString ?? "")
                     .padding(.vertical, 8)
                     .padding(.leading, 4)
