@@ -39,9 +39,11 @@ class SnagPublisher: NSObject {
                 let params: NWParameters
                 if SnagConfiguration.isSecurityEnabled {
                     let tlsOptions = NWProtocolTLS.Options()
-                    // Snag uses a system-provided self-signed certificate if possible, 
-                    // or we can just use the default identity for simplicity in this PoC.
-                    // In a real app, we'd bundle a certificate or generate one.
+                    if let identity = SnagIdentityManager.shared.getIdentity() {
+                        sec_protocol_options_set_local_identity(tlsOptions.securityProtocolOptions, identity)
+                    } else {
+                        print("SnagPublisher: ERROR - Failed to get TLS identity")
+                    }
                     params = NWParameters(tls: tlsOptions, tcp: tcpOptions)
                 } else {
                     params = NWParameters(tls: nil, tcp: tcpOptions)
@@ -94,14 +96,25 @@ class SnagPublisher: NSObject {
             guard let self = self else { return }
             switch state {
             case .ready:
-                if self.isAutoTrusted(connection: connection) {
+                let isTrusted = self.isAutoTrusted(connection: connection)
+                if isTrusted {
                     self.authenticatedConnections.insert(ObjectIdentifier(connection))
+                }
+                DispatchQueue.main.async {
+                    SnagController.shared.publisherStatus = "Connected: \(connection.endpoint) (Trusted: \(isTrusted))"
                 }
                 self.receiveData(on: connection)
             case .failed(let error):
                 print("SnagPublisher: Connection failed: \(error)")
                 self.authenticatedConnections.remove(ObjectIdentifier(connection))
                 self.removeConnection(connection)
+                DispatchQueue.main.async {
+                    SnagController.shared.publisherStatus = "Conn Failed: \(error.localizedDescription)"
+                }
+            case .waiting(let error):
+                DispatchQueue.main.async {
+                    SnagController.shared.publisherStatus = "Conn Waiting: \(error.localizedDescription)"
+                }
             case .cancelled:
                 self.authenticatedConnections.remove(ObjectIdentifier(connection))
                 self.removeConnection(connection)
@@ -267,6 +280,9 @@ class SnagPublisher: NSObject {
                     }
                     
                     connection.cancel()
+                    DispatchQueue.main.async {
+                        SnagController.shared.publisherStatus = "Auth Failed: Rejected \(connection.endpoint)"
+                    }
                     return
                 }
             }
@@ -278,6 +294,7 @@ class SnagPublisher: NSObject {
             }
             
             DispatchQueue.main.async {
+                SnagController.shared.publisherStatus = "Packet from \(snagPacket.device?.deviceName ?? "Unknown")"
                 self.delegate?.didGetPacket(publisher: self, packet: snagPacket)
             }
         } catch {

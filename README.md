@@ -30,7 +30,10 @@ Snag uses a secure connection flow to ensure your network traffic remains privat
 All traffic is encrypted via TLS. Snag intelligently manages trust to minimize friction. **Security is enabled by default** in the client libraries.
 
 - **Auto-Trust**: Connections from **Simulators** or via **USB/Wired** are automatically trusted.
-- **PIN Authentication**: For remote connections over **Wi-Fi**, the client must provide a **6-digit PIN** that is automatically generated and displayed at the bottom of the Mac app's sidebar.
+- **PIN Authentication**: For remote connections over **Wi-Fi**, the client must provide a **6-digit PIN** that is automatically generated and displayed at the bottom of the Mac app's sidebar. This ensures your data remains private even on shared office networks.
+
+> [!NOTE]
+> **Privacy Isolation**: Because of the mandatory PIN for Wi-Fi, you will never see other developers' devices in your sidebar, and they won't see yours, unless you explicitly share your PIN with them.
 
 ```mermaid
 sequenceDiagram
@@ -55,6 +58,16 @@ sequenceDiagram
     Note over Client,Server: Only Trusted Connections can exchange data
     Client->>Server: Send encrypted SnagPacket
 ```
+
+### 🛡️ Security Verification
+
+You can verify that traffic is encrypted using **Wireshark**:
+
+1.  Capture traffic on your local network interface.
+2.  Filter by port: `tcp.port == 43435`.
+3.  You will see the **TLS Handshake** and all subsequent packets marked as **Application Data**. The payload will be encrypted and unreadable.
+
+![Wireshark Verification](https://raw.githubusercontent.com/thanhcuong1990/Snag/main/assets/wireshark_verify.png)
 
 ## Preview
 
