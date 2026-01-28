@@ -1,6 +1,7 @@
 package com.snag.network
 
 import com.snag.models.SnagPacket
+import com.snag.models.SnagControl
 import kotlinx.coroutines.*
 import kotlinx.coroutines.channels.BufferOverflow
 import kotlinx.coroutines.channels.Channel
@@ -240,7 +241,32 @@ internal class ConnectionManager(
     private fun sendAuthPacket(socket: Socket) {
         val currentConfig = config ?: return
         val authControl = SnagControl(type = "authPIN", authPIN = currentConfig.securityPIN)
-        val authPacket = SnagPacket(control = authControl)
+        
+        // Use SnagAppMetadataProvider to ensure consistent Project and Device info
+        // This prevents "duplicate" devices appearing on the Mac app (one from auth, one from handshake)
+        val context = com.snag.Snag.appContext
+        
+        val project = if (context != null) {
+            com.snag.core.SnagAppMetadataProvider.getProject(context, currentConfig.projectName)
+        } else {
+            com.snag.models.SnagProject(projectName = currentConfig.projectName)
+        }
+
+        val device = if (context != null) {
+            com.snag.core.SnagAppMetadataProvider.getDevice(context)
+        } else {
+            // Fallback if context is somehow null (unlikely if Snag.start() was called)
+             com.snag.models.SnagDevice(
+                deviceName = "${android.os.Build.MANUFACTURER} ${android.os.Build.MODEL}",
+                deviceId = java.util.UUID.randomUUID().toString()
+            )
+        }
+        
+        val authPacket = SnagPacket(
+            control = authControl,
+            project = project,
+            device = device
+        )
         
         try {
             val payload = json.encodeToString(authPacket).toByteArray()
@@ -252,6 +278,7 @@ internal class ConnectionManager(
         }
     }
 
+    @android.annotation.SuppressLint("CustomX509TrustManager")
     private fun createSSLSocket(host: String, port: Int): Socket {
         val trustAllCerts = arrayOf<TrustManager>(object : X509TrustManager {
             override fun checkClientTrusted(chain: Array<out X509Certificate>?, authType: String?) {}

@@ -13,7 +13,9 @@ class SnagPublisher: NSObject {
     private var connections: [NWConnection] = []
     private var authenticatedConnections: Set<ObjectIdentifier> = []
     private var deviceConnections: [String: NWConnection] = [:]
+    private var manuallyAuthorizedDeviceIds: Set<String> = []
     private let queue = DispatchQueue(label: "com.snag.publisher.queue")
+    private let authorizedDevicesKey = "SnagAuthorizedDeviceIds"
 
     private lazy var jsonEncoder: JSONEncoder = {
         let encoder = JSONEncoder()
@@ -28,6 +30,7 @@ class SnagPublisher: NSObject {
     }()
     
     func startPublishing() {
+        self.loadAuthorizedDevices()
         queue.async { [weak self] in
             guard let self = self else { return }
             self.stopPublishingLocked()
@@ -39,6 +42,10 @@ class SnagPublisher: NSObject {
                 let params: NWParameters
                 if SnagConfiguration.isSecurityEnabled {
                     let tlsOptions = NWProtocolTLS.Options()
+                    
+                    sec_protocol_options_set_min_tls_protocol_version(tlsOptions.securityProtocolOptions, .TLSv12)
+                    sec_protocol_options_set_max_tls_protocol_version(tlsOptions.securityProtocolOptions, .TLSv13)
+                    
                     if let identity = SnagIdentityManager.shared.getIdentity() {
                         sec_protocol_options_set_local_identity(tlsOptions.securityProtocolOptions, identity)
                     } else {
@@ -256,34 +263,30 @@ class SnagPublisher: NSObject {
             
             // Security Check
             if SnagConfiguration.isSecurityEnabled {
-                let isAuth = authenticatedConnections.contains(ObjectIdentifier(connection))
+                let isTrusted = authenticatedConnections.contains(ObjectIdentifier(connection))
+                var isAuthorized = false
                 
-                if !isAuth {
+                if let deviceId = snagPacket.device?.deviceId {
+                    isAuthorized = manuallyAuthorizedDeviceIds.contains(deviceId)
+                }
+                
+                if !isTrusted && !isAuthorized {
                     if let pin = snagPacket.control?.authPIN {
                         if pin == SnagConfiguration.securityPIN {
                             authenticatedConnections.insert(ObjectIdentifier(connection))
+                            isAuthorized = true
                             DispatchQueue.main.async {
                                 SnagController.shared.publisherStatus = "Authenticated: \(snagPacket.device?.deviceName ?? "Device")"
                             }
-                            return
                         } else {
                             print("SnagPublisher: Authentication failed with incorrect PIN: \(pin)")
-                            DispatchQueue.main.async {
-                                SnagController.shared.publisherStatus = "Auth Failed: Invalid PIN"
-                            }
-                        }
-                    } else {
-                        print("SnagPublisher: Connection from \(connection.endpoint) needs authentication but none provided.")
-                        DispatchQueue.main.async {
-                            SnagController.shared.publisherStatus = "Auth Failed: Missing PIN"
                         }
                     }
                     
-                    connection.cancel()
-                    DispatchQueue.main.async {
-                        SnagController.shared.publisherStatus = "Auth Failed: Rejected \(connection.endpoint)"
+                    if !isAuthorized {
+                        // Mark packet as unauthenticated instead of cancelling
+                        snagPacket.isUnauthenticated = true
                     }
-                    return
                 }
             }
             
@@ -353,6 +356,29 @@ class SnagPublisher: NSObject {
                 print("SnagPublisher: Broadcast encoding error: \(error)")
             }
         }
+    }
+    
+    func authorizeDevice(deviceId: String) {
+        queue.async { [weak self] in
+            guard let self = self else { return }
+            self.manuallyAuthorizedDeviceIds.insert(deviceId)
+            self.saveAuthorizedDevices()
+            
+            if let connection = self.deviceConnections[deviceId] {
+                self.authenticatedConnections.insert(ObjectIdentifier(connection))
+            }
+            
+            print("SnagPublisher: Device \(deviceId) manually authorized")
+        }
+    }
+
+    private func loadAuthorizedDevices() {
+        let saved = UserDefaults.standard.stringArray(forKey: authorizedDevicesKey) ?? []
+        self.manuallyAuthorizedDeviceIds = Set(saved)
+    }
+
+    private func saveAuthorizedDevices() {
+        UserDefaults.standard.set(Array(self.manuallyAuthorizedDeviceIds), forKey: authorizedDevicesKey)
     }
     
     private var publishRetryScheduled = false

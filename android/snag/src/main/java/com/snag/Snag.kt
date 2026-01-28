@@ -14,7 +14,7 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
 object Snag {
-    private var appContext: Context? = null
+    internal var appContext: Context? = null
     private lateinit var device: SnagDevice
     private lateinit var project: SnagProject
 

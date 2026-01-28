@@ -152,4 +152,13 @@ class SnagController: NSObject, @MainActor SnagPublisherDelegate, ObservableObje
             return selectedSavedPacket
         }
     }
+    
+    func authorizeDevice(_ deviceController: SnagDeviceController) {
+        guard let deviceId = deviceController.deviceId else { return }
+        publisher.authorizeDevice(deviceId: deviceId)
+        
+        // Refresh the device state
+        deviceController.isAuthenticated = true
+        deviceController.requestAppInfo()
+    }
 }

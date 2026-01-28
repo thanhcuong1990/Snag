@@ -106,13 +106,29 @@ struct SidebarView: View {
                         .lineLimit(1)
                 }
                 
-                if snagController.isSecurityEnabled {
-                    Text("Security PIN: \(snagController.securityPIN)")
-                        .font(.system(size: 10, weight: .bold))
-                } else {
+                if !snagController.isSecurityEnabled {
                     Text("Security Disabled")
                         .font(.system(size: 10))
                         .foregroundColor(.secondary)
+                }
+                
+                if let project = snagController.selectedProjectController,
+                   let device = project.selectedDeviceController,
+                   !device.isAuthenticated {
+                    Button(action: {
+                        snagController.authorizeDevice(device)
+                    }) {
+                        HStack {
+                            Image(systemName: "hand.tap.fill")
+                            Text("Authorize Device".localized)
+                        }
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical, 4)
+                    }
+                    .buttonStyle(BorderedButtonStyle())
+                    .controlSize(.small)
+                    .tint(.blue)
+                    .padding(.top, 4)
                 }
             }
             .padding(12)

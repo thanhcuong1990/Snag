@@ -15,6 +15,9 @@ class SnagPacket: Codable, Identifiable, Equatable, ObservableObject {
     /// The time when this packet was first discovered/received by the Mac app.
     /// Initialized to Date() when the object is created (decoded).
     var discoveryDate: Date = Date()
+    
+    /// Transient flag to indicate if this packet came from an unauthenticated connection.
+    var isUnauthenticated: Bool = false
 
     enum CodingKeys: String, CodingKey {
         case packetId

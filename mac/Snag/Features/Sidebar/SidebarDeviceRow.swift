@@ -13,9 +13,17 @@ struct SidebarDeviceRow: View {
                 .foregroundColor(isSelected ? .white : .secondaryLabelColor)
             
             VStack(alignment: .leading, spacing: 0) {
-                Text(device.deviceName ?? "Unknown Device".localized)
-                    .font(.system(size: 11, weight: isSelected ? .semibold : .regular))
-                    .foregroundColor(isSelected ? .white : .labelColor)
+                HStack(spacing: 4) {
+                    Text(device.deviceName ?? "Unknown Device".localized)
+                        .font(.system(size: 11, weight: isSelected ? .semibold : .regular))
+                        .foregroundColor(isSelected ? .white : .labelColor)
+                    
+                    if !device.isAuthenticated {
+                        Image(systemName: "lock.fill")
+                            .font(.system(size: 9))
+                            .foregroundColor(isSelected ? .white.opacity(0.8) : .secondaryLabelColor)
+                    }
+                }
             }
             
             Spacer()

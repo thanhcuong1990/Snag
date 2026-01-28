@@ -33,6 +33,8 @@ class SnagDeviceController: NSObject, ObservableObject {
         }
     }
     
+    @Published var isAuthenticated: Bool = true
+    
     @Published private(set) var selectedPacket: SnagPacket?
     
     func select(packet: SnagPacket?) {
@@ -65,6 +67,12 @@ class SnagDeviceController: NSObject, ObservableObject {
         }
         if self.ipAddress == nil {
             self.ipAddress = newPacket.device?.ipAddress
+        }
+
+        self.isAuthenticated = !newPacket.isUnauthenticated
+        
+        if newPacket.isUnauthenticated {
+            return true // Keep device in list but don't add data
         }
         
         if self.appInfo == nil && newPacket.control == nil && Date().timeIntervalSince(lastAppInfoRequest) > 5.0 {
