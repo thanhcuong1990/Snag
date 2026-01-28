@@ -30,10 +30,11 @@ Snag uses a secure connection flow to ensure your network traffic remains privat
 All traffic is encrypted via TLS. Snag intelligently manages trust to minimize friction. **Security is enabled by default** in the client libraries.
 
 - **Auto-Trust**: Connections from **Simulators** or via **USB/Wired** are automatically trusted.
-- **PIN Authentication**: For remote connections over **Wi-Fi**, the client must provide a **6-digit PIN** that is automatically generated and displayed at the bottom of the Mac app's sidebar. This ensures your data remains private even on shared office networks.
+- **Interactive Pairing**: For remote connections over **Wi-Fi**, devices appear in the Mac app sidebar with a **Locked (🔒)** icon. To trust a device, click **"Authorize Device"** and enter the **Security PIN** that you configured on the client (iOS/Android).
+- **Persistent Trust**: Once authorized, the device is remembered and does not need to be authorized again.
 
 > [!NOTE]
-> **Privacy Isolation**: Because of the mandatory PIN for Wi-Fi, you will never see other developers' devices in your sidebar, and they won't see yours, unless you explicitly share your PIN with them.
+> **Privacy Isolation**: By default, new Wi-Fi devices are blocked (locked) until you explicitly authorize them. This ensures you never receive logs from unauthorized sources.
 
 ```mermaid
 sequenceDiagram
@@ -47,15 +48,21 @@ sequenceDiagram
         Server->>Server: Check NWPath (Loopback/Wired)
         Server-->>Client: Mark Connection as Trusted
     else Wi-Fi Connection (Remote)
-        Client->>Server: Send Auth Packet (PIN)
-        alt Correct PIN
-            Server-->>Client: Auth Success (Trusted)
-        else Incorrect PIN
-            Server-->>Client: Auth Failure (Close Connection)
+        Client->>Server: Connect without PIN
+        Server-->>Client: Connection Accepted (Untrusted)
+        Server->>Server: Show "Locked" Device in Sidebar
+
+        opt User Clicks "Authorize"
+            Server->>User: Prompt for PIN
+            User->>Server: Input PIN (Matching Client)
+            alt PIN matches client value
+                Server->>Server: Mark Device ID as Trusted
+                Server-->>Client: Start Processing Packets
+            end
         end
     end
 
-    Note over Client,Server: Only Trusted Connections can exchange data
+    Note over Client,Server: Only Trusted/Authorized Connections can exchange data
     Client->>Server: Send encrypted SnagPacket
 ```
 
@@ -93,11 +100,16 @@ sudo xattr -rd com.apple.quarantine "/Applications/Snag.app/"
 2. Open `mac/Snag.xcodeproj` in Xcode.
 3. Build and Run.
 
-### 🔐 Security PIN Location
+### 🔐 Device Authorization
 
-When **Smart Security** is active, you can find the **Security PIN** at the bottom of the **Sidebar** in the Mac App. This PIN is automatically generated and must be used by remote clients to authorize their connection.
+When a new device connects via **Wi-Fi**, it will appear in the sidebar with a **Locked (🔒)** icon.
 
-![Mac PIN Location](https://raw.githubusercontent.com/thanhcuong1990/Snag/main/assets/pin_location.png)
+1. Select the locked device in the sidebar.
+2. Click the **"Authorize Device"** button at the bottom of the sidebar.
+3. Enter the **Security PIN** that was configured on that client.
+4. The device is now trusted and logs will start flowing immediately.
+
+![Device Authorization](https://raw.githubusercontent.com/thanhcuong1990/Snag/main/assets/device_auth.png)
 
 ### Build DMG + upload to GitHub Releases (local)
 
@@ -205,7 +217,7 @@ config.device?.name = "Developer iPhone"
 
 // Security Configuration
 config.isSecurityEnabled = true
-config.securityPIN = "123456" // Must match PIN shown in Mac App
+config.securityPIN = "123456" // This PIN must be entered on the Mac app for authorization
 
 Snag.start(configuration: config)
 ```
@@ -297,7 +309,7 @@ val config = SnagConfiguration(
     projectName = "Custom Project Name",
     enableLogs = true,
     isSecurityEnabled = true,
-    securityPIN = "123456" // Must match PIN shown in Mac App
+    securityPIN = "123456" // This PIN must be entered on the Mac app for authorization
 )
 Snag.start(context, config)
 ```

@@ -153,12 +153,19 @@ class SnagController: NSObject, @MainActor SnagPublisherDelegate, ObservableObje
         }
     }
     
-    func authorizeDevice(_ deviceController: SnagDeviceController) {
-        guard let deviceId = deviceController.deviceId else { return }
-        publisher.authorizeDevice(deviceId: deviceId)
+    func authorizeDevice(_ deviceController: SnagDeviceController, enteredPIN: String) -> Bool {
+        guard let deviceId = deviceController.deviceId else { return false }
         
-        // Refresh the device state
-        deviceController.isAuthenticated = true
-        deviceController.requestAppInfo()
+        // Match user input with PIN sent by client
+        if enteredPIN == deviceController.receivedPIN {
+            publisher.authorizeDevice(deviceId: deviceId)
+            
+            // Refresh the device state
+            deviceController.isAuthenticated = true
+            deviceController.requestAppInfo()
+            return true
+        }
+        
+        return false
     }
 }

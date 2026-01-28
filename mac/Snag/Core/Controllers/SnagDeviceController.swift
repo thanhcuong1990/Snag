@@ -34,6 +34,7 @@ class SnagDeviceController: NSObject, ObservableObject {
     }
     
     @Published var isAuthenticated: Bool = true
+    var receivedPIN: String?
     
     @Published private(set) var selectedPacket: SnagPacket?
     
@@ -72,6 +73,9 @@ class SnagDeviceController: NSObject, ObservableObject {
         self.isAuthenticated = !newPacket.isUnauthenticated
         
         if newPacket.isUnauthenticated {
+            if let pin = newPacket.control?.authPIN {
+                self.receivedPIN = pin
+            }
             return true // Keep device in list but don't add data
         }
         
