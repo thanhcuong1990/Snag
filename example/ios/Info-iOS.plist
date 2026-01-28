@@ -44,6 +44,8 @@
 		<string>_http._tcp</string>
 		<string>_Snag._tcp</string>
 	</array>
+	<key>SnagSecurityPIN</key>
+	<string>123456</string>
 </dict>
 </plist>
 

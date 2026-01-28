@@ -41,13 +41,13 @@ public class SnagConfiguration {
         config.netserviceType = "_Snag._tcp"
         config.netserviceName = ""
         
-        config.securityPIN = SnagUtility.securityPIN()
-        
         return config
     }()
     
     public init() {
         self.project = SnagProject()
         self.device = SnagDevice()
+        
+        self.securityPIN = SnagUtility.securityPIN()
     }
 }
