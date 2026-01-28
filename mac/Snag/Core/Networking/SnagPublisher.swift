@@ -11,6 +11,7 @@ class SnagPublisher: NSObject {
     
     private var listener: NWListener?
     private var connections: [NWConnection] = []
+    private var authenticatedConnections: Set<ObjectIdentifier> = []
     private var deviceConnections: [String: NWConnection] = [:]
     private let queue = DispatchQueue(label: "com.snag.publisher.queue")
 
@@ -30,13 +31,22 @@ class SnagPublisher: NSObject {
         queue.async { [weak self] in
             guard let self = self else { return }
             self.stopPublishingLocked()
-            
             do {
                 let tcpOptions = NWProtocolTCP.Options()
                 tcpOptions.enableKeepalive = true
                 tcpOptions.noDelay = true
+
+                let params: NWParameters
+                if SnagConfiguration.isSecurityEnabled {
+                    let tlsOptions = NWProtocolTLS.Options()
+                    // Snag uses a system-provided self-signed certificate if possible, 
+                    // or we can just use the default identity for simplicity in this PoC.
+                    // In a real app, we'd bundle a certificate or generate one.
+                    params = NWParameters(tls: tlsOptions, tcp: tcpOptions)
+                } else {
+                    params = NWParameters(tls: nil, tcp: tcpOptions)
+                }
                 
-                let params = NWParameters(tls: nil, tcp: tcpOptions)
                 params.includePeerToPeer = true
                 
                 let listener = try NWListener(using: params, on: NWEndpoint.Port(rawValue: UInt16(SnagConfiguration.netServicePort))!)
@@ -51,8 +61,14 @@ class SnagPublisher: NSObject {
                     switch state {
                     case .ready:
                         print("SnagPublisher: Ready and listening on port \(listener.port!)")
+                        DispatchQueue.main.async {
+                            SnagController.shared.publisherStatus = "Listening on \(listener.port!)"
+                        }
                     case .failed(let error):
                         print("SnagPublisher: Listener failed with error: \(error)")
+                        DispatchQueue.main.async {
+                            SnagController.shared.publisherStatus = "Failed: \(error.localizedDescription)"
+                        }
                         self.schedulePublishRetryLocked()
                     default:
                         break
@@ -75,11 +91,20 @@ class SnagPublisher: NSObject {
 
     private func setupConnection(_ connection: NWConnection) {
         connection.stateUpdateHandler = { [weak self] state in
+            guard let self = self else { return }
             switch state {
             case .ready:
-                self?.receiveData(on: connection)
-            case .failed, .cancelled:
-                self?.removeConnection(connection)
+                if self.isAutoTrusted(connection: connection) {
+                    self.authenticatedConnections.insert(ObjectIdentifier(connection))
+                }
+                self.receiveData(on: connection)
+            case .failed(let error):
+                print("SnagPublisher: Connection failed: \(error)")
+                self.authenticatedConnections.remove(ObjectIdentifier(connection))
+                self.removeConnection(connection)
+            case .cancelled:
+                self.authenticatedConnections.remove(ObjectIdentifier(connection))
+                self.removeConnection(connection)
             default:
                 break
             }
@@ -96,8 +121,7 @@ class SnagPublisher: NSObject {
         connection.receive(minimumIncompleteLength: 8, maximumLength: 8) { [weak self] data, _, isComplete, error in
             guard let self = self else { return }
             
-            if let error = error {
-                print("SnagPublisher: Receive header error: \(error)")
+            if let _ = error {
                 connection.cancel()
                 return
             }
@@ -108,7 +132,6 @@ class SnagPublisher: NSObject {
             }
             
             guard let length = self.lengthOf(data: data) else {
-                print("SnagPublisher: Invalid length header")
                 connection.cancel()
                 return
             }
@@ -117,24 +140,74 @@ class SnagPublisher: NSObject {
             connection.receive(minimumIncompleteLength: length, maximumLength: length) { [weak self] data, _, isComplete, error in
                 guard let self = self else { return }
                 
-                if let error = error {
-                    print("SnagPublisher: Receive body error: \(error)")
+                if let _ = error {
                     connection.cancel()
                     return
                 }
                 
                 if let data = data {
-                    self.parseBody(data: data, from: connection)
+                    self.processReceivedData(data, from: connection)
                 }
                 
                 // Continue reading next packet if not closed
                 if !isComplete {
                     self.receiveData(on: connection)
                 } else {
+                    self.authenticatedConnections.remove(ObjectIdentifier(connection))
                     connection.cancel()
                 }
             }
         }
+    }
+
+    private func isAutoTrusted(connection: NWConnection) -> Bool {
+        guard let path = connection.currentPath else { return false }
+        
+        // Auto-trust loopback (Simulator)
+        if path.usesInterfaceType(.loopback) { return true }
+        
+        // Auto-trust wired (USB)
+        if path.usesInterfaceType(.wiredEthernet) { return true }
+
+        // Additional check for Simulator/Localhost via IP
+        if case let .hostPort(host, _) = connection.endpoint {
+            let hostStr = host.debugDescription
+            if hostStr.contains("127.0.0.1") || hostStr.contains("::1") || hostStr.contains("localhost") {
+                return true
+            }
+            
+            // Check if it's one of our own IP addresses (bonjour often gives LAN IP even for local simulator)
+            let localIPs = self.getLocalIPAddresses()
+            for ip in localIPs {
+                if hostStr.contains(ip) {
+                    return true
+                }
+            }
+        }
+        
+        return false
+    }
+
+    private func getLocalIPAddresses() -> [String] {
+        var addresses: [String] = []
+        var ifaddr: UnsafeMutablePointer<ifaddrs>?
+        if getifaddrs(&ifaddr) == 0 {
+            var ptr = ifaddr
+            while ptr != nil {
+                defer { ptr = ptr?.pointee.ifa_next }
+                let interface = ptr?.pointee
+                let addrFamily = interface?.ifa_addr.pointee.sa_family
+                if addrFamily == UInt8(AF_INET) || addrFamily == UInt8(AF_INET6) {
+                    var hostname = [CChar](repeating: 0, count: Int(NI_MAXHOST))
+                    getnameinfo(interface?.ifa_addr, socklen_t(interface?.ifa_addr.pointee.sa_len ?? 0),
+                                &hostname, socklen_t(hostname.count),
+                                nil, socklen_t(0), NI_NUMERICHOST)
+                    addresses.append(String(cString: hostname))
+                }
+            }
+            freeifaddrs(ifaddr)
+        }
+        return addresses
     }
 
     private func removeConnection(_ connection: NWConnection) {
@@ -151,6 +224,7 @@ class SnagPublisher: NSObject {
         connections.forEach { $0.cancel() }
         connections.removeAll()
         deviceConnections.removeAll()
+        authenticatedConnections.removeAll()
     }
     
     private func lengthOf(data: Data) -> Int? {
@@ -162,10 +236,40 @@ class SnagPublisher: NSObject {
         }
         return Int(length)
     }
-    
-    private func parseBody(data: Data, from connection: NWConnection) {
+
+    private func processReceivedData(_ data: Data, from connection: NWConnection) {
         do {
             let snagPacket = try jsonDecoder.decode(SnagPacket.self, from: data)
+            
+            // Security Check
+            if SnagConfiguration.isSecurityEnabled {
+                let isAuth = authenticatedConnections.contains(ObjectIdentifier(connection))
+                
+                if !isAuth {
+                    if let pin = snagPacket.control?.authPIN {
+                        if pin == SnagConfiguration.securityPIN {
+                            authenticatedConnections.insert(ObjectIdentifier(connection))
+                            DispatchQueue.main.async {
+                                SnagController.shared.publisherStatus = "Authenticated: \(snagPacket.device?.deviceName ?? "Device")"
+                            }
+                            return
+                        } else {
+                            print("SnagPublisher: Authentication failed with incorrect PIN: \(pin)")
+                            DispatchQueue.main.async {
+                                SnagController.shared.publisherStatus = "Auth Failed: Invalid PIN"
+                            }
+                        }
+                    } else {
+                        print("SnagPublisher: Connection from \(connection.endpoint) needs authentication but none provided.")
+                        DispatchQueue.main.async {
+                            SnagController.shared.publisherStatus = "Auth Failed: Missing PIN"
+                        }
+                    }
+                    
+                    connection.cancel()
+                    return
+                }
+            }
             
             if let deviceId = snagPacket.device?.deviceId {
                 queue.async {
@@ -177,7 +281,9 @@ class SnagPublisher: NSObject {
                 self.delegate?.didGetPacket(publisher: self, packet: snagPacket)
             }
         } catch {
-            print("SnagPublisher: Parse error: \(error)")
+            DispatchQueue.main.async {
+                SnagController.shared.publisherStatus = "Parse Error: \(error.localizedDescription)"
+            }
         }
     }
 

@@ -12,6 +12,11 @@ import java.net.Socket
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.LinkedBlockingQueue
 import java.util.concurrent.atomic.AtomicLong
+import javax.net.ssl.SSLContext
+import javax.net.ssl.SSLSocket
+import javax.net.ssl.TrustManager
+import javax.net.ssl.X509TrustManager
+import java.security.cert.X509Certificate
 
 /**
  * Manages active socket connections, packet serialization, and delivery.
@@ -30,6 +35,12 @@ internal class ConnectionManager(
         capacity = MAX_PACKET_BUFFER,
         onBufferOverflow = BufferOverflow.DROP_OLDEST
     )
+
+    private var config: com.snag.core.SnagConfiguration? = null
+
+    fun setConfig(config: com.snag.core.SnagConfiguration) {
+        this.config = config
+    }
 
     init {
         scope.launch(Dispatchers.IO) {
@@ -58,14 +69,27 @@ internal class ConnectionManager(
 
             try {
                 Timber.d("Connecting to $hostAddress:$port")
-                val socket = Socket().apply {
+                
+                val socket = if (config?.isSecurityEnabled == true) {
+                    createSSLSocket(hostAddress, port)
+                } else {
+                    Socket().apply {
+                        connect(InetSocketAddress(hostAddress, port), 1500)
+                    }
+                }
+                
+                socket.apply {
                     keepAlive = true
-                    connect(InetSocketAddress(hostAddress, port), 1500)
                 }
 
                 if (socket.isConnected) {
                     Timber.d("Connected to $serviceName at $hostAddress:$port")
                     connections[hostAddress] = socket
+                    
+                    if (config?.isSecurityEnabled == true) {
+                        sendAuthPacket(socket)
+                    }
+                    
                     startReceiving(socket)
                     onConnected()
                     flushPending()
@@ -211,6 +235,37 @@ internal class ConnectionManager(
         val last = lastReconnectAttempt.get()
         if (now - last < RECONNECT_THROTTLE_MS) return false
         return lastReconnectAttempt.compareAndSet(last, now)
+    }
+
+    private fun sendAuthPacket(socket: Socket) {
+        val currentConfig = config ?: return
+        val authControl = SnagControl(type = "authPIN", authPIN = currentConfig.securityPIN)
+        val authPacket = SnagPacket(control = authControl)
+        
+        try {
+            val payload = json.encodeToString(authPacket).toByteArray()
+            val data = PacketFraming.frame(payload)
+            socket.getOutputStream().write(data)
+            socket.getOutputStream().flush()
+        } catch (e: Exception) {
+            Timber.e(e, "Snag: Failed to send auth packet")
+        }
+    }
+
+    private fun createSSLSocket(host: String, port: Int): Socket {
+        val trustAllCerts = arrayOf<TrustManager>(object : X509TrustManager {
+            override fun checkClientTrusted(chain: Array<out X509Certificate>?, authType: String?) {}
+            override fun checkServerTrusted(chain: Array<out X509Certificate>?, authType: String?) {}
+            override fun getAcceptedIssuers(): Array<X509Certificate> = arrayOf()
+        })
+
+        val sslContext = SSLContext.getInstance("TLS")
+        sslContext.init(null, trustAllCerts, java.security.SecureRandom())
+        val factory = sslContext.socketFactory
+        val socket = factory.createSocket() as SSLSocket
+        socket.connect(InetSocketAddress(host, port), 1500)
+        socket.startHandshake()
+        return socket
     }
 
     companion object {

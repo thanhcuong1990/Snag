@@ -15,6 +15,8 @@ public class SnagConfiguration {
     var publicKeyName: String?
     
     public var enableLogs: Bool = true
+    public var isSecurityEnabled: Bool = true
+    public var securityPIN: String?
     
     public static let defaultConfiguration: SnagConfiguration = {
         let config = SnagConfiguration()
@@ -38,6 +40,8 @@ public class SnagConfiguration {
         config.netserviceDomain = ""
         config.netserviceType = "_Snag._tcp"
         config.netserviceName = ""
+        
+        config.securityPIN = SnagUtility.securityPIN()
         
         return config
     }()

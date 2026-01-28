@@ -21,6 +21,41 @@
 
 **Snag** is a native network debugger for iOS and Android. No proxies, no certificates, and zero configuration required. It uses **Bonjour** for automatic discovery, allowing you to monitor network traffic in real-time on a desktop viewer over your local network.
 
+## 🔄 Connection Flow
+
+Snag uses a secure connection flow to ensure your network traffic remains private. It balances high security with a "zero-config" developer experience:
+
+### Smart Security (TLS + PIN)
+
+All traffic is encrypted via TLS. Snag intelligently manages trust to minimize friction. **Security is enabled by default** in the client libraries.
+
+- **Auto-Trust**: Connections from **Simulators** or via **USB/Wired** are automatically trusted.
+- **PIN Authentication**: For remote connections over **Wi-Fi**, the client must provide a **6-digit PIN** that is automatically generated and displayed at the bottom of the Mac app's sidebar.
+
+```mermaid
+sequenceDiagram
+    participant Client as iOS/Android Client
+    participant Server as Mac App (Snag)
+
+    Client->>Server: Connect (TLS)
+    Server-->>Client: TLS Handshake (Self-signed Cert)
+
+    alt Auto-Trust (Simulator/USB)
+        Server->>Server: Check NWPath (Loopback/Wired)
+        Server-->>Client: Mark Connection as Trusted
+    else Wi-Fi Connection (Remote)
+        Client->>Server: Send Auth Packet (PIN)
+        alt Correct PIN
+            Server-->>Client: Auth Success (Trusted)
+        else Incorrect PIN
+            Server-->>Client: Auth Failure (Close Connection)
+        end
+    end
+
+    Note over Client,Server: Only Trusted Connections can exchange data
+    Client->>Server: Send encrypted SnagPacket
+```
+
 ## Preview
 
 ![Snag Screenshot](https://raw.githubusercontent.com/thanhcuong1990/Snag/main/assets/screenshot.png)
@@ -44,6 +79,12 @@ sudo xattr -rd com.apple.quarantine "/Applications/Snag.app/"
 1. Clone the repository.
 2. Open `mac/Snag.xcodeproj` in Xcode.
 3. Build and Run.
+
+### 🔐 Security PIN Location
+
+When **Smart Security** is active, you can find the **Security PIN** at the bottom of the **Sidebar** in the Mac App. This PIN is automatically generated and must be used by remote clients to authorize their connection.
+
+![Mac PIN Location](https://raw.githubusercontent.com/thanhcuong1990/Snag/main/assets/pin_location.png)
 
 ### Build DMG + upload to GitHub Releases (local)
 
@@ -79,40 +120,55 @@ pod 'Snag', '~> 1.0.21'
 ```
 
 ### Usage
- 
- Snag is **zero-config** on iOS. Just add the dependency and it will automatically initialize itself in **Debug** builds.
- 
- > [!IMPORTANT]
- > Snag uses an Objective-C loader to start automatically. This ensures it **only runs in DEBUG builds**, keeping your production app clean.
- 
- ### Enable via Info.plist (e.g. for Staging)
- 
- By default, Snag only runs in DEBUG builds. To force-enable it (e.g. for Staging), add `SnagEnabled` (Boolean) to your `Info.plist`:
- 
- ```xml
- <key>SnagEnabled</key>
- <true/>
- ```
- 
- ### Enable via Launch Argument (Xcode Scheme)
- 
- You can also force-enable Snag by passing `-SnagEnabled` as a launch argument. This is useful for temporary debugging or specific test schemes.
- 
- 1. In Xcode, go to **Product** > **Scheme** > **Edit Scheme...**
- 2. Select **Run** from the left sidebar.
- 3. Go to the **Arguments** tab.
- 4. Under **Arguments Passed On Launch**, click **+** and add:
-    `-SnagEnabled`
- 
- ### Manual Initialization (Optional)
- 
- If you need to start Snag manually (e.g. for specific configurations):
- 
- ```swift
- import Snag
- 
- Snag.start()
- ```
+
+Snag is **zero-config** on iOS. Just add the dependency and it will automatically initialize itself in **Debug** builds.
+
+> [!IMPORTANT]
+> Snag uses an Objective-C loader to start automatically. This ensures it **only runs in DEBUG builds**, keeping your production app clean.
+
+### Enable via Info.plist (e.g. for Staging)
+
+By default, Snag only runs in DEBUG builds. To force-enable it (e.g. for Staging), add `SnagEnabled` (Boolean) to your `Info.plist`:
+
+```xml
+<key>SnagEnabled</key>
+<true/>
+```
+
+### Enable via Launch Argument (Xcode Scheme)
+
+You can force-enable Snag or set the security PIN using launch arguments:
+
+1.  In Xcode, go to **Product** > **Scheme** > **Edit Scheme...**
+2.  Select **Run** from the left sidebar.
+3.  Go to the **Arguments** tab.
+4.  Under **Arguments Passed On Launch**, click **+** and add:
+    - `-SnagEnabled` (to force-enable Snag)
+    - `-SnagSecurityPIN 123456` (to set the security PIN)
+
+### Configure via Info.plist
+
+You can also configure Snag via your `Info.plist`:
+
+```xml
+<!-- Force enable Snag (e.g. for Staging) -->
+<key>SnagEnabled</key>
+<true/>
+
+<!-- Set security PIN -->
+<key>SnagSecurityPIN</key>
+<string>123456</string>
+```
+
+### Manual Initialization (Optional)
+
+If you need to start Snag manually (e.g. for specific configurations):
+
+```swift
+import Snag
+
+Snag.start()
+```
 
 ### Local Network permissions (required on real devices)
 
@@ -133,6 +189,10 @@ Add the following to your app's `Info.plist` to allow Bonjour discovery on a rea
 let config = SnagConfiguration()
 config.project?.name = "My App"
 config.device?.name = "Developer iPhone"
+
+// Security Configuration
+config.isSecurityEnabled = true
+config.securityPIN = "123456" // Must match PIN shown in Mac App
 
 Snag.start(configuration: config)
 ```
@@ -171,6 +231,7 @@ For detailed instructions on how to publish this package yourself, see [android/
 ### Usage
 
 Snag is **zero-config** on Android. Just add the dependency and it will automatically:
+
 1. Initialize itself on app startup.
 2. Intercept and debug **OkHttp** requests (including those from **React Native**).
 3. Capture **Logcat** logs.
@@ -179,53 +240,69 @@ Snag is **zero-config** on Android. Just add the dependency and it will automati
 > Snag only initializes itself if it detects that the app is debuggable or running in an emulator.
 
 ### Custom OkHttp Client
- 
- If you use a custom `OkHttpClient` (or want to use it with Retrofit/Apollo), you can manually add the Snag interceptor:
 
- ```kotlin
- val builder = OkHttpClient.Builder()
- Snag.addInterceptor(builder) // Safe to call multiple times
- ```
- 
- ### Enable via Manifest (e.g. for Staging)
- 
- By default, Snag only runs in debug builds or simulators. To force-enable it (e.g., for a QA/Staging build), add this to your `AndroidManifest.xml`:
- 
- ```xml
- <meta-data
-     android:name="com.snag.ENABLED"
-     android:value="true" />
- ```
- 
- ### Manual Initialization (Optional)
- 
- If you want to customize other configuration options:
- 
- ```kotlin
- import com.snag.Snag
- import com.snag.core.SnagConfiguration
- 
- val config = SnagConfiguration(
-     projectName = "Custom Project Name",
-     enableLogs = true
- )
- Snag.start(context, config)
- ```
- 
- ### Logging
- 
- Snag automatically captures `Logcat` output and displays it in the desktop viewer.
- 
- - **Automatic Capture**: Intercepts standard Android logs (`Log.v`, `Log.d`, etc.).
- - **Manual Logging**: Send custom logs using `Snag.log("message")`.
- 
- To disable automatic log capture:
- 
- ```kotlin
- // In your initialization logic
- val config = SnagConfiguration.getDefault(context).copy(enableLogs = false)
- Snag.start(context, config)
- ```
+If you use a custom `OkHttpClient` (or want to use it with Retrofit/Apollo), you can manually add the Snag interceptor:
+
+```kotlin
+val builder = OkHttpClient.Builder()
+Snag.addInterceptor(builder) // Safe to call multiple times
+```
+
+### Enable/Configure via Manifest (e.g. for Staging)
+
+By default, Snag only runs in debug builds or simulators, and security is enabled. To force-enable it, disable security, or set a custom PIN, add this to your `AndroidManifest.xml`:
+
+```xml
+<!-- Force enable Snag -->
+<meta-data
+    android:name="com.snag.ENABLED"
+    android:value="true" />
+
+<!-- Disable Smart Security -->
+<meta-data
+    android:name="com.snag.SECURITY_ENABLED"
+    android:value="false" />
+
+<!-- Set security PIN -->
+<meta-data
+    android:name="com.snag.SECURITY_PIN"
+    android:value="123456" />
+```
+
+> [!TIP]
+> You can also set the PIN via System Properties (e.g., in tests or via ADB) by setting `SnagSecurityPIN`.
+
+### Manual Initialization (Optional)
+
+If you want to customize other configuration options:
+
+```kotlin
+import com.snag.Snag
+import com.snag.core.SnagConfiguration
+
+val config = SnagConfiguration(
+    projectName = "Custom Project Name",
+    enableLogs = true,
+    isSecurityEnabled = true,
+    securityPIN = "123456" // Must match PIN shown in Mac App
+)
+Snag.start(context, config)
+```
+
+### Logging
+
+Snag automatically captures `Logcat` output and displays it in the desktop viewer.
+
+- **Automatic Capture**: Intercepts standard Android logs (`Log.v`, `Log.d`, etc.).
+- **Manual Logging**: Send custom logs using `Snag.log("message")`.
+
+To disable automatic log capture:
+
+```kotlin
+// In your initialization logic
+val config = SnagConfiguration.getDefault(context).copy(enableLogs = false)
+Snag.start(context, config)
+```
 
 ---
 
@@ -234,25 +311,30 @@ Snag is **zero-config** on Android. Just add the dependency and it will automati
 Snag provides a **truly zero-config** experience for React Native.
 
 ### 1. Zero-Config (Recommended)
+
 Just add the native Snag library to your `ios` and `android` projects as described above. Snag will automatically:
+
 - Intercept `console.log`, `console.warn`, and `console.error`.
 - Capture all network requests (`fetch`, `XMLHttpRequest`).
 - **No JavaScript changes or imports required.**
 
 ### 2. Manual Logging & Object Inspection
+
 If you want to log complex objects or use custom tags from JavaScript, you can use the `react-native-snag` wrapper.
 
 #### Installation
+
 ```bash
 npm install react-native-snag
 ```
 
 #### Usage
+
 ```javascript
-import Snag from 'react-native-snag';
+import Snag from "react-native-snag";
 
 // Manual logging with tags
-Snag.log('User logged in', 'info', 'Auth');
+Snag.log("User logged in", "info", "Auth");
 
 // Note: console.log is already handled by the native hooks.
 // Use Snag.log when you need more control.

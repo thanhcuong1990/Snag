@@ -10,5 +10,7 @@ data class SnagControl(
     @SerialName("appInfo")
     val appInfo: SnagAppInfo? = null,
     @SerialName("shouldStreamLogs")
-    val shouldStreamLogs: Boolean? = null
+    val shouldStreamLogs: Boolean? = null,
+    @SerialName("authPIN")
+    val authPIN: String? = null
 )

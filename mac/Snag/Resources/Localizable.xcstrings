@@ -1873,6 +1873,12 @@
         }
       }
     },
+    "Security Disabled" : {
+
+    },
+    "Security PIN: %@" : {
+
+    },
     "Select All" : {
       "extractionState" : "manual",
       "localizations" : {

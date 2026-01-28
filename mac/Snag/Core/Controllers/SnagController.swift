@@ -46,6 +46,10 @@ class SnagController: NSObject, @MainActor SnagPublisherDelegate, ObservableObje
         }
     }
     
+    @Published var publisherStatus: String = "Stopped"
+    @Published var isSecurityEnabled: Bool = SnagConfiguration.isSecurityEnabled
+    @Published var securityPIN: String = SnagConfiguration.securityPIN ?? ""
+    
     var publisher = SnagPublisher()
     
     override init() {
@@ -53,6 +57,7 @@ class SnagController: NSObject, @MainActor SnagPublisherDelegate, ObservableObje
         super.init()
         self.publisher.delegate = self
         self.publisher.startPublishing()
+        self.publisherStatus = "Starting..."
         
         NotificationCenter.default.addObserver(self, selector: #selector(handleDeviceSelection), name: SnagNotifications.didSelectDevice, object: nil)
     }

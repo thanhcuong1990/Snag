@@ -43,7 +43,9 @@ internal class SnagBrowserImpl(
         onPacketReceived = { packet ->
             packetListeners.forEach { it.onPacketReceived(packet) }
         }
-    )
+    ).apply {
+        setConfig(config)
+    }
 
     private val discoveryManager = DiscoveryManager(
         context = context,

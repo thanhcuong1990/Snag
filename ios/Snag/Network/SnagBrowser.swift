@@ -84,9 +84,19 @@ class SnagBrowser: NSObject {
         tcpOptions.enableKeepalive = true
         tcpOptions.noDelay = true // Disable Nagle's algorithm for immediate sending
         
-        let params = NWParameters(tls: nil, tcp: tcpOptions)
         
-        // Ensure we're using TCP as initially intended
+        let params: NWParameters
+        if self.configuration?.isSecurityEnabled ?? false {
+            let tlsOptions = NWProtocolTLS.Options()
+            // Allow self-signed certificates
+            sec_protocol_options_set_verify_block(tlsOptions.securityProtocolOptions, { (metadata, sec_trust, completionHandler) in
+                completionHandler(true)
+            }, self.queue)
+            params = NWParameters(tls: tlsOptions, tcp: tcpOptions)
+        } else {
+            params = NWParameters(tls: nil, tcp: tcpOptions)
+        }
+        
         let connection = NWConnection(to: endpoint, using: params)
         
         connection.stateUpdateHandler = { [weak self] state in
@@ -117,9 +127,34 @@ class SnagBrowser: NSObject {
     
     private func handleConnected(_ connection: NWConnection) {
         queue.async {
+            self.sendAuthIfRequired(on: connection)
             self.flushPendingLocked()
             self.didConnect?()
             self.receive(on: connection)
+        }
+    }
+    
+    private func sendAuthIfRequired(on connection: NWConnection) {
+        guard let config = self.configuration, config.isSecurityEnabled else { return }
+        
+        let authControl = SnagControl(type: "authPIN", authPIN: config.securityPIN)
+        var authPacket = SnagPacket()
+        authPacket.control = authControl
+        authPacket.project = config.project
+        authPacket.device = config.device
+        
+        do {
+            let packetData = try self.encoder.encode(authPacket)
+            var headerLength = UInt64(packetData.count)
+            let headerData = Data(bytes: &headerLength, count: MemoryLayout<UInt64>.size)
+            
+            var buffer = Data()
+            buffer.append(headerData)
+            buffer.append(packetData)
+            
+            self.sendData(buffer, on: connection)
+        } catch {
+            print("SnagBrowser: Auth encoding error: \(error)")
         }
     }
     
