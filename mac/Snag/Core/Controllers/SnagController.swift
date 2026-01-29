@@ -139,14 +139,26 @@ class SnagController: NSObject, @MainActor SnagPublisherDelegate, ObservableObje
             }
         }
         
-        // 2. Fallback to Project Name matching
-        for projectController in self.projectControllers {
-            if projectController.projectName == newPacket.project?.projectName {
-                return projectController.addPacket(newPacket: newPacket)
+        // 2. Fallback to Bundle ID matching
+        if let newBundleId = newPacket.project?.bundleId {
+            for projectController in self.projectControllers {
+                if projectController.bundleId == newBundleId {
+                    return projectController.addPacket(newPacket: newPacket)
+                }
             }
         }
         
-        // 3. Create New Project Controller
+        // 3. Fallback to Project Name matching
+        for projectController in self.projectControllers {
+            if projectController.projectName == newPacket.project?.projectName {
+                // Only match by name if the project doesn't have a different bundleId already
+                if projectController.bundleId == nil || projectController.bundleId == newPacket.project?.bundleId {
+                    return projectController.addPacket(newPacket: newPacket)
+                }
+            }
+        }
+        
+        // 4. Create New Project Controller
         let projectController = SnagProjectController()
         projectController.projectName = newPacket.project?.projectName
         projectController.addPacket(newPacket: newPacket)

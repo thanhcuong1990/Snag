@@ -12,7 +12,7 @@
 
 /* Begin PBXFileReference section */
 		A51234562EF71818000C8FD2 /* Info-iOS.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = "Info-iOS.plist"; sourceTree = "<group>"; };
-		A54C280A2EF71818000C8FD2 /* example.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; name = example.app; path = "Snag Example.app"; sourceTree = BUILT_PRODUCTS_DIR; };
+		A54C280A2EF71818000C8FD2 /* Snag Example.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "Snag Example.app"; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
@@ -55,7 +55,7 @@
 		A54C280B2EF71818000C8FD2 /* Products */ = {
 			isa = PBXGroup;
 			children = (
-				A54C280A2EF71818000C8FD2 /* example.app */,
+				A54C280A2EF71818000C8FD2 /* Snag Example.app */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -83,7 +83,7 @@
 				A506B2A92F110D4900C8DB77 /* Snag */,
 			);
 			productName = example;
-			productReference = A54C280A2EF71818000C8FD2 /* example.app */;
+			productReference = A54C280A2EF71818000C8FD2 /* Snag Example.app */;
 			productType = "com.apple.product-type.application";
 		};
 /* End PBXNativeTarget section */
@@ -292,7 +292,8 @@
 				"LD_RUNPATH_SEARCH_PATHS[sdk=macosx*]" = "@executable_path/../Frameworks";
 				MACOSX_DEPLOYMENT_TARGET = 26.2;
 				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = com.example;
+				PRODUCT_BUNDLE_IDENTIFIER = com.snag;
+				"PRODUCT_BUNDLE_IDENTIFIER[sdk=iphoneos*]" = com.snag;
 				PRODUCT_NAME = "Snag Example";
 				REGISTER_APP_GROUPS = YES;
 				SDKROOT = auto;
@@ -340,7 +341,8 @@
 				"LD_RUNPATH_SEARCH_PATHS[sdk=macosx*]" = "@executable_path/../Frameworks";
 				MACOSX_DEPLOYMENT_TARGET = 26.2;
 				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = com.example;
+				PRODUCT_BUNDLE_IDENTIFIER = com.snag;
+				"PRODUCT_BUNDLE_IDENTIFIER[sdk=iphoneos*]" = com.snag;
 				PRODUCT_NAME = "Snag Example";
 				REGISTER_APP_GROUPS = YES;
 				SDKROOT = auto;
