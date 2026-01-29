@@ -18,6 +18,8 @@ import javax.crypto.SecretKey
 import kotlinx.coroutines.MainScope
 import kotlinx.coroutines.launch
 import kotlinx.serialization.json.Json
+import kotlinx.serialization.encodeToString
+import kotlinx.serialization.decodeFromString
 import timber.log.Timber
 
 internal class SnagBrowserImpl(
@@ -157,7 +159,8 @@ internal class SnagBrowserImpl(
     private fun sendHelloPacket() {
         val proj = project ?: return
         val dev = device ?: return
-        sendPacket(SnagPacket(device = dev, project = proj))
+        val helloControl = com.snag.models.SnagControl(type = "hello", deviceId = dev.deviceId)
+        sendPacket(SnagPacket(control = helloControl, device = dev, project = proj))
     }
 
     override fun sendPacket(requestInfo: SnagRequestInfo) {

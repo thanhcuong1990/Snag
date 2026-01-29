@@ -344,6 +344,7 @@ class SnagBrowser: NSObject {
         var verifyPacket = SnagPacket()
         verifyPacket.control = SnagControl(type: "auth_verify", authHash: computedHash)
         verifyPacket.device = self.configuration?.device
+        verifyPacket.project = self.configuration?.project
         
         self.sendRaw(packet: verifyPacket, on: connection)
     }

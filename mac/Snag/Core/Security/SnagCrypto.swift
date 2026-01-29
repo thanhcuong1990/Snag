@@ -26,7 +26,7 @@ class SnagCrypto {
         let pinData = Data(pin.utf8)
         // 10,000 rounds is a baseline; for mobile/desktop interactive limits this is safe.
         // Snag is a local tool, extreme KDF hardness isn't the primary goal vs UX, but we want to prevent trivial brute force.
-        let keyData = PBKDF2.deriveKey(password: pinData, salt: salt, iterations: 10000, keyByteCount: keySize)
+        let keyData = PBKDF2.deriveKey(password: pinData, salt: salt, iterations: 100000, keyByteCount: keySize)
         return SymmetricKey(data: keyData)
     }
     

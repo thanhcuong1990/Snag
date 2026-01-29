@@ -17,7 +17,7 @@ object SnagCrypto {
     private const val NONCE_SIZE = 12
     private const val KEY_SIZE_BITS = 256
     private const val TAG_SIZE_BITS = 128
-    private const val ITERATION_COUNT = 10000
+    private const val ITERATION_COUNT = 100000
 
     fun deriveKey(pin: String, salt: ByteArray): SecretKey {
         val spec = PBEKeySpec(pin.toCharArray(), salt, ITERATION_COUNT, KEY_SIZE_BITS)

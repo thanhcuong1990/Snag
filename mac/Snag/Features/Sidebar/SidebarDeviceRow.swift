@@ -61,6 +61,7 @@ struct SidebarDeviceRow: View {
                 enteredPIN = ""
                 errorMessage = nil
                 shakeOffset = 0
+                checkLockout() // Initial check
                 showingPINPopover = true
             }
         }
@@ -69,17 +70,20 @@ struct SidebarDeviceRow: View {
                 Text("Enter Security PIN".localized)
                     .font(.system(size: 12, weight: .bold))
                 
-                TextField("6-digit PIN", text: Binding(
+                let lockout = lockoutRemaining()
+                let isLocked = lockout != nil
+                
+                TextField("Security PIN".localized, text: Binding(
                     get: { enteredPIN },
                     set: { newValue in
                         errorMessage = nil
-                        let filtered = newValue.filter { $0.isNumber }
-                        enteredPIN = String(filtered.prefix(6))
+                        enteredPIN = newValue
                     }
                 ))
                     .textFieldStyle(RoundedBorderTextFieldStyle())
                     .font(.system(size: 11, design: .monospaced))
-                    .frame(width: 120)
+                    .frame(width: 160)
+                    .disabled(isLocked)
                     .onSubmit {
                         performAuthorization()
                     }
@@ -89,6 +93,12 @@ struct SidebarDeviceRow: View {
                         Text(error)
                             .font(.system(size: 10))
                             .foregroundColor(.red)
+                    } else if let remaining = lockout {
+                        let minutes = remaining / 60
+                        let seconds = remaining % 60
+                        Text(String(format: "Device locked. Try again in %d:%02d".localized, minutes, seconds))
+                            .font(.system(size: 10))
+                            .foregroundColor(.orange)
                     } else {
                         Text("Enter the PIN from your %@ device.".localized(with: deviceOSName(for: device.deviceDescription)))
                             .font(.system(size: 10))
@@ -105,11 +115,16 @@ struct SidebarDeviceRow: View {
                     }
                     .buttonStyle(BorderedProminentButtonStyle())
                     .controlSize(.small)
-                    .disabled(enteredPIN.count < 6)
+                    .disabled(enteredPIN.isEmpty || isLocked)
                 }
             }
             .padding(16)
             .offset(x: shakeOffset)
+            .onReceive(Timer.publish(every: 1, on: .main, in: .common).autoconnect()) { _ in
+                if showingPINPopover {
+                    checkLockout()
+                }
+            }
         }
     }
     
@@ -122,14 +137,38 @@ struct SidebarDeviceRow: View {
     }
     
     private func performAuthorization() {
-        guard enteredPIN.count >= 6 else { return }
+        guard !enteredPIN.isEmpty else { return }
+        
+        // Check if device is locked out before attempting
+        if let deviceId = device.deviceId {
+            let lockoutStatus = SnagController.shared.isDeviceLocked(deviceId: deviceId)
+            if lockoutStatus.locked, let remaining = lockoutStatus.remainingSeconds {
+                let minutes = remaining / 60
+                let seconds = remaining % 60
+                errorMessage = String(format: "Device locked. Try again in %d:%02d".localized, minutes, seconds)
+                return
+            }
+        }
         
         if SnagController.shared.authorizeDevice(device, enteredPIN: enteredPIN) {
             showingPINPopover = false
             errorMessage = nil
             selectDevice()
         } else {
-            errorMessage = "Incorrect PIN. Please try again.".localized
+            // Check if now locked out after this failed attempt
+            if let deviceId = device.deviceId {
+                let lockoutStatus = SnagController.shared.isDeviceLocked(deviceId: deviceId)
+                if lockoutStatus.locked, let remaining = lockoutStatus.remainingSeconds {
+                    let minutes = remaining / 60
+                    let seconds = remaining % 60
+                    errorMessage = String(format: "Too many attempts. Locked for %d:%02d".localized, minutes, seconds)
+                } else {
+                    errorMessage = "Incorrect PIN. Please try again.".localized
+                }
+            } else {
+                errorMessage = "Incorrect PIN. Please try again.".localized
+            }
+            
             withAnimation(.default) {
                 shakeOffset = 10
             }
@@ -150,6 +189,18 @@ struct SidebarDeviceRow: View {
     @State private var enteredPIN = ""
     @State private var errorMessage: String? = nil
     @State private var shakeOffset: CGFloat = 0
+    @State private var currentRemainingSeconds: Int? = nil
+    
+    private func checkLockout() {
+        if let deviceId = device.deviceId {
+            let status = SnagController.shared.isDeviceLocked(deviceId: deviceId)
+            currentRemainingSeconds = status.remainingSeconds
+        }
+    }
+    
+    private func lockoutRemaining() -> Int? {
+        return currentRemainingSeconds
+    }
     
     private func deviceIconName(for description: String?) -> String {
         let desc = description?.lowercased() ?? ""

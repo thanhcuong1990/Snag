@@ -19,8 +19,16 @@ class SnagPublisher: NSObject {
     private var connectionSalts: [ObjectIdentifier: Data] = [:]
     private var pendingAuthVerifications: [ObjectIdentifier: String] = [:] // Connection -> Client Hash
     
+    // Rate limiting for failed PIN attempts
+    private var failedAuthAttempts: [String: Int] = [:] // DeviceID -> Count
+    private var lockedOutDevices: [String: Date] = [:] // DeviceID -> Lockout Expiry
+    private let maxFailedAttempts = 5
+    private let lockoutDuration: TimeInterval = 300 // 5 minutes
+    
     private let queue = DispatchQueue(label: "com.snag.publisher.queue")
     private let authorizedDevicesKey = "SnagAuthorizedDeviceIds"
+    private let failedAttemptsKey = "SnagFailedAuthAttempts"
+    private let lockedOutDevicesKey = "SnagLockedOutDevices"
 
     private lazy var jsonEncoder: JSONEncoder = {
         let encoder = JSONEncoder()
@@ -38,6 +46,7 @@ class SnagPublisher: NSObject {
         queue.async { [weak self] in
             guard let self = self else { return }
             self.loadAuthorizedDevices()
+            self.loadLockoutState()
             self.stopPublishingLocked()
             do {
                 let tcpOptions = NWProtocolTCP.Options()
@@ -282,7 +291,6 @@ class SnagPublisher: NSObject {
             if let type = snagPacket.control?.type {
                 if type == "hello" {
                     handleHello(packet: snagPacket, connection: connection)
-                    return
                 } else if type == "auth_verify" {
                     handleAuthVerify(packet: snagPacket, connection: connection)
                     return
@@ -449,6 +457,18 @@ class SnagPublisher: NSObject {
     func authorizeDevice(deviceId: String, pin: String) -> Bool {
         var success = false
         queue.sync { // Use sync to return result, ensure thread safety
+             // Check if device is locked out
+             if let lockoutExpiry = self.lockedOutDevices[deviceId] {
+                 if Date() < lockoutExpiry {
+                     print("SnagPublisher: Device \(deviceId) is locked out until \(lockoutExpiry)")
+                     return
+                 } else {
+                     // Lockout expired, clear it
+                     self.lockedOutDevices.removeValue(forKey: deviceId)
+                     self.failedAuthAttempts.removeValue(forKey: deviceId)
+                 }
+             }
+             
              guard let connection = self.deviceConnections[deviceId] else { return }
              guard let salt = self.connectionSalts[ObjectIdentifier(connection)] else {
                  print("SnagPublisher: No salt found for device \(deviceId)")
@@ -461,14 +481,9 @@ class SnagPublisher: NSObject {
              
              // Verify
              let key = SnagCrypto.deriveKey(pin: pin, salt: salt)
-             // Compute Hash(Key + "Client")
-             // We need a standard hash function. Let's use SHA256 of the Key's raw representation + string.
-             // Wait, SnagCrypto doesn't expose a hash helper. Let's add it or do it here.
-             // Easier to just check if `deriveKey` is deterministic (it is).
              
              // The client sends: SHA256(KeyBytes + "Client".utf8)
              // We compute the same.
-             
              let validationString = "Client"
              var dataToHash = Data()
              key.withUnsafeBytes { dataToHash.append(contentsOf: $0) }
@@ -477,6 +492,10 @@ class SnagPublisher: NSObject {
              let computedHash = SHA256.hash(data: dataToHash).map { String(format: "%02x", $0) }.joined()
              
              if computedHash == clientHash {
+                 // Success - clear any failed attempts
+                 self.failedAuthAttempts.removeValue(forKey: deviceId)
+                 self.saveLockoutState()
+                 
                  self.authenticatedConnections.insert(ObjectIdentifier(connection))
                  self.sessionKeys[ObjectIdentifier(connection)] = key
                  self.manuallyAuthorizedDeviceIds.insert(deviceId)
@@ -495,17 +514,42 @@ class SnagPublisher: NSObject {
                 localSuccessPacket.device = deviceModel
                 
                 DispatchQueue.main.async {
-                    SnagController.shared.publisherStatus = "Authorized: \(deviceId)"
+                    SnagController.shared.publisherStatus = String(format: "Authorized: %@".localized, deviceId)
                     self.delegate?.didGetPacket(publisher: self, packet: localSuccessPacket)
                 }
                   
                 print("SnagPublisher: Device \(deviceId) Authorized & Encrypted")
                 success = true
             } else {
-                print("SnagPublisher: PIN Mismatch for \(deviceId)")
+                // Increment failed attempts
+                let attempts = (self.failedAuthAttempts[deviceId] ?? 0) + 1
+                self.failedAuthAttempts[deviceId] = attempts
+                
+                if attempts >= self.maxFailedAttempts {
+                    // Lock out the device
+                    let lockoutExpiry = Date().addingTimeInterval(self.lockoutDuration)
+                    self.lockedOutDevices[deviceId] = lockoutExpiry
+                    print("SnagPublisher: Device \(deviceId) locked out for \(Int(self.lockoutDuration)) seconds after \(attempts) failed attempts")
+                } else {
+                    print("SnagPublisher: PIN Mismatch for \(deviceId). Failed attempt \(attempts)/\(self.maxFailedAttempts)")
+                }
+                self.saveLockoutState()
             }
         }
         return success
+    }
+    
+    func getLockoutStatus(deviceId: String) -> (locked: Bool, remainingSeconds: Int?) {
+        var result: (Bool, Int?) = (false, nil)
+        queue.sync {
+            if let lockoutExpiry = self.lockedOutDevices[deviceId] {
+                let remaining = lockoutExpiry.timeIntervalSince(Date())
+                if remaining > 0 {
+                    result = (true, Int(remaining))
+                }
+            }
+        }
+        return result
     }
 
     func stopPublishing() {
@@ -521,6 +565,22 @@ class SnagPublisher: NSObject {
 
     private func saveAuthorizedDevices() {
         UserDefaults.standard.set(Array(self.manuallyAuthorizedDeviceIds), forKey: authorizedDevicesKey)
+    }
+    
+    private func saveLockoutState() {
+        UserDefaults.standard.set(failedAuthAttempts, forKey: failedAttemptsKey)
+        
+        // Store Dates as time intervals for JSON-friendly persistence
+        let lockedOutTimestamps = lockedOutDevices.mapValues { $0.timeIntervalSince1970 }
+        UserDefaults.standard.set(lockedOutTimestamps, forKey: lockedOutDevicesKey)
+    }
+
+    private func loadLockoutState() {
+        self.failedAuthAttempts = UserDefaults.standard.dictionary(forKey: failedAttemptsKey) as? [String: Int] ?? [:]
+        
+        if let savedTimestamps = UserDefaults.standard.dictionary(forKey: lockedOutDevicesKey) as? [String: Double] {
+            self.lockedOutDevices = savedTimestamps.mapValues { Date(timeIntervalSince1970: $0) }
+        }
     }
     
     private var publishRetryScheduled = false

@@ -45,7 +45,7 @@
 		<string>_Snag._tcp</string>
 	</array>
 	<key>SnagSecurityPIN</key>
-	<string>123456</string>
+	<string>MySecretPin123!</string>
 </dict>
 </plist>
 

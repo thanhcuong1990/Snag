@@ -19,7 +19,7 @@ class SnagCrypto {
     
     static func deriveKey(pin: String, salt: Data) -> SymmetricKey {
         let pinData = Data(pin.utf8)
-        let keyData = PBKDF2.deriveKey(password: pinData, salt: salt, iterations: 10000, keyByteCount: keySize)
+        let keyData = PBKDF2.deriveKey(password: pinData, salt: salt, iterations: 100000, keyByteCount: keySize)
         return SymmetricKey(data: keyData)
     }
     

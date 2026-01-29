@@ -192,4 +192,8 @@ class SnagController: NSObject, @MainActor SnagPublisherDelegate, ObservableObje
         
         return false
     }
+    
+    func isDeviceLocked(deviceId: String) -> (locked: Bool, remainingSeconds: Int?) {
+        return publisher.getLockoutStatus(deviceId: deviceId)
+    }
 }

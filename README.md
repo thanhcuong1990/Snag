@@ -32,6 +32,10 @@ Traffic is encrypted via **TLS** (Transport Layer) AND **AES-GCM** (Application 
 - **Auto-Trust**: Connections from **Simulators** or via **USB/Wired** are automatically trusted and use cleartext credentials (over TLS) for zero-latency performance.
 - **Interactive Pairing**: For remote connections over **Wi-Fi**, devices appear in the Mac app sidebar with a **Locked (🔒)** icon. To trust a device, click **"Authorize Device"** and enter the **Security PIN** that you configured on the client (iOS/Android).
 - **Persistent Trust**: Once authorized, the device is remembered.
+- **Rate Limiting**: After 5 failed PIN attempts, the device is locked out for 5 minutes to prevent brute-force attacks.
+
+> [!TIP]
+> For stronger security, use an alphanumeric PIN (8+ characters recommended) instead of a 6-digit numeric code. Example: `MySecretPin123!`
 
 > [!NOTE]
 > **Privacy Isolation**: By default, new Wi-Fi devices are blocked (locked) until you explicitly authorize them. The client sends a "Hello" packet, but no logs or sensitive data are transmitted until the secure handshake generates a shared session key.
@@ -227,7 +231,7 @@ config.device?.name = "Developer iPhone"
 
 // Security Configuration
 config.isSecurityEnabled = true
-config.securityPIN = "123456" // This PIN must be entered on the Mac app for authorization
+config.securityPIN = "MySecretPin123!" // Alphanumeric PIN for stronger security
 
 Snag.start(configuration: config)
 ```
