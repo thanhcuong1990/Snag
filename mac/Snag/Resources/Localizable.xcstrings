@@ -1,2377 +1,2717 @@
 {
-  "sourceLanguage" : "en",
-  "strings" : {
-    " records" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : " records"
+  "sourceLanguage": "en",
+  "strings": {
+    " records": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": " records"
           }
         },
-        "ja" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : " レコード"
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": " レコード"
           }
         },
-        "ko" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : " 기록"
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": " 기록"
           }
         },
-        "vi" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : " records"
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": " records"
           }
         }
       }
     },
-    " requests" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : " requests"
+    " requests": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": " requests"
           }
         },
-        "ja" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : " リクエスト"
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": " リクエスト"
           }
         },
-        "ko" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : " 요청"
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": " 요청"
           }
         },
-        "vi" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : " yêu cầu"
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": " yêu cầu"
           }
         }
       }
     },
-    "%@" : {
-
+    "%@": {},
+    "%@×%@ • %@": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "new",
+            "value": "%1$@×%2$@ • %3$@"
+          }
+        }
+      }
+    },
+    "1xx": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "1xx"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "1xx"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "1xx"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "1xx"
+          }
+        }
+      }
+    },
+    "2xx": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "2xx"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "2xx"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "2xx"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "2xx"
+          }
+        }
+      }
+    },
+    "3xx": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "3xx"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "3xx"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "3xx"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "3xx"
+          }
+        }
+      }
+    },
+    "4xx": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "4xx"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "4xx"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "4xx"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "4xx"
+          }
+        }
+      }
+    },
+    "5xx": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "5xx"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "5xx"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "5xx"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "5xx"
+          }
+        }
+      }
+    },
+    "About Snag": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "About Snag"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Snagについて"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Snag 정보"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Giới thiệu Snag"
+          }
+        }
+      }
+    },
+    "Accepted": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Accepted"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "受理"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "접수됨"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Đã chấp nhận"
+          }
+        }
+      }
+    },
+    "All": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "All"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "すべて"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "전체"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tất cả"
+          }
+        }
+      }
     },
-    "%@×%@ • %@" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "new",
-            "value" : "%1$@×%2$@ • %3$@"
+    "Authorize": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Authorize"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "認証"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "승인"
           }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Xác thực"
+          }
         }
       }
     },
-    "1xx" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "1xx"
+    "Auto": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Auto"
           }
         },
-        "ja" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "1xx"
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "自動"
           }
         },
-        "ko" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "1xx"
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "자동"
           }
         },
-        "vi" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "1xx"
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tự động"
           }
         }
       }
     },
-    "2xx" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "2xx"
+    "Bad Gateway": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bad Gateway"
           }
         },
-        "ja" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "2xx"
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "不正なゲートウェイ"
           }
         },
-        "ko" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "2xx"
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "잘못된 게이트웨이"
           }
         },
-        "vi" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "2xx"
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cổng kết nối xấu"
           }
         }
       }
     },
-    "3xx" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "3xx"
+    "Bad Request": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bad Request"
           }
         },
-        "ja" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "3xx"
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "不正なリクエスト"
           }
         },
-        "ko" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "3xx"
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "잘못된 요청"
           }
         },
-        "vi" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "3xx"
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Yêu cầu không hợp lệ"
           }
         }
       }
     },
-    "4xx" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "4xx"
+    "Binary Data": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Binary Data"
           }
         },
-        "ja" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "4xx"
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "バイナリデータ"
           }
         },
-        "ko" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "4xx"
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "바이너리 데이터"
           }
         },
-        "vi" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "4xx"
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dữ liệu nhị phân"
           }
         }
       }
     },
-    "5xx" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "5xx"
+    "Body": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Body"
           }
         },
-        "ja" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "5xx"
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ボディ"
           }
         },
-        "ko" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "5xx"
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "본문"
           }
         },
-        "vi" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "5xx"
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nội dung"
           }
         }
       }
     },
-    "About Snag" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "About Snag"
+    "Check for Updates...": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Check for Updates..."
           }
         },
-        "ja" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Snagについて"
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "アップデートを確認..."
           }
         },
-        "ko" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Snag 정보"
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "업데이트 확인..."
           }
         },
-        "vi" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Giới thiệu Snag"
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kiểm tra cập nhật..."
           }
         }
       }
     },
-    "Accepted" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Accepted"
+    "Clear": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Clear"
           }
         },
-        "ja" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "受理"
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "クリア"
           }
         },
-        "ko" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "접수됨"
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "지우기"
           }
         },
-        "vi" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Đã chấp nhận"
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Xoá"
           }
         }
       }
     },
-    "All" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "All"
+    "Clear Logs": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Clear Logs"
           }
         },
-        "ja" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "すべて"
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ログをクリア"
           }
         },
-        "ko" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "전체"
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "로그 지우기"
           }
         },
-        "vi" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Tất cả"
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Xoá nhật ký"
           }
         }
       }
     },
-    "Auto" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Auto"
+    "Code": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Status"
           }
         },
-        "ja" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "自動"
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ステータス"
           }
         },
-        "ko" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "자동"
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "상태 코드"
           }
         },
-        "vi" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Tự động"
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mã trạng thái"
           }
         }
       }
     },
-    "Bad Gateway" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Bad Gateway"
+    "Connection Locked": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Connection Locked"
           }
         },
-        "ja" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "不正なゲートウェイ"
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "接続ロック中"
           }
         },
-        "ko" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "잘못된 게이트웨이"
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "연결 잠김"
           }
         },
-        "vi" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Cổng kết nối xấu"
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kết nối bị khoá"
           }
         }
       }
     },
-    "Bad Request" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Bad Request"
+    "Copy": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Copy"
           }
         },
-        "ja" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "不正なリクエスト"
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "コピー"
           }
         },
-        "ko" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "잘못된 요청"
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "복사"
           }
         },
-        "vi" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Yêu cầu không hợp lệ"
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sao chép"
           }
         }
       }
     },
-    "Body" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Body"
+    "Copy cURL": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Copy cURL"
           }
         },
-        "ja" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "ボディ"
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "cURLをコピー"
           }
         },
-        "ko" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "본문"
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "cURL 복사"
           }
         },
-        "vi" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Nội dung"
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sao chép cURL"
           }
         }
       }
     },
-    "Check for Updates..." : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Check for Updates..."
+    "Created": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Created"
           }
         },
-        "ja" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "アップデートを確認..."
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "作成済み"
           }
         },
-        "ko" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "업데이트 확인..."
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "생성됨"
           }
         },
-        "vi" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Kiểm tra cập nhật..."
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Đã tạo"
           }
         }
       }
     },
-    "Clear" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Clear"
+    "Cut": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cut"
           }
         },
-        "ja" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "クリア"
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "カット"
           }
         },
-        "ko" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "지우기"
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "오려두기"
           }
         },
-        "vi" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Xoá"
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cắt"
           }
         }
       }
     },
-    "Clear Logs" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Clear Logs"
+    "Details": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Details"
           }
         },
-        "ja" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "ログをクリア"
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "詳細"
           }
         },
-        "ko" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "로그 지우기"
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "세부정보"
           }
         },
-        "vi" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Xoá nhật ký"
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Chi tiết"
           }
         }
       }
     },
-    "Code" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Status"
+    "Duration": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Duration"
           }
         },
-        "ja" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "ステータス"
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "継続時間"
           }
         },
-        "ko" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "상태 코드"
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "지속 시간"
           }
         },
-        "vi" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Mã trạng thái"
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Thời gian"
           }
         }
       }
     },
-    "Copy" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Copy"
+    "Edit": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Edit"
           }
         },
-        "ja" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "コピー"
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "編集"
           }
         },
-        "ko" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "복사"
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "편집"
           }
         },
-        "vi" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Sao chép"
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sửa"
           }
         }
       }
     },
-    "Copy cURL" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Copy cURL"
+    "English": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "English"
           }
         },
-        "ja" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "cURLをコピー"
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "英語"
           }
         },
-        "ko" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "cURL 복사"
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "영어"
           }
         },
-        "vi" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Sao chép cURL"
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tiếng Anh"
           }
         }
       }
     },
-    "Created" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Created"
+    "Enter Security PIN": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Enter Security PIN"
           }
         },
-        "ja" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "作成済み"
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "セキュリティPINを入力"
           }
         },
-        "ko" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "생성됨"
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "보안 PIN 입력"
           }
         },
-        "vi" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Đã tạo"
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nhập mã PIN bảo mật"
           }
         }
       }
     },
-    "Cut" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Cut"
+    "Enter the PIN from your %@ device.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Enter the PIN from your %@ device."
           }
         },
-        "ja" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "カット"
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@デバイスのPINを入力してください。"
           }
         },
-        "ko" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "오려두기"
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ 장치의 PIN을 입력하세요."
           }
         },
-        "vi" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Cắt"
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nhập mã PIN từ thiết bị %@ của bạn."
           }
         }
       }
     },
-    "Details" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Details"
+    "Fetch/XHR": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Fetch/XHR"
           }
         },
-        "ja" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "詳細"
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Fetch/XHR"
           }
         },
-        "ko" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "세부정보"
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Fetch/XHR"
           }
         },
-        "vi" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Chi tiết"
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Fetch/XHR"
           }
         }
       }
     },
-    "Duration" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Duration"
+    "Filter URL...": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Filter URL..."
           }
         },
-        "ja" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "継続時間"
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "URLをフィルタ..."
           }
         },
-        "ko" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "지속 시간"
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "URL 필터링..."
           }
         },
-        "vi" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Thời gian"
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Lọc URL..."
           }
         }
       }
     },
-    "Edit" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Edit"
+    "Filter logs...": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Filter logs..."
           }
         },
-        "ja" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "編集"
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ログをフィルタ..."
           }
         },
-        "ko" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "편집"
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "로그 필터링..."
           }
         },
-        "vi" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Sửa"
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Lọc nhật ký..."
           }
         }
       }
     },
-    "English" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "English"
+    "Find...": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Find..."
           }
         },
-        "ja" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "英語"
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "検索..."
           }
         },
-        "ko" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "영어"
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "찾기..."
           }
         },
-        "vi" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Tiếng Anh"
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tìm kiếm..."
           }
         }
       }
     },
-    "Fetch/XHR" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Fetch/XHR"
+    "Forbidden": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Forbidden"
           }
         },
-        "ja" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Fetch/XHR"
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "アクセス拒否"
           }
         },
-        "ko" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Fetch/XHR"
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "금지됨"
           }
         },
-        "vi" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Fetch/XHR"
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bị cấm"
           }
         }
       }
     },
-    "Filter logs..." : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Filter logs..."
+    "Force PIN": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Force PIN"
           }
         },
-        "ja" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "ログをフィルタ..."
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "PINを強制"
           }
         },
-        "ko" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "로그 필터링..."
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "PIN 강제"
           }
         },
-        "vi" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Lọc nhật ký..."
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bắt buộc mã PIN"
           }
         }
       }
     },
-    "Filter URL..." : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Filter URL..."
+    "Found": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Found"
           }
         },
-        "ja" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "URLをフィルタ..."
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "見つかりました"
           }
         },
-        "ko" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "URL 필터링..."
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "찾음 (리디렉션)"
           }
         },
-        "vi" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Lọc URL..."
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Đã tìm thấy (Chuyển hướng)"
           }
         }
       }
     },
-    "Forbidden" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Forbidden"
+    "Header": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Headers"
           }
         },
-        "ja" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "アクセス拒否"
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ヘッダー"
           }
         },
-        "ko" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "금지됨"
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "헤더"
           }
         },
-        "vi" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Bị cấm"
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Các tiêu đề"
           }
         }
       }
     },
-    "Found" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Found"
+    "Hide Others": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Hide Others"
           }
         },
-        "ja" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "見つかりました"
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ほかを隠す"
           }
         },
-        "ko" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "찾음 (리디렉션)"
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "기타 가리기"
           }
         },
-        "vi" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Đã tìm thấy (Chuyển hướng)"
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ẩn các cửa sổ khác"
           }
         }
       }
     },
-    "Header" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Headers"
+    "Hide Snag": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Hide Snag"
           }
         },
-        "ja" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "ヘッダー"
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Snagを隠す"
           }
         },
-        "ko" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "헤더"
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Snag 가리기"
           }
         },
-        "vi" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Các tiêu đề"
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ẩn Snag"
           }
         }
       }
     },
-    "Hide Others" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Hide Others"
+    "Incorrect PIN. Please try again.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Incorrect PIN. Please try again."
           }
         },
-        "ja" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "ほかを隠す"
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "PINが正しくありません。もう一度お試しください。"
           }
         },
-        "ko" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "기타 가리기"
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "PIN이 올바르지 않습니다. 다시 시도하세요."
           }
         },
-        "vi" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Ẩn các cửa sổ khác"
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mã PIN không đúng. Vui lòng thử lại."
           }
         }
       }
     },
-    "Hide Snag" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Hide Snag"
+    "Internal Server Error": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Internal Server Error"
           }
         },
-        "ja" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Snagを隠す"
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "内部サーバーエラー"
           }
         },
-        "ko" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Snag 가리기"
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "내부 서버 오류"
           }
         },
-        "vi" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Ẩn Snag"
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Lỗi máy chủ nội bộ"
           }
         }
       }
     },
-    "Internal Server Error" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Internal Server Error"
+    "JSON is large (%@). Pretty tree-view is disabled for performance.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "JSON is large (%@). Pretty tree-view is disabled for performance."
           }
         },
-        "ja" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "内部サーバーエラー"
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "JSONが大きすぎます (%@)。パフォーマンスのため、ツリービューは無効になりました。"
           }
         },
-        "ko" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "내부 서버 오류"
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "JSON이 너무 큽니다 (%@). 성능을 위해 트리 보기가 비활성화되었습니다."
           }
         },
-        "vi" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Lỗi máy chủ nội bộ"
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "JSON quá lớn (%@). Chế độ xem cây bị tắt để đảm bảo hiệu suất."
           }
         }
       }
     },
-    "Japanese" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Japanese"
+    "Japanese": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Japanese"
           }
         },
-        "ja" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "日本語"
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "日本語"
           }
         },
-        "ko" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "일본어"
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "일본어"
           }
         },
-        "vi" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Tiếng Nhật"
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tiếng Nhật"
           }
         }
       }
     },
-    "JSON is large (%@). Pretty tree-view is disabled for performance." : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "JSON is large (%@). Pretty tree-view is disabled for performance."
+    "Korean": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Korean"
           }
         },
-        "ja" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "JSONが大きすぎます (%@)。パフォーマンスのため、ツリービューは無効になりました。"
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "韓国語"
           }
         },
-        "ko" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "JSON이 너무 큽니다 (%@). 성능을 위해 트리 보기가 비활성화되었습니다."
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "한국어"
           }
         },
-        "vi" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "JSON quá lớn (%@). Chế độ xem cây bị tắt để đảm bảo hiệu suất."
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tiếng Hàn"
           }
         }
       }
     },
-    "Korean" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Korean"
+    "LOCAL": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "LOCAL"
           }
         },
-        "ja" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "韓国語"
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ローカル"
           }
         },
-        "ko" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "한국어"
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "로컬"
           }
         },
-        "vi" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Tiếng Hàn"
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "NỘI BỘ"
           }
         }
       }
     },
-    "LOCAL" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "LOCAL"
+    "Logs": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Logs"
           }
         },
-        "ja" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "ローカル"
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ログ"
           }
         },
-        "ko" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "로컬"
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "로그"
           }
         },
-        "vi" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "NỘI BỘ"
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nhật ký"
           }
         }
       }
     },
-    "Logs" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Logs"
+    "Media": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Media"
           }
         },
-        "ja" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "ログ"
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "メディア"
           }
         },
-        "ko" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "로그"
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "미디어"
           }
         },
-        "vi" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Nhật ký"
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Phương tiện"
           }
         }
       }
     },
-    "Media" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Media"
+    "Method": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Method"
           }
         },
-        "ja" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "メディア"
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "メソッド"
           }
         },
-        "ko" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "미디어"
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "메소드"
           }
         },
-        "vi" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Phương tiện"
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Phương thức"
           }
         }
       }
     },
-    "Method" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Method"
+    "Moved Permanently": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Moved Permanently"
           }
         },
-        "ja" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "メソッド"
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "恒久的に移動"
           }
         },
-        "ko" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "메소드"
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "영구적으로 이동됨"
           }
         },
-        "vi" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Phương thức"
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Đã chuyển vĩnh viễn"
           }
         }
       }
     },
-    "Moved Permanently" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Moved Permanently"
+    "Network": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Network"
           }
         },
-        "ja" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "恒久的に移動"
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ネットワーク"
           }
         },
-        "ko" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "영구적으로 이동됨"
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "네트워크"
           }
         },
-        "vi" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Đã chuyển vĩnh viễn"
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mạng"
           }
         }
       }
     },
-    "Network" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Network"
+    "No Apps Connected": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No Apps Connected"
           }
         },
-        "ja" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "ネットワーク"
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "アプリが接続されていません"
           }
         },
-        "ko" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "네트워크"
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "연결된 앱 없음"
           }
         },
-        "vi" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Mạng"
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Không có ứng dụng nào kết nối"
           }
         }
       }
     },
-    "No Apps Connected" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "No Apps Connected"
+    "No Content": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No Content"
           }
         },
-        "ja" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "アプリが接続されていません"
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "コンテンツなし"
           }
         },
-        "ko" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "연결된 앱 없음"
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "콘텐츠 없음"
           }
         },
-        "vi" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Không có ứng dụng nào kết nối"
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Không có nội dung"
           }
         }
       }
     },
-    "No Content" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "No Content"
+    "No Data": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No Data"
           }
         },
-        "ja" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "コンテンツなし"
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "データなし"
           }
         },
-        "ko" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "콘텐츠 없음"
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "데이터 없음"
           }
         },
-        "vi" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Không có nội dung"
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Không có dữ liệu"
           }
         }
       }
     },
-    "No Data" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "No Data"
+    "No Headers": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No Headers"
           }
         },
-        "ja" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "データなし"
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ヘッダーなし"
           }
         },
-        "ko" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "데이터 없음"
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "헤더 없음"
           }
         },
-        "vi" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Không có dữ liệu"
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Không có tiêu đề"
           }
         }
       }
     },
-    "No Headers" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "No Headers"
+    "Not Found": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Not Found"
           }
         },
-        "ja" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "ヘッダーなし"
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "見つかりません"
           }
         },
-        "ko" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "헤더 없음"
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "찾을 수 없음"
           }
         },
-        "vi" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Không có tiêu đề"
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Không tìm thấy"
           }
         }
       }
     },
-    "Not Found" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Not Found"
+    "Not Modified": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Not Modified"
           }
         },
-        "ja" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "見つかりません"
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "変更なし"
           }
         },
-        "ko" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "찾을 수 없음"
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "수정되지 않음"
           }
         },
-        "vi" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Không tìm thấy"
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Không thay đổi"
           }
         }
       }
     },
-    "Not Modified" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Not Modified"
+    "OK": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "OK"
           }
         },
-        "ja" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "変更なし"
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "OK"
           }
         },
-        "ko" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "수정되지 않음"
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "성공"
           }
         },
-        "vi" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Không thay đổi"
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Thành công"
           }
         }
       }
     },
-    "OK" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "OK"
+    "Overview": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Overview"
           }
         },
-        "ja" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "OK"
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "概要"
           }
         },
-        "ko" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "성공"
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "개요"
           }
         },
-        "vi" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Thành công"
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tổng quan"
           }
         }
       }
     },
-    "Overview" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Overview"
+    "Paste": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Paste"
           }
         },
-        "ja" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "概要"
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ペースト"
           }
         },
-        "ko" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "개요"
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "붙여넣기"
           }
         },
-        "vi" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Tổng quan"
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dán"
           }
         }
       }
     },
-    "Paste" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Paste"
+    "Pause Output": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pause Output"
           }
         },
-        "ja" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "ペースト"
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "出力を一時停止"
           }
         },
-        "ko" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "붙여넣기"
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "출력 일시 중지"
           }
         },
-        "vi" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Dán"
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tạm dừng đầu ra"
           }
         }
       }
     },
-    "Pause Output" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Pause Output"
+    "Query": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Query"
           }
         },
-        "ja" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "出力を一時停止"
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "クエリ"
           }
         },
-        "ko" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "출력 일시 중지"
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "쿼리"
           }
         },
-        "vi" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Tạm dừng đầu ra"
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Truy vấn"
           }
         }
       }
     },
-    "Query" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Query"
+    "Quit Snag": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Quit Snag"
           }
         },
-        "ja" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "クエリ"
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Snagを終了"
           }
         },
-        "ko" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "쿼리"
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Snag 종료"
           }
         },
-        "vi" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Truy vấn"
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Thoát Snag"
           }
         }
       }
     },
-    "Quit Snag" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Quit Snag"
+    "RECENT SEARCHES": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "RECENT SEARCHES"
           }
         },
-        "ja" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Snagを終了"
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "最近の検索"
           }
         },
-        "ko" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Snag 종료"
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "최근 검색"
           }
         },
-        "vi" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Thoát Snag"
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "TÌM KIẾM GẦN ĐÂY"
           }
         }
       }
     },
-    "Raw" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Raw"
+    "REMOTE": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "REMOTE"
           }
         },
-        "ja" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Raw"
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "リモート"
           }
         },
-        "ko" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "원본"
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "원격"
           }
         },
-        "vi" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Dữ liệu thô"
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "TỪ XA"
           }
         }
       }
     },
-    "RECENT SEARCHES" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "RECENT SEARCHES"
+    "Raw": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Raw"
           }
         },
-        "ja" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "最近の検索"
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Raw"
           }
         },
-        "ko" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "최근 검색"
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "원본"
           }
         },
-        "vi" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "TÌM KIẾM GẦN ĐÂY"
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dữ liệu thô"
           }
         }
       }
     },
-    "Redo" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Redo"
+    "Redo": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Redo"
           }
         },
-        "ja" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "やり直す"
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "やり直す"
           }
         },
-        "ko" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "다시 실행"
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "다시 실행"
           }
         },
-        "vi" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Làm lại"
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Làm lại"
           }
         }
       }
     },
-    "REMOTE" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "REMOTE"
+    "Rendering this may cause the app to slow down.": {},
+    "Request": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Request"
           }
         },
-        "ja" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "リモート"
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "リクエスト"
           }
         },
-        "ko" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "원격"
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "요청"
           }
         },
-        "vi" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "TỪ XA"
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Yêu cầu"
           }
         }
       }
     },
-    "Rendering this may cause the app to slow down." : {
-
+    "Response": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Response"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "レスポンス"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "응답"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Phản hồi"
+          }
+        }
+      }
     },
-    "Request" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Request"
+    "Resume Auto-scroll": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Resume Auto-scroll"
           }
         },
-        "ja" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "リクエスト"
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "自動スクロールを再開"
           }
         },
-        "ko" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "요청"
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "자동 스크롤 재개"
           }
         },
-        "vi" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Yêu cầu"
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tiếp tục tự động cuộn"
           }
         }
       }
     },
-    "Response" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Response"
+    "Saved Requests": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Saved Requests"
           }
         },
-        "ja" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "レスポンス"
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "保存済みリクエスト"
           }
         },
-        "ko" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "응답"
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "저장된 요청"
           }
         },
-        "vi" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Phản hồi"
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Yêu cầu đã lưu"
           }
         }
       }
     },
-    "Resume Auto-scroll" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Resume Auto-scroll"
+    "Security Disabled": {},
+    "Select All": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Select All"
           }
         },
-        "ja" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "自動スクロールを再開"
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "すべてを選択"
           }
         },
-        "ko" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "자동 스크롤 재개"
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "전체 선택"
           }
         },
-        "vi" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Tiếp tục tự động cuộn"
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Chọn tất cả"
           }
         }
       }
     },
-    "Saved Requests" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Saved Requests"
+    "Service Unavailable": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Service Unavailable"
           }
         },
-        "ja" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "保存済みリクエスト"
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "サービス利用不可"
           }
         },
-        "ko" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "저장된 요청"
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "서비스를 사용할 수 없음"
           }
         },
-        "vi" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Yêu cầu đã lưu"
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dịch vụ không khả dụng"
           }
         }
       }
     },
-    "Security Disabled" : {
-
+    "Show All": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Show All"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "すべてを表示"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "모두 보기"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Hiển thị tất cả"
+          }
+        }
+      }
     },
-    "Select All" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Select All"
+    "Show Full": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Show Full"
           }
         },
-        "ja" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "すべてを選択"
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "すべて表示"
           }
         },
-        "ko" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "전체 선택"
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "전체 보기"
           }
         },
-        "vi" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Chọn tất cả"
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Hiển thị đầy đủ"
           }
         }
       }
     },
-    "Service Unavailable" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Service Unavailable"
+    "Size: %@": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Size: %@"
           }
         },
-        "ja" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "サービス利用不可"
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "サイズ: %@"
           }
         },
-        "ko" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "서비스를 사용할 수 없음"
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "크기: %@"
           }
         },
-        "vi" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Dịch vụ không khả dụng"
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kích thước: %@"
           }
         }
       }
     },
-    "Show All" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Show All"
+    "Snag - Network Debugger": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Snag - Network Debugger"
           }
         },
-        "ja" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "すべてを表示"
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Snag - ネットワークデバッガ"
           }
         },
-        "ko" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "모두 보기"
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Snag - 네트워크 디버거"
           }
         },
-        "vi" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Hiển thị tất cả"
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Snag - Trình gỡ lỗi mạng"
           }
         }
       }
     },
-    "Snag - Network Debugger" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Snag - Network Debugger"
+    "Style: Auto (System)": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Style: Auto (System)"
           }
         },
-        "ja" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Snag - ネットワークデバッガ"
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "スタイル: 自動 (システム)"
           }
         },
-        "ko" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Snag - 네트워크 디버거"
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "스타일: 자동 (시스템)"
           }
         },
-        "vi" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Snag - Trình gỡ lỗi mạng"
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Giao diện: Tự động (Hệ thống)"
           }
         }
       }
     },
-    "Style: Auto (System)" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Style: Auto (System)"
+    "Style: Dark": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Style: Dark"
           }
         },
-        "ja" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "スタイル: 自動 (システム)"
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "スタイル: ダーク"
           }
         },
-        "ko" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "스타일: 자동 (시스템)"
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "스타일: 다크"
           }
         },
-        "vi" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Giao diện: Tự động (Hệ thống)"
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Giao diện: Tối"
           }
         }
       }
     },
-    "Style: Dark" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Style: Dark"
+    "Style: Light": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Style: Light"
           }
         },
-        "ja" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "スタイル: ダーク"
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "スタイル: ライト"
           }
         },
-        "ko" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "스타일: 다크"
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "스타일: 라이트"
           }
         },
-        "vi" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Giao diện: Tối"
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Giao diện: Sáng"
           }
         }
       }
     },
-    "Style: Light" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Style: Light"
+    "Text is very large (%@)": {},
+    "Time": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Time"
           }
         },
-        "ja" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "スタイル: ライト"
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "時間"
           }
         },
-        "ko" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "스타일: 라이트"
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "시간"
           }
         },
-        "vi" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Giao diện: Sáng"
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Thời gian"
           }
         }
       }
     },
-    "Text is very large (%@)" : {
-
+    "Try Anyway": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Try Anyway"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "とにかく試す"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "그래도 시도"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Thử xem"
+          }
+        }
+      }
     },
-    "Time" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Time"
+    "URL": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Name"
           }
         },
-        "ja" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "時間"
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "名前"
           }
         },
-        "ko" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "시간"
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "이름"
           }
         },
-        "vi" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Thời gian"
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tên"
           }
         }
       }
     },
-    "Try Anyway" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Try Anyway"
+    "Unable to load image": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Unable to load image"
           }
         },
-        "ja" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "とにかく試す"
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "画像を読み込めません"
           }
         },
-        "ko" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "그래도 시도"
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "이미지를 불러올 수 없음"
           }
         },
-        "vi" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Thử xem"
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Không thể tải hình ảnh"
           }
         }
       }
     },
-    "Unable to load image" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Unable to load image"
+    "Unauthorized": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Unauthorized"
           }
         },
-        "ja" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "画像を読み込めません"
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "認証エラー"
           }
         },
-        "ko" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "이미지를 불러올 수 없음"
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "권한 없음"
           }
         },
-        "vi" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Không thể tải hình ảnh"
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Không được phép"
           }
         }
       }
     },
-    "Unauthorized" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Unauthorized"
+    "Undo": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Undo"
           }
         },
-        "ja" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "認証エラー"
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "取り消す"
           }
         },
-        "ko" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "권한 없음"
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "실행 취소"
           }
         },
-        "vi" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Không được phép"
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Hoàn tác"
           }
         }
       }
     },
-    "Undo" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Undo"
+    "Unknown Device": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Unknown Device"
           }
         },
-        "ja" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "取り消す"
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "不明なデバイス"
           }
         },
-        "ko" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "실행 취소"
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "알 수 없는 장치"
           }
         },
-        "vi" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Hoàn tác"
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Thiết bị không xác định"
           }
         }
       }
     },
-    "Unknown Device" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Unknown Device"
+    "Unknown Project": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Unknown Project"
           }
         },
-        "ja" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "不明なデバイス"
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "不明なプロジェクト"
           }
         },
-        "ko" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "알 수 없는 장치"
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "알 수 없는 프로젝트"
           }
         },
-        "vi" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Thiết bị không xác định"
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dự án không xác định"
           }
         }
       }
     },
-    "Unknown Project" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Unknown Project"
+    "Vietnamese": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Vietnamese"
           }
         },
-        "ja" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "不明なプロジェクト"
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ベトナム語"
           }
         },
-        "ko" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "알 수 없는 프로젝트"
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "베트남어"
           }
         },
-        "vi" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Dự án không xác định"
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tiếng Việt"
           }
         }
       }
     },
-    "URL" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Name"
+    "Waiting for devices on port %@...": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Waiting for devices on port %@..."
           }
         },
-        "ja" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "名前"
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ポート %@ でデバイスを待機中..."
           }
         },
-        "ko" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "이름"
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "포트 %@에서 장치를 기다리는 중..."
           }
         },
-        "vi" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Tên"
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Đang chờ thiết bị trên cổng %@..."
           }
         }
       }
     },
-    "Vietnamese" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Vietnamese"
+    "cURL": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "cURL"
           }
         },
-        "ja" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "ベトナム語"
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "cURL"
           }
         },
-        "ko" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "베트남어"
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "cURL"
           }
         },
-        "vi" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Tiếng Việt"
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "cURL"
           }
         }
       }
     },
-    "Waiting for devices on port %@..." : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Waiting for devices on port %@..."
+    "cURL body is large. Truncated for performance.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "cURL body is large. Truncated for performance."
           }
         },
-        "ja" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "ポート %@ でデバイスを待機中..."
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "cURLボディが大きすぎます。パフォーマンスのために切り詰められました。"
           }
         },
-        "ko" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "포트 %@에서 장치를 기다리는 중..."
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "cURL 본문이 너무 큽니다. 성능을 위해 생략되었습니다."
           }
         },
-        "vi" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Đang chờ thiết bị trên cổng %@..."
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nội dung cURL quá lớn. Đã cắt bớt để đảm bảo hiệu năng."
           }
         }
       }
     }
   },
-  "version" : "1.0"
+  "version": "1.0"
 }

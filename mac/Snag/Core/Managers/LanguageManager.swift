@@ -70,4 +70,8 @@ extension String {
     var localized: String {
         return LanguageManager.shared.localizedString(self)
     }
+    
+    func localized(with arguments: CVarArg...) -> String {
+        return String(format: self.localized, arguments: arguments)
+    }
 }

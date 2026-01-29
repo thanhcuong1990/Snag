@@ -30,9 +30,9 @@ class SnagPublisher: NSObject {
     }()
     
     func startPublishing() {
-        self.loadAuthorizedDevices()
         queue.async { [weak self] in
             guard let self = self else { return }
+            self.loadAuthorizedDevices()
             self.stopPublishingLocked()
             do {
                 let tcpOptions = NWProtocolTCP.Options()
@@ -101,32 +101,34 @@ class SnagPublisher: NSObject {
     private func setupConnection(_ connection: NWConnection) {
         connection.stateUpdateHandler = { [weak self] state in
             guard let self = self else { return }
-            switch state {
-            case .ready:
-                let isTrusted = self.isAutoTrusted(connection: connection)
-                if isTrusted {
-                    self.authenticatedConnections.insert(ObjectIdentifier(connection))
+            self.queue.async {
+                switch state {
+                case .ready:
+                    let isTrusted = self.isAutoTrusted(connection: connection)
+                    if isTrusted {
+                        self.authenticatedConnections.insert(ObjectIdentifier(connection))
+                    }
+                    DispatchQueue.main.async {
+                        SnagController.shared.publisherStatus = "Connected: \(connection.endpoint) (Trusted: \(isTrusted))"
+                    }
+                    self.receiveData(on: connection)
+                case .failed(let error):
+                    print("SnagPublisher: Connection failed: \(error)")
+                    self.authenticatedConnections.remove(ObjectIdentifier(connection))
+                    self.removeConnection(connection)
+                    DispatchQueue.main.async {
+                        SnagController.shared.publisherStatus = "Conn Failed: \(error.localizedDescription)"
+                    }
+                case .waiting(let error):
+                    DispatchQueue.main.async {
+                        SnagController.shared.publisherStatus = "Conn Waiting: \(error.localizedDescription)"
+                    }
+                case .cancelled:
+                    self.authenticatedConnections.remove(ObjectIdentifier(connection))
+                    self.removeConnection(connection)
+                default:
+                    break
                 }
-                DispatchQueue.main.async {
-                    SnagController.shared.publisherStatus = "Connected: \(connection.endpoint) (Trusted: \(isTrusted))"
-                }
-                self.receiveData(on: connection)
-            case .failed(let error):
-                print("SnagPublisher: Connection failed: \(error)")
-                self.authenticatedConnections.remove(ObjectIdentifier(connection))
-                self.removeConnection(connection)
-                DispatchQueue.main.async {
-                    SnagController.shared.publisherStatus = "Conn Failed: \(error.localizedDescription)"
-                }
-            case .waiting(let error):
-                DispatchQueue.main.async {
-                    SnagController.shared.publisherStatus = "Conn Waiting: \(error.localizedDescription)"
-                }
-            case .cancelled:
-                self.authenticatedConnections.remove(ObjectIdentifier(connection))
-                self.removeConnection(connection)
-            default:
-                break
             }
         }
         
@@ -160,27 +162,34 @@ class SnagPublisher: NSObject {
             connection.receive(minimumIncompleteLength: length, maximumLength: length) { [weak self] data, _, isComplete, error in
                 guard let self = self else { return }
                 
-                if let _ = error {
-                    connection.cancel()
-                    return
-                }
-                
-                if let data = data {
-                    self.processReceivedData(data, from: connection)
-                }
-                
-                // Continue reading next packet if not closed
-                if !isComplete {
-                    self.receiveData(on: connection)
-                } else {
-                    self.authenticatedConnections.remove(ObjectIdentifier(connection))
-                    connection.cancel()
+                self.queue.async {
+                    if let _ = error {
+                        self.removeConnection(connection)
+                        self.authenticatedConnections.remove(ObjectIdentifier(connection))
+                        connection.cancel()
+                        return
+                    }
+                    
+                    if let data = data {
+                        self.processReceivedDataLocked(data, from: connection)
+                    }
+                    
+                    // Continue reading next packet if not closed
+                    if !isComplete {
+                        self.receiveData(on: connection)
+                    } else {
+                        self.removeConnection(connection)
+                        self.authenticatedConnections.remove(ObjectIdentifier(connection))
+                        connection.cancel()
+                    }
                 }
             }
         }
     }
 
     private func isAutoTrusted(connection: NWConnection) -> Bool {
+        if SnagConfiguration.forceInteractiveAuth { return false }
+        
         guard let path = connection.currentPath else { return false }
         
         // Auto-trust loopback (Simulator)
@@ -257,7 +266,7 @@ class SnagPublisher: NSObject {
         return Int(length)
     }
 
-    private func processReceivedData(_ data: Data, from connection: NWConnection) {
+    private func processReceivedDataLocked(_ data: Data, from connection: NWConnection) {
         do {
             let snagPacket = try jsonDecoder.decode(SnagPacket.self, from: data)
             
@@ -271,29 +280,13 @@ class SnagPublisher: NSObject {
                 }
                 
                 if !isTrusted && !isAuthorized {
-                    if let pin = snagPacket.control?.authPIN {
-                        if pin == SnagConfiguration.securityPIN {
-                            authenticatedConnections.insert(ObjectIdentifier(connection))
-                            isAuthorized = true
-                            DispatchQueue.main.async {
-                                SnagController.shared.publisherStatus = "Authenticated: \(snagPacket.device?.deviceName ?? "Device")"
-                            }
-                        } else {
-                            print("SnagPublisher: Authentication failed with incorrect PIN: \(pin)")
-                        }
-                    }
-                    
-                    if !isAuthorized {
-                        // Mark packet as unauthenticated instead of cancelling
-                        snagPacket.isUnauthenticated = true
-                    }
+                    // Mark packet as unauthenticated. Manual authorization via the Mac app (using the PIN) is required.
+                    snagPacket.isUnauthenticated = true
                 }
             }
             
             if let deviceId = snagPacket.device?.deviceId {
-                queue.async {
-                    self.deviceConnections[deviceId] = connection
-                }
+                self.deviceConnections[deviceId] = connection
             }
             
             DispatchQueue.main.async {

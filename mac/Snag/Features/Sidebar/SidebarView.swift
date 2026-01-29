@@ -104,6 +104,20 @@ struct SidebarView: View {
                     Text(snagController.publisherStatus)
                         .font(.system(size: 10))
                         .lineLimit(1)
+                    
+                    Spacer()
+                    
+                    Toggle("", isOn: Binding(
+                        get: { SettingsManager.shared.forceInteractiveAuth },
+                        set: { SettingsManager.shared.forceInteractiveAuth = $0 }
+                    ))
+                    .toggleStyle(CheckboxToggleStyle())
+                    .labelsHidden()
+                    .help("Force PIN prompt on Simulators/USB")
+                    
+                    Text("Force PIN".localized)
+                        .font(.system(size: 9))
+                        .foregroundColor(.secondary)
                 }
                 
                 if !snagController.isSecurityEnabled {
@@ -112,69 +126,15 @@ struct SidebarView: View {
                         .foregroundColor(.secondary)
                 }
                 
-                if let project = snagController.selectedProjectController,
-                   let device = project.selectedDeviceController,
-                   !device.isAuthenticated {
-                    Button(action: {
-                        enteredPIN = ""
-                        showingPINPopover = true
-                    }) {
-                        HStack {
-                            Image(systemName: "hand.tap.fill")
-                            Text("Authorize Device".localized)
-                        }
-                        .frame(maxWidth: .infinity)
-                        .padding(.vertical, 4)
-                    }
-                    .buttonStyle(BorderedButtonStyle())
-                    .controlSize(.small)
-                    .tint(.blue)
-                    .padding(.top, 4)
-                    .popover(isPresented: $showingPINPopover) {
-                        VStack(alignment: .leading, spacing: 12) {
-                            Text("Enter Security PIN".localized)
-                                .font(.system(size: 12, weight: .bold))
-                            
-                            TextField("6-digit PIN", text: $enteredPIN)
-                                .textFieldStyle(RoundedBorderTextFieldStyle())
-                                .font(.system(size: 11, design: .monospaced))
-                                .frame(width: 120)
-                                .onChange(of: enteredPIN) { newValue in
-                                    let filtered = newValue.filter { $0.isNumber }
-                                    if filtered.count > 6 {
-                                        enteredPIN = String(filtered.prefix(6))
-                                    } else {
-                                        enteredPIN = filtered
-                                    }
-                                }
-                            
-                            Text("Enter the PIN configured on your iOS/Android device to authorize this connection.".localized)
-                                .font(.system(size: 10))
-                                .foregroundColor(.secondary)
-                                .frame(width: 200, alignment: .leading)
-                                .fixedSize(horizontal: false, vertical: true)
-                            
-                            HStack {
-                                Spacer()
-                                Button("Authorize".localized) {
-                                    if snagController.authorizeDevice(device, enteredPIN: enteredPIN) {
-                                        showingPINPopover = false
-                                    }
-                                }
-                                .buttonStyle(BorderedProminentButtonStyle())
-                                .controlSize(.small)
-                                .disabled(enteredPIN.count < 6)
-                            }
-                        }
-                        .padding(16)
-                    }
+                if snagController.publisherStatus.contains("Connected") && !snagController.publisherStatus.contains("Trusted") {
+                    Text("Connection Locked".localized)
+                        .font(.system(size: 10, weight: .semibold))
+                        .foregroundColor(.secondary)
+                        .padding(.top, 4)
                 }
             }
             .padding(12)
         }
         .background(Color(nsColor: ThemeColor.deviceListBackgroundColor))
     }
-    
-    @State private var showingPINPopover = false
-    @State private var enteredPIN = ""
 }

@@ -24,10 +24,17 @@ class SettingsManager: ObservableObject {
         }
     }
     
+    @Published var forceInteractiveAuth: Bool {
+        didSet {
+            defaults.set(forceInteractiveAuth, forKey: SnagConstants.forceInteractiveAuthKey)
+        }
+    }
+    
     private init() {
         self.appearanceMode = defaults.string(forKey: SnagConstants.appearanceModeKey) ?? SnagConstants.appearanceAuto
         self.addressFilter = defaults.string(forKey: SnagConstants.addressFilterPersistenceKey) ?? ""
         self.recentSearches = defaults.stringArray(forKey: SnagConstants.recentSearchesKey) ?? []
+        self.forceInteractiveAuth = defaults.bool(forKey: SnagConstants.forceInteractiveAuthKey)
     }
     
     // Helper to add search and keep it within limits

@@ -54,7 +54,102 @@ struct SidebarDeviceRow: View {
             }
         )
         .contentShape(Rectangle())
+        .onTapGesture {
+            if device.isAuthenticated {
+                selectDevice()
+            } else {
+                enteredPIN = ""
+                errorMessage = nil
+                shakeOffset = 0
+                showingPINPopover = true
+            }
+        }
+        .popover(isPresented: $showingPINPopover, arrowEdge: .trailing) {
+            VStack(alignment: .leading, spacing: 12) {
+                Text("Enter Security PIN".localized)
+                    .font(.system(size: 12, weight: .bold))
+                
+                TextField("6-digit PIN", text: Binding(
+                    get: { enteredPIN },
+                    set: { newValue in
+                        errorMessage = nil
+                        let filtered = newValue.filter { $0.isNumber }
+                        enteredPIN = String(filtered.prefix(6))
+                    }
+                ))
+                    .textFieldStyle(RoundedBorderTextFieldStyle())
+                    .font(.system(size: 11, design: .monospaced))
+                    .frame(width: 120)
+                    .onSubmit {
+                        performAuthorization()
+                    }
+                
+                VStack(alignment: .leading, spacing: 0) {
+                    if let error = errorMessage {
+                        Text(error)
+                            .font(.system(size: 10))
+                            .foregroundColor(.red)
+                    } else {
+                        Text("Enter the PIN from your %@ device.".localized(with: deviceOSName(for: device.deviceDescription)))
+                            .font(.system(size: 10))
+                            .foregroundColor(.secondary)
+                    }
+                }
+                .frame(width: 200, height: 30, alignment: .topLeading)
+                .fixedSize(horizontal: false, vertical: false)
+                
+                HStack {
+                    Spacer()
+                    Button("Authorize".localized) {
+                        performAuthorization()
+                    }
+                    .buttonStyle(BorderedProminentButtonStyle())
+                    .controlSize(.small)
+                    .disabled(enteredPIN.count < 6)
+                }
+            }
+            .padding(16)
+            .offset(x: shakeOffset)
+        }
     }
+    
+    private func selectDevice() {
+        // Find the project controller containing this device
+        if let project = SnagController.shared.projectControllers.first(where: { $0.deviceControllers.contains(device) }) {
+            SnagController.shared.selectedProjectController = project
+            project.selectedDeviceController = device
+        }
+    }
+    
+    private func performAuthorization() {
+        guard enteredPIN.count >= 6 else { return }
+        
+        if SnagController.shared.authorizeDevice(device, enteredPIN: enteredPIN) {
+            showingPINPopover = false
+            errorMessage = nil
+            selectDevice()
+        } else {
+            errorMessage = "Incorrect PIN. Please try again.".localized
+            withAnimation(.default) {
+                shakeOffset = 10
+            }
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+                withAnimation(.default) {
+                    shakeOffset = -10
+                }
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+                    withAnimation(.default) {
+                        shakeOffset = 0
+                    }
+                }
+            }
+        }
+    }
+    
+    @State private var showingPINPopover = false
+    @State private var enteredPIN = ""
+    @State private var errorMessage: String? = nil
+    @State private var shakeOffset: CGFloat = 0
     
     private func deviceIconName(for description: String?) -> String {
         let desc = description?.lowercased() ?? ""
@@ -85,5 +180,15 @@ struct SidebarDeviceRow: View {
             return version
         }
         return desc
+    }
+    
+    private func deviceOSName(for description: String?) -> String {
+        let desc = description?.lowercased() ?? ""
+        if desc.contains("iphone") || desc.contains("ios") || desc.contains("ipad") {
+            return "iOS"
+        } else if desc.contains("android") {
+            return "Android"
+        }
+        return "device"
     }
 }

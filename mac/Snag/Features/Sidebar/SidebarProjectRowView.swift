@@ -14,10 +14,6 @@ struct SidebarProjectRowView: View {
                         device: device,
                         isSelected: snagController.selectedProjectController == project && project.selectedDeviceController == device
                     )
-                    .onTapGesture {
-                        snagController.selectedProjectController = project
-                        project.selectedDeviceController = device
-                    }
                 }
             }
             .padding(.horizontal, 16)
