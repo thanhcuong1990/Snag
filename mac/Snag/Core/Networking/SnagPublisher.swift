@@ -285,10 +285,6 @@ class SnagPublisher: NSObject {
     }
 
     private func processReceivedDataLocked(_ data: Data, from connection: NWConnection) {
-        // Raw Diagnostic
-        let bytes = data.prefix(16).map { String(format: "%02x", $0) }.joined(separator: " ")
-        print("SnagPublisher: Processing \(data.count) bytes from \(connection.endpoint). Raw: \(bytes)...")
-        
         do {
             let snagPacket = try jsonDecoder.decode(SnagPacket.self, from: data)
             
@@ -404,7 +400,6 @@ class SnagPublisher: NSObject {
         // Store salt by deviceId, not connection
         if let deviceId = packet.device?.deviceId {
             self.connectionSalts[deviceId] = salt
-            print("DEBUG SALT: Generated salt \(saltHex) for deviceId \(deviceId) (endpoint: \(connection.endpoint))")
         } else {
             print("SnagPublisher: WARNING - No deviceId in hello packet, cannot store salt")
         }
@@ -427,7 +422,6 @@ class SnagPublisher: NSObject {
         
         // Store by deviceId, not connection
         self.pendingAuthVerifications[deviceId] = hash
-        print("DEBUG SALT: Stored pending verification hash for deviceId \(deviceId)")
         
         // Auto-Auth Check: Do we have a cached PIN for this device?
         if let cachedId = self.knownPINs[deviceId] {
@@ -453,29 +447,20 @@ class SnagPublisher: NSObject {
     private func handleEncryptedData(packet: SnagPacket, connection: NWConnection) {
         // Get deviceId from the packet or look it up from the connection
         var deviceId: String? = packet.device?.deviceId
-        print("DEBUG ENCRYPT: handleEncryptedData called. Packet deviceId: \(deviceId ?? "nil")")
         
         // If no deviceId in packet, try to find it from connection mapping
         if deviceId == nil {
             for (id, conn) in self.deviceConnections where conn === connection {
                 deviceId = id
-                print("DEBUG ENCRYPT: Resolved deviceId \(id) from connection mapping")
                 break
             }
         }
-        
-        if deviceId == nil {
-            print("DEBUG ENCRYPT: Could not resolve deviceId! Available deviceConnections: \(Array(self.deviceConnections.keys))")
-        }
-        
-        print("DEBUG ENCRYPT: Available sessionKeys for: \(Array(self.sessionKeys.keys))")
         
         guard let resolvedDeviceId = deviceId,
               let key = self.sessionKeys[resolvedDeviceId],
               let ciphertext = packet.control?.encryptedPayload,
               let nonce = packet.control?.encryptedNonce else {
             print("SnagPublisher: Missing key, ciphertext, or nonce for encrypted packet from \(connection.endpoint)")
-            print("DEBUG ENCRYPT: resolvedDeviceId=\(deviceId ?? "nil"), hasKey=\(deviceId != nil ? String(self.sessionKeys[deviceId!] != nil) : "N/A"), hasCiphertext=\(packet.control?.encryptedPayload != nil), hasNonce=\(packet.control?.encryptedNonce != nil)")
             return
         }
         
@@ -582,23 +567,18 @@ class SnagPublisher: NSObject {
              }
              
              guard let connection = self.deviceConnections[deviceId] else {
-                 print("DEBUG SALT: No connection found for deviceId \(deviceId)")
+                 print("SnagPublisher: No connection found for deviceId \(deviceId)")
                  return
              }
-             print("DEBUG SALT: authorizeDevice for deviceId \(deviceId) (endpoint: \(connection.endpoint))")
              
              // Lookup by deviceId now (not connection)
              guard let salt = self.connectionSalts[deviceId] else {
                  print("SnagPublisher: No salt found for device \(deviceId)")
-                 print("DEBUG SALT: Available salts for deviceIds: \(Array(self.connectionSalts.keys))")
                  return
              }
-             let saltHex = salt.map { String(format: "%02x", $0) }.joined()
-             print("DEBUG SALT: Using salt \(saltHex) for verification")
              
              guard let clientHash = self.pendingAuthVerifications[deviceId] else {
                  print("SnagPublisher: No pending verify for device \(deviceId)")
-                 print("DEBUG SALT: Available pending verifications for deviceIds: \(Array(self.pendingAuthVerifications.keys))")
                  return
              }
              
@@ -656,11 +636,6 @@ class SnagPublisher: NSObject {
                     print("SnagPublisher: Device \(deviceId) locked out for \(Int(self.lockoutDuration)) seconds after \(attempts) failed attempts")
                 } else {
                     print("SnagPublisher: PIN Mismatch for \(deviceId). Failed attempt \(attempts)/\(self.maxFailedAttempts)")
-                    print("DEBUG: Mismatch Details:")
-                    print("DEBUG: Expecting (Client Hash): \(clientHash)")
-                    print("DEBUG: Computed (Mac Hash):  \(computedHash)")
-                    print("DEBUG: Salt Used: \(salt.map { String(format: "%02x", $0) }.joined())")
-                    print("DEBUG: PIN Used: '\(pin)'")
                 }
                 self.saveLockoutState()
             }

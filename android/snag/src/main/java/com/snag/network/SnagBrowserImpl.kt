@@ -229,8 +229,6 @@ internal class SnagBrowserImpl(
         if (type == "auth_required") {
             val saltHex = packet.control.salt ?: return true
             val pin = config.securityPIN ?: ""
-            Timber.d("Handshake: Using PIN '${pin}' for salt '${saltHex}'") 
-            
             val salt = SnagCrypto.hexToBytes(saltHex)
             val key = SnagCrypto.deriveKey(pin, salt)
             this.sessionKey = key
@@ -243,12 +241,6 @@ internal class SnagBrowserImpl(
             val dataToHash = keyBytes + validation
             val hashBytes = java.security.MessageDigest.getInstance("SHA-256").digest(dataToHash)
             val hashHex = SnagCrypto.bytesToHex(hashBytes)
-            
-            Timber.e("DIAGNOSTIC: Handshake for DeviceID: ${device?.deviceId}")
-            Timber.e("DIAGNOSTIC: PIN used: '$pin'")
-            Timber.e("DIAGNOSTIC: Salt (Hex): '$saltHex'")
-            Timber.e("DIAGNOSTIC: Computed Hash: '$hashHex'")
-            Timber.e("DIAGNOSTIC: Key (Hex): '${SnagCrypto.bytesToHex(keyBytes)}'")
             
             val verifyControl = com.snag.models.SnagControl(type = "auth_verify", authHash = hashHex)
             val verifyPacket = SnagPacket(control = verifyControl, project = project, device = device)
