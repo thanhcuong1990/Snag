@@ -27,6 +27,7 @@ class SettingsManager: ObservableObject {
     @Published var forceInteractiveAuth: Bool {
         didSet {
             defaults.set(forceInteractiveAuth, forKey: SnagConstants.forceInteractiveAuthKey)
+            NotificationCenter.default.post(name: NSNotification.Name("SnagSettingsChanged"), object: nil)
         }
     }
     

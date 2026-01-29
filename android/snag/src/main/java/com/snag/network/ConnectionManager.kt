@@ -88,7 +88,7 @@ internal class ConnectionManager(
                     connections[hostAddress] = socket
                     
                     if (config?.isSecurityEnabled == true) {
-                        sendAuthPacket(socket)
+                        sendHelloPacket(socket)
                     }
                     
                     startReceiving(socket)
@@ -238,12 +238,10 @@ internal class ConnectionManager(
         return lastReconnectAttempt.compareAndSet(last, now)
     }
 
-    private fun sendAuthPacket(socket: Socket) {
+    private fun sendHelloPacket(socket: Socket) {
         val currentConfig = config ?: return
-        val authControl = SnagControl(type = "authPIN", authPIN = currentConfig.securityPIN)
         
         // Use SnagAppMetadataProvider to ensure consistent Project and Device info
-        // This prevents "duplicate" devices appearing on the Mac app (one from auth, one from handshake)
         val context = com.snag.Snag.appContext
         
         val project = if (context != null) {
@@ -255,26 +253,28 @@ internal class ConnectionManager(
         val device = if (context != null) {
             com.snag.core.SnagAppMetadataProvider.getDevice(context)
         } else {
-            // Fallback if context is somehow null (unlikely if Snag.start() was called)
              com.snag.models.SnagDevice(
                 deviceName = "${android.os.Build.MANUFACTURER} ${android.os.Build.MODEL}",
                 deviceId = java.util.UUID.randomUUID().toString()
             )
         }
         
-        val authPacket = SnagPacket(
-            control = authControl,
+        // Send Hello
+        val helloControl = SnagControl(type = "hello", deviceId = device.deviceId)
+        
+        val helloPacket = SnagPacket(
+            control = helloControl,
             project = project,
             device = device
         )
         
         try {
-            val payload = json.encodeToString(authPacket).toByteArray()
+            val payload = json.encodeToString(helloPacket).toByteArray()
             val data = PacketFraming.frame(payload)
             socket.getOutputStream().write(data)
             socket.getOutputStream().flush()
         } catch (e: Exception) {
-            Timber.e(e, "Snag: Failed to send auth packet")
+            Timber.e(e, "Snag: Failed to send hello packet")
         }
     }
 

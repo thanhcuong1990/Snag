@@ -34,7 +34,6 @@ class SnagDeviceController: NSObject, ObservableObject {
     }
     
     @Published var isAuthenticated: Bool = true
-    var receivedPIN: String?
     
     @Published private(set) var selectedPacket: SnagPacket?
     
@@ -70,14 +69,26 @@ class SnagDeviceController: NSObject, ObservableObject {
             self.ipAddress = newPacket.device?.ipAddress
         }
 
-        self.isAuthenticated = !newPacket.isUnauthenticated
-        
-        if newPacket.isUnauthenticated {
-            if let pin = newPacket.control?.authPIN {
-                self.receivedPIN = pin
-            }
-            return true // Keep device in list but don't add data
+        // New Handshake Logic: "auth_verify" means device is waiting for PIN
+        if newPacket.control?.type == "auth_verify" {
+            self.isAuthenticated = false
+            return true
+        } else if newPacket.control?.type == "auth_success" {
+            // Local injected packet to confirm auth
+            self.isAuthenticated = true
+            return true
+        } else if newPacket.isUnauthenticated {
+             // Legacy fallback
+             self.isAuthenticated = false
+             return true
+        } else {
+             // If we are receiving normal packets, we assume authenticated (unless explicitly marked unauth)
+             // But valid packets only arrive if we are authorized now.
+             if !self.isAuthenticated {
+                 self.isAuthenticated = true
+             }
         }
+
         
         if self.appInfo == nil && newPacket.control == nil && Date().timeIntervalSince(lastAppInfoRequest) > 5.0 {
             self.requestAppInfo()

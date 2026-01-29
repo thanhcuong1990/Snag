@@ -25,45 +25,55 @@
 
 Snag uses a secure connection flow to ensure your network traffic remains private. It balances high security with a "zero-config" developer experience:
 
-### Smart Security (TLS + PIN)
+### Smart Security (Double Encryption)
 
-All traffic is encrypted via TLS. Snag intelligently manages trust to minimize friction. **Security is enabled by default** in the client libraries.
+Traffic is encrypted via **TLS** (Transport Layer) AND **AES-GCM** (Application Layer). The application layer encryption uses a Session Key derived from your **Security PIN**, ensuring that even if the TLS connection is intercepted (MITM), the data remains unreadable.
 
-- **Auto-Trust**: Connections from **Simulators** or via **USB/Wired** are automatically trusted.
+- **Auto-Trust**: Connections from **Simulators** or via **USB/Wired** are automatically trusted and use cleartext credentials (over TLS) for zero-latency performance.
 - **Interactive Pairing**: For remote connections over **Wi-Fi**, devices appear in the Mac app sidebar with a **Locked (🔒)** icon. To trust a device, click **"Authorize Device"** and enter the **Security PIN** that you configured on the client (iOS/Android).
-- **Persistent Trust**: Once authorized, the device is remembered and does not need to be authorized again.
+- **Persistent Trust**: Once authorized, the device is remembered.
 
 > [!NOTE]
-> **Privacy Isolation**: By default, new Wi-Fi devices are blocked (locked) until you explicitly authorize them. This ensures you never receive logs from unauthorized sources.
+> **Privacy Isolation**: By default, new Wi-Fi devices are blocked (locked) until you explicitly authorize them. The client sends a "Hello" packet, but no logs or sensitive data are transmitted until the secure handshake generates a shared session key.
 
 ```mermaid
 sequenceDiagram
     participant Client as iOS/Android Client
     participant Server as Mac App (Snag)
+    participant User as Developer
 
     Client->>Server: Connect (TLS)
-    Server-->>Client: TLS Handshake (Self-signed Cert)
+    Client->>Server: Hello (Device ID)
 
     alt Auto-Trust (Simulator/USB)
         Server->>Server: Check NWPath (Loopback/Wired)
-        Server-->>Client: Mark Connection as Trusted
+        Server-->>Client: Auth Success (Mode: Cleartext)
+        Client->>Server: Send Data (Cleartext over TLS)
     else Wi-Fi Connection (Remote)
-        Client->>Server: Connect without PIN
-        Server-->>Client: Connection Accepted (Untrusted)
+        Server-->>Client: Auth Required (Salt)
+        Client->>Client: Derive Key (PBKDF2(PIN, Salt))
+        Client->>Server: Auth Verify (Hash(Key))
+
         Server->>Server: Show "Locked" Device in Sidebar
 
         opt User Clicks "Authorize"
             Server->>User: Prompt for PIN
-            User->>Server: Input PIN (Matching Client)
-            alt PIN matches client value
-                Server->>Server: Mark Device ID as Trusted
-                Server-->>Client: Start Processing Packets
+            User->>Server: Input PIN
+            Server->>Server: Derive Key (PBKDF2(PIN, Salt))
+
+            alt Keys Match
+                Server->>Server: Mark Device Trusted
+                Server-->>Client: Auth Success (Mode: Encrypted)
+                loop Secure Data Stream
+                    Client->>Client: Encrypt Packet (AES-GCM)
+                    Client->>Server: Send Encrypted Data
+                    Server->>Server: Decrypt Packet
+                end
+            else PIN Mismatch
+                 Server->>User: Show Error
             end
         end
     end
-
-    Note over Client,Server: Only Trusted/Authorized Connections can exchange data
-    Client->>Server: Send encrypted SnagPacket
 ```
 
 ### 🛡️ Security Verification
@@ -72,7 +82,7 @@ You can verify that traffic is encrypted using **Wireshark**:
 
 1.  Capture traffic on your local network interface.
 2.  Filter by port: `tcp.port == 43435`.
-3.  You will see the **TLS Handshake** and all subsequent packets marked as **Application Data**. The payload will be encrypted and unreadable.
+3.  You will see the **TLS Handshake**. Inside the TLS stream, if you could decrypt it (which you can't easily without the key, but assuming you did), you would see "Data" packets containing **encrypted payload blobs** instead of raw JSON logs.
 
 ![Wireshark Verification](https://raw.githubusercontent.com/thanhcuong1990/Snag/main/assets/wireshark_verify.png)
 
