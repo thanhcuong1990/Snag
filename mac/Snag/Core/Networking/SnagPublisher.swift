@@ -15,9 +15,10 @@ class SnagPublisher: NSObject {
     private var authenticatedConnections: Set<ObjectIdentifier> = []
     private var deviceConnections: [String: NWConnection] = [:]
     private var manuallyAuthorizedDeviceIds: Set<String> = []
-    private var sessionKeys: [ObjectIdentifier: SymmetricKey] = [:]
-    private var connectionSalts: [ObjectIdentifier: Data] = [:]
-    private var pendingAuthVerifications: [ObjectIdentifier: String] = [:] // Connection -> Client Hash
+    private var sessionKeys: [String: SymmetricKey] = [:] // DeviceID -> Session Key
+    private var connectionSalts: [String: Data] = [:] // DeviceID -> Salt
+    private var pendingAuthVerifications: [String: String] = [:] // DeviceID -> Client Hash
+    private var knownPINs: [String: String] = [:] // DeviceID -> PIN (Session Cache)
     
     // Rate limiting for failed PIN attempts
     private var failedAuthAttempts: [String: Int] = [:] // DeviceID -> Count
@@ -284,11 +285,16 @@ class SnagPublisher: NSObject {
     }
 
     private func processReceivedDataLocked(_ data: Data, from connection: NWConnection) {
+        // Raw Diagnostic
+        let bytes = data.prefix(16).map { String(format: "%02x", $0) }.joined(separator: " ")
+        print("SnagPublisher: Processing \(data.count) bytes from \(connection.endpoint). Raw: \(bytes)...")
+        
         do {
             let snagPacket = try jsonDecoder.decode(SnagPacket.self, from: data)
             
             // 1. Handle Handshake Control Packets
             if let type = snagPacket.control?.type {
+                print("SnagPublisher: Received control packet type '\(type)' from \(connection.endpoint)")
                 if type == "hello" {
                     handleHello(packet: snagPacket, connection: connection)
                 } else if type == "auth_verify" {
@@ -298,15 +304,20 @@ class SnagPublisher: NSObject {
                     handleEncryptedData(packet: snagPacket, connection: connection)
                     return
                 }
+            } else {
+                print("SnagPublisher: Received packet (no control) from \(connection.endpoint)")
             }
             
             // 2. Handle Cleartext / Auto-Trusted Packets
             // Only allow if connection is already trusted (Auto-Trust or previously authorized in cleartext mode, though we prefer encryption)
             let isTrusted = authenticatedConnections.contains(ObjectIdentifier(connection))
             
+            // Allow discovery packets to bypass trust check so they appear in UI
+            let isDiscovery = snagPacket.control?.type == "hello"
+            
             // If security is enabled, we strictly require trust for any non-handshake packet.
-            if SnagConfiguration.isSecurityEnabled && !isTrusted {
-                print("SnagPublisher: Dropped unauthorized packet from \(connection.endpoint)")
+            if SnagConfiguration.isSecurityEnabled && !isTrusted && !isDiscovery {
+                print("SnagPublisher: Dropped unauthorized packet from \(connection.endpoint). Trusted: \(isTrusted), Discovery: \(isDiscovery)")
                 return
             }
             
@@ -331,24 +342,75 @@ class SnagPublisher: NSObject {
             self.deviceConnections[deviceId] = connection
         }
         
+        // Check if this device is already authenticated
+        if let deviceId = packet.device?.deviceId {
+            if self.sessionKeys[deviceId] != nil {
+                // Device is already authenticated - auto-auth this new connection
+                print("SnagPublisher: Device \(deviceId) already authenticated. Auto-authorizing new connection from \(connection.endpoint)")
+                self.authenticatedConnections.insert(ObjectIdentifier(connection))
+                
+                // Send auth_success to this connection
+                var successPacket = SnagPacket()
+                successPacket.control = SnagControl(type: "auth_success", authMode: "encrypted")
+                self.send(packet: successPacket, toConnection: connection)
+                
+                // Notify UI
+                DispatchQueue.main.async {
+                    self.delegate?.didGetPacket(publisher: self, packet: packet)
+                }
+                return
+            }
+            
+            // If salt exists but not yet authenticated, re-send the same salt to new connection
+            if let existingSalt = self.connectionSalts[deviceId] {
+                print("SnagPublisher: Handshake pending for deviceId \(deviceId). Re-sending existing salt to new connection \(connection.endpoint)")
+                let saltHex = existingSalt.map { String(format: "%02x", $0) }.joined()
+                var challengePacket = SnagPacket()
+                challengePacket.control = SnagControl(type: "auth_required", salt: saltHex)
+                self.send(packet: challengePacket, toConnection: connection)
+                return
+            }
+        }
+        
         // check auto trust
         if isAutoTrusted(connection: connection) {
              print("SnagPublisher: Auto-trusting connection from \(connection.endpoint)")
              self.authenticatedConnections.insert(ObjectIdentifier(connection))
              
-             // Send auth_success (cleartext)
-             var successPacket = SnagPacket()
+             // Send auth_success (cleartext) to client
+             let successPacket = SnagPacket()
              successPacket.control = SnagControl(type: "auth_success", authMode: "cleartext")
              self.send(packet: successPacket, toConnection: connection)
+             
+             // Also notify local UI so the device is marked as authenticated immediately
+             DispatchQueue.main.async {
+                 // Forward the hello packet so device info is registered
+                 self.delegate?.didGetPacket(publisher: self, packet: packet)
+                 
+                 // Also inject a local success packet to toggle isAuthenticated
+                 var localSuccess = SnagPacket()
+                 localSuccess.control = SnagControl(type: "auth_success")
+                 localSuccess.device = packet.device
+                 localSuccess.project = packet.project
+                 self.delegate?.didGetPacket(publisher: self, packet: localSuccess)
+             }
              return
         }
         
         // Start Handshake: Send Salt
         let salt = SnagCrypto.randomSalt()
-        self.connectionSalts[ObjectIdentifier(connection)] = salt
+        let saltHex = salt.map { String(format: "%02x", $0) }.joined()
+        
+        // Store salt by deviceId, not connection
+        if let deviceId = packet.device?.deviceId {
+            self.connectionSalts[deviceId] = salt
+            print("DEBUG SALT: Generated salt \(saltHex) for deviceId \(deviceId) (endpoint: \(connection.endpoint))")
+        } else {
+            print("SnagPublisher: WARNING - No deviceId in hello packet, cannot store salt")
+        }
         
         var challengePacket = SnagPacket()
-        challengePacket.control = SnagControl(type: "auth_required", salt: salt.map { String(format: "%02x", $0) }.joined())
+        challengePacket.control = SnagControl(type: "auth_required", salt: saltHex)
         self.send(packet: challengePacket, toConnection: connection)
         
         DispatchQueue.main.async {
@@ -358,7 +420,25 @@ class SnagPublisher: NSObject {
     
     private func handleAuthVerify(packet: SnagPacket, connection: NWConnection) {
         guard let hash = packet.control?.authHash else { return }
-        self.pendingAuthVerifications[ObjectIdentifier(connection)] = hash
+        guard let deviceId = packet.device?.deviceId else {
+            print("SnagPublisher: No deviceId in auth_verify packet")
+            return
+        }
+        
+        // Store by deviceId, not connection
+        self.pendingAuthVerifications[deviceId] = hash
+        print("DEBUG SALT: Stored pending verification hash for deviceId \(deviceId)")
+        
+        // Auto-Auth Check: Do we have a cached PIN for this device?
+        if let cachedId = self.knownPINs[deviceId] {
+             print("SnagPublisher: Found cached PIN for \(deviceId). Attempting auto-auth.")
+             if self.authorizeDevice(deviceId: deviceId, pin: cachedId) {
+                 return // Success
+             } else {
+                 print("SnagPublisher: Cached PIN failed for \(deviceId). Removing from cache.")
+                 self.knownPINs.removeValue(forKey: deviceId)
+             }
+        }
         
         // Now we wait for User to enter PIN via UI.
         // We trigger the UI by notifying the controller that this device exists (it's already in deviceConnections).
@@ -371,22 +451,54 @@ class SnagPublisher: NSObject {
     }
     
     private func handleEncryptedData(packet: SnagPacket, connection: NWConnection) {
-        guard let key = self.sessionKeys[ObjectIdentifier(connection)],
+        // Get deviceId from the packet or look it up from the connection
+        var deviceId: String? = packet.device?.deviceId
+        print("DEBUG ENCRYPT: handleEncryptedData called. Packet deviceId: \(deviceId ?? "nil")")
+        
+        // If no deviceId in packet, try to find it from connection mapping
+        if deviceId == nil {
+            for (id, conn) in self.deviceConnections where conn === connection {
+                deviceId = id
+                print("DEBUG ENCRYPT: Resolved deviceId \(id) from connection mapping")
+                break
+            }
+        }
+        
+        if deviceId == nil {
+            print("DEBUG ENCRYPT: Could not resolve deviceId! Available deviceConnections: \(Array(self.deviceConnections.keys))")
+        }
+        
+        print("DEBUG ENCRYPT: Available sessionKeys for: \(Array(self.sessionKeys.keys))")
+        
+        guard let resolvedDeviceId = deviceId,
+              let key = self.sessionKeys[resolvedDeviceId],
               let ciphertext = packet.control?.encryptedPayload,
               let nonce = packet.control?.encryptedNonce else {
+            print("SnagPublisher: Missing key, ciphertext, or nonce for encrypted packet from \(connection.endpoint)")
+            print("DEBUG ENCRYPT: resolvedDeviceId=\(deviceId ?? "nil"), hasKey=\(deviceId != nil ? String(self.sessionKeys[deviceId!] != nil) : "N/A"), hasCiphertext=\(packet.control?.encryptedPayload != nil), hasNonce=\(packet.control?.encryptedNonce != nil)")
             return
         }
         
         do {
             let plaintext = try SnagCrypto.decrypt(ciphertext: ciphertext, nonce: nonce, key: key)
-            let actualPacket = try jsonDecoder.decode(SnagPacket.self, from: plaintext)
+            print("SnagPublisher: Decrypted \(plaintext.count) bytes from \(connection.endpoint)")
             
-            // Process as normal
-            DispatchQueue.main.async {
-                self.delegate?.didGetPacket(publisher: self, packet: actualPacket)
+            do {
+                let actualPacket = try jsonDecoder.decode(SnagPacket.self, from: plaintext)
+                print("SnagPublisher: Decoded packet from \(connection.endpoint). ID: \(actualPacket.packetId ?? "nil")")
+                
+                // Process as normal
+                DispatchQueue.main.async {
+                    self.delegate?.didGetPacket(publisher: self, packet: actualPacket)
+                }
+            } catch {
+                print("SnagPublisher: JSON Decoding failed for decrypted packet: \(error)")
+                if let json = String(data: plaintext, encoding: .utf8) {
+                    print("SnagPublisher: Malformed JSON: \(json)")
+                }
             }
         } catch {
-            print("SnagPublisher: Decryption failed: \(error)")
+            print("SnagPublisher: Decryption failed for packet from \(connection.endpoint): \(error)")
         }
     }
     
@@ -469,13 +581,24 @@ class SnagPublisher: NSObject {
                  }
              }
              
-             guard let connection = self.deviceConnections[deviceId] else { return }
-             guard let salt = self.connectionSalts[ObjectIdentifier(connection)] else {
-                 print("SnagPublisher: No salt found for device \(deviceId)")
+             guard let connection = self.deviceConnections[deviceId] else {
+                 print("DEBUG SALT: No connection found for deviceId \(deviceId)")
                  return
              }
-             guard let clientHash = self.pendingAuthVerifications[ObjectIdentifier(connection)] else {
+             print("DEBUG SALT: authorizeDevice for deviceId \(deviceId) (endpoint: \(connection.endpoint))")
+             
+             // Lookup by deviceId now (not connection)
+             guard let salt = self.connectionSalts[deviceId] else {
+                 print("SnagPublisher: No salt found for device \(deviceId)")
+                 print("DEBUG SALT: Available salts for deviceIds: \(Array(self.connectionSalts.keys))")
+                 return
+             }
+             let saltHex = salt.map { String(format: "%02x", $0) }.joined()
+             print("DEBUG SALT: Using salt \(saltHex) for verification")
+             
+             guard let clientHash = self.pendingAuthVerifications[deviceId] else {
                  print("SnagPublisher: No pending verify for device \(deviceId)")
+                 print("DEBUG SALT: Available pending verifications for deviceIds: \(Array(self.pendingAuthVerifications.keys))")
                  return
              }
              
@@ -497,12 +620,13 @@ class SnagPublisher: NSObject {
                  self.saveLockoutState()
                  
                  self.authenticatedConnections.insert(ObjectIdentifier(connection))
-                 self.sessionKeys[ObjectIdentifier(connection)] = key
+                 self.sessionKeys[deviceId] = key // Store by deviceId
                  self.manuallyAuthorizedDeviceIds.insert(deviceId)
+                 self.knownPINs[deviceId] = pin // Cache PIN for re-auth
                  self.saveAuthorizedDevices()
                  
                 // Send Success
-                var successPacket = SnagPacket()
+                let successPacket = SnagPacket()
                 successPacket.control = SnagControl(type: "auth_success", authMode: "encrypted")
                 self.send(packet: successPacket, toConnection: connection)
                 
@@ -532,6 +656,11 @@ class SnagPublisher: NSObject {
                     print("SnagPublisher: Device \(deviceId) locked out for \(Int(self.lockoutDuration)) seconds after \(attempts) failed attempts")
                 } else {
                     print("SnagPublisher: PIN Mismatch for \(deviceId). Failed attempt \(attempts)/\(self.maxFailedAttempts)")
+                    print("DEBUG: Mismatch Details:")
+                    print("DEBUG: Expecting (Client Hash): \(clientHash)")
+                    print("DEBUG: Computed (Mac Hash):  \(computedHash)")
+                    print("DEBUG: Salt Used: \(salt.map { String(format: "%02x", $0) }.joined())")
+                    print("DEBUG: PIN Used: '\(pin)'")
                 }
                 self.saveLockoutState()
             }

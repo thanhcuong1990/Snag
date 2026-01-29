@@ -115,7 +115,7 @@ struct SidebarDeviceRow: View {
                     }
                     .buttonStyle(BorderedProminentButtonStyle())
                     .controlSize(.small)
-                    .disabled(enteredPIN.isEmpty || isLocked)
+                    .disabled(isLocked)
                 }
             }
             .padding(16)

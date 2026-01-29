@@ -29,10 +29,19 @@ object SnagAppMetadataProvider {
         val ip = getIpAddress() ?: "unknown"
         val deviceDescription = "Android ${Build.VERSION.RELEASE}"
         
+        // Use a stable, persisted ID so that the Mac app correctly identifies this device
+        // across network switches (Wi-Fi, Wired, etc.)
+        val prefs = context.getSharedPreferences("snag_prefs", Context.MODE_PRIVATE)
+        var stableId = prefs.getString("device_id", null)
+        if (stableId == null) {
+            stableId = java.util.UUID.randomUUID().toString()
+            prefs.edit().putString("device_id", stableId).apply()
+        }
+        
         return SnagDevice(
             deviceName = deviceName,
             deviceDescription = deviceDescription,
-            deviceId = "$hostName-$deviceName-$deviceDescription-$ip",
+            deviceId = stableId,
             hostName = hostName,
             ip = ip
         )

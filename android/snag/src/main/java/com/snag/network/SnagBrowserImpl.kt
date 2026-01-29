@@ -47,12 +47,10 @@ internal class SnagBrowserImpl(
         json = json,
         onPacketReceived = { packet ->
             if (handleHandshakePacket(packet)) {
-                // Consumed by handshake
-            } else if (packet.control?.encryptedPayload != null) {
-                // Decrypt
+                // Handled
+            } else if (packet.control?.type == "data") {
                 handleEncryptedPacket(packet)
             } else {
-                // Normal packet
                 packetListeners.forEach { it.onPacketReceived(packet) }
             }
         }
@@ -206,7 +204,10 @@ internal class SnagBrowserImpl(
          val proj = project
          val dev = device
          
-         if (proj == null || dev == null || (config.isSecurityEnabled && authMode == null)) {
+         val type = packet.control?.type
+         val isHandshake = type == "hello" || type == "auth_verify"
+         
+         if (!isHandshake && (proj == null || dev == null || (config.isSecurityEnabled && authMode == null))) {
              pendingPackets.add(packet)
          } else {
              sendEncryptedIfRequired(packet)
@@ -227,7 +228,8 @@ internal class SnagBrowserImpl(
         
         if (type == "auth_required") {
             val saltHex = packet.control.salt ?: return true
-            val pin = config.securityPIN ?: return true
+            val pin = config.securityPIN ?: ""
+            Timber.d("Handshake: Using PIN '${pin}' for salt '${saltHex}'") 
             
             val salt = SnagCrypto.hexToBytes(saltHex)
             val key = SnagCrypto.deriveKey(pin, salt)
@@ -241,6 +243,12 @@ internal class SnagBrowserImpl(
             val dataToHash = keyBytes + validation
             val hashBytes = java.security.MessageDigest.getInstance("SHA-256").digest(dataToHash)
             val hashHex = SnagCrypto.bytesToHex(hashBytes)
+            
+            Timber.e("DIAGNOSTIC: Handshake for DeviceID: ${device?.deviceId}")
+            Timber.e("DIAGNOSTIC: PIN used: '$pin'")
+            Timber.e("DIAGNOSTIC: Salt (Hex): '$saltHex'")
+            Timber.e("DIAGNOSTIC: Computed Hash: '$hashHex'")
+            Timber.e("DIAGNOSTIC: Key (Hex): '${SnagCrypto.bytesToHex(keyBytes)}'")
             
             val verifyControl = com.snag.models.SnagControl(type = "auth_verify", authHash = hashHex)
             val verifyPacket = SnagPacket(control = verifyControl, project = project, device = device)

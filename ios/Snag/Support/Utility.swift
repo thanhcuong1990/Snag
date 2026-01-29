@@ -176,7 +176,7 @@ class SnagUtility {
     }
     
     static func securityPIN() -> String? {
-        // 1. Check Launch Arguments (e.g. -SnagSecurityPIN 123456)
+        // 1. Check Launch Arguments (e.g. -SnagSecurityPIN MySecretPin123!)
         let arguments = ProcessInfo.processInfo.arguments
         if let index = arguments.firstIndex(of: "-SnagSecurityPIN"), index + 1 < arguments.count {
             return arguments[index + 1]

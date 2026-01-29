@@ -1,13 +1,16 @@
 package com.snag.models
 
+import kotlinx.serialization.EncodeDefault
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import java.util.UUID
 
 @Serializable
 data class SnagPacket(
+    @OptIn(kotlinx.serialization.ExperimentalSerializationApi::class)
+    @EncodeDefault
     @SerialName("packetId")
-    val id: String = UUID.randomUUID().toString(),
+    val id: String? = null,
     @SerialName("requestInfo")
     val requestInfo: SnagRequestInfo? = null,
     @SerialName("device")

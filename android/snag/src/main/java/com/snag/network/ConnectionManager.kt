@@ -147,7 +147,9 @@ internal class ConnectionManager(
         return try {
             if (!socket.isClosed) {
                 synchronized(socket) {
-                    socket.getOutputStream().write(data)
+                    val outputStream = socket.getOutputStream()
+                    outputStream.write(data)
+                    outputStream.flush()
                 }
                 true
             } else {

@@ -309,8 +309,8 @@ class SnagBrowser: NSObject {
     // MARK: - Handshake Handlers
     
     private func handleAuthRequired(packet: SnagPacket, connection: NWConnection) {
-        guard let saltHex = packet.control?.salt,
-              let pin = self.configuration?.securityPIN else { return }
+        guard let saltHex = packet.control?.salt else { return }
+        let pin = self.configuration?.securityPIN ?? ""
         
         // Convert Salt Hex to Data
         // Simple hex decode

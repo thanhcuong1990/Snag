@@ -183,7 +183,7 @@ You can force-enable Snag or set the security PIN using launch arguments:
 3.  Go to the **Arguments** tab.
 4.  Under **Arguments Passed On Launch**, click **+** and add:
     - `-SnagEnabled` (to force-enable Snag)
-    - `-SnagSecurityPIN 123456` (to set the security PIN)
+    - `-SnagSecurityPIN MySecretPin123!` (to set the security PIN)
 
 ### Configure via Info.plist
 
@@ -196,7 +196,7 @@ You can also configure Snag via your `Info.plist`:
 
 <!-- Set security PIN -->
 <key>SnagSecurityPIN</key>
-<string>123456</string>
+<string>MySecretPin123!</string>
 ```
 
 ### Manual Initialization (Optional)
@@ -305,7 +305,7 @@ By default, Snag only runs in debug builds or simulators, and security is enable
 <!-- Set security PIN -->
 <meta-data
     android:name="com.snag.SECURITY_PIN"
-    android:value="123456" />
+    android:value="MySecretPin123!" />
 ```
 
 > [!TIP]
@@ -323,7 +323,7 @@ val config = SnagConfiguration(
     projectName = "Custom Project Name",
     enableLogs = true,
     isSecurityEnabled = true,
-    securityPIN = "123456" // This PIN must be entered on the Mac app for authorization
+    securityPIN = "MySecretPin123!" // This PIN must be entered on the Mac app for authorization
 )
 Snag.start(context, config)
 ```
