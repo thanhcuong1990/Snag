@@ -419,9 +419,8 @@ class SnagBrowser: NSObject {
                              
                              var wrapperPacket = SnagPacket()
                              wrapperPacket.control = SnagControl(type: "data", encryptedPayload: ciphertext, encryptedNonce: nonce)
-                             wrapperPacket.device = finalPacket.device // Keep device info in clear header? Or encrypted?
-                             // Packet header must be clear routing info if needed, but here payload is inner.
-                             // Server needs deviceId to map connection? It has mapping from Hello.
+                             wrapperPacket.device = finalPacket.device
+                             wrapperPacket.project = finalPacket.project
                              
                              self.sendRaw(packet: wrapperPacket, on: connection)
                          } catch {

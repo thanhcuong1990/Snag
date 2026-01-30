@@ -7,8 +7,8 @@ class SnagPublisherAuthenticator {
     
     // In-memory session state
     private var sessionKeys: [String: SymmetricKey] = [:] // DeviceID -> Session Key
-    private var connectionSalts: [String: Data] = [:] // DeviceID -> Salt
-    private var pendingAuthVerifications: [String: String] = [:] // DeviceID -> Client Hash
+    private var connectionSalts: [ObjectIdentifier: Data] = [:] // Connection -> Salt
+    private var pendingAuthVerifications: [ObjectIdentifier: String] = [:] // Connection -> Client Hash
     
     private let maxFailedAttempts = 5
     private let lockoutDuration: TimeInterval = 300 // 5 minutes
@@ -33,19 +33,18 @@ class SnagPublisherAuthenticator {
         return sessionKeys[deviceId.lowercased()] != nil
     }
     
-    func getSalt(for deviceId: String) -> Data? {
-        return connectionSalts[deviceId.lowercased()]
+    func getSalt(for connection: NWConnection) -> Data? {
+        return connectionSalts[ObjectIdentifier(connection)]
     }
     
-    func generateSalt(for deviceId: String) -> String {
-        let id = deviceId.lowercased()
+    func generateSalt(for connection: NWConnection) -> String {
         let salt = SnagCrypto.randomSalt()
-        connectionSalts[id] = salt
+        connectionSalts[ObjectIdentifier(connection)] = salt
         return salt.map { String(format: "%02x", $0) }.joined()
     }
     
-    func registerPendingVerification(deviceId: String, hash: String) {
-        pendingAuthVerifications[deviceId.lowercased()] = hash
+    func registerPendingVerification(connection: NWConnection, hash: String) {
+        pendingAuthVerifications[ObjectIdentifier(connection)] = hash
     }
     
     func getCachedPIN(for deviceId: String) -> String? {
@@ -69,8 +68,10 @@ class SnagPublisherAuthenticator {
     
     // MARK: - Authorization Logic
     
-    func authorizeDeviceLocked(deviceId: String, pin: String, onAuthenticated: (NWConnection) -> Void, sendPacket: (SnagPacket, NWConnection) -> Void, getConnection: (String) -> NWConnection?) -> Bool {
+    func authorizeDeviceLocked(connection: NWConnection, deviceId: String, pin: String, onAuthenticated: (NWConnection) -> Void, sendPacket: (SnagPacket, NWConnection) -> Void) -> Bool {
         let id = deviceId.lowercased()
+        let connId = ObjectIdentifier(connection)
+        
         // 1. Check Lockout
         if let lockoutExpiry = store.lockedOutDevices[id] {
             if Date() < lockoutExpiry {
@@ -82,9 +83,9 @@ class SnagPublisherAuthenticator {
         }
         
         // 2. Validate IDs
-        guard let connection = getConnection(id),
-              let salt = connectionSalts[id],
-              let clientHash = pendingAuthVerifications[id] else {
+        guard let salt = connectionSalts[connId],
+              let clientHash = pendingAuthVerifications[connId] else {
+            print("Authenticator: Missing salt or verification for connection \(connId)")
             return false
         }
         
@@ -104,12 +105,17 @@ class SnagPublisherAuthenticator {
             onAuthenticated(connection)
             
             let successPacket = SnagPacket()
-            successPacket.control = SnagControl(type: "auth_success", authMode: "encrypted")
+            successPacket.control = SnagControl(type: "auth_success", deviceId: id, authMode: "encrypted")
             sendPacket(successPacket, connection)
+            
+            // Clean up handshake state
+            connectionSalts.removeValue(forKey: connId)
+            pendingAuthVerifications.removeValue(forKey: connId)
             
             return true
         } else {
             // FAILURE
+            print("Authenticator: Hash mismatch for \(id). Expected \(computedHash), got \(clientHash)")
             store.recordFailedAttempt(deviceId: id, maxFailedAttempts: maxFailedAttempts, lockoutDuration: lockoutDuration)
             return false
         }
@@ -129,16 +135,30 @@ class SnagPublisherAuthenticator {
         if SnagConfiguration.forceInteractiveAuth { return false }
         guard let path = connection.currentPath else { return false }
         
+        // 1. Loopback or Ethernet (usually trusted local physical network)
         if path.usesInterfaceType(.loopback) || path.usesInterfaceType(.wiredEthernet) {
             return true
         }
         
+        // 2. Check Endpoint
         if case let .hostPort(host, _) = connection.endpoint {
             let hostStr = host.debugDescription
-            if hostStr.contains("127.0.0.1") || hostStr.contains("::1") || hostStr.contains("localhost") {
+            
+            // Standard loopback variations
+            let loopbacks = ["127.0.0.1", "::1", "localhost"]
+            if loopbacks.contains(where: { hostStr.contains($0) }) {
                 return true
             }
+            
+            // Common Emulator Bridge Subnets (10.0.2.x, etc.)
+            // On Mac, the connection might appear to come from a virtual interface IP.
+            if hostStr.contains("10.0.") || hostStr.contains("192.168.56.") {
+                return true
+            }
+            
+            // Local IP check
             for ip in localIPs {
+                // Exact match or contains for debugDescription which includes port
                 if hostStr.contains(ip) { return true }
             }
         }

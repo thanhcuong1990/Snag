@@ -64,13 +64,13 @@ internal class ConnectionManager(
         
         var shouldTriggerConnected = false
         synchronized(connections) {
-            val existing = connections[hostAddress]
-            if (existing != null) {
-                if (!existing.isConnected || existing.isClosed) {
-                    connections.remove(hostAddress)
-                } else {
-                    return
-                }
+            // If we already have any active connection for this service, don't create another one.
+            // This prevents the handshake race condition where multiple interfaces (WiFi, Ethernet, etc.)
+            // connect simultaneously and challenges/responses get mixed up.
+            val activeConnection = connections.values.firstOrNull { it.isConnected && !it.isClosed }
+            if (activeConnection != null) {
+                Timber.d("Already connected to service $serviceName. Skipping $hostAddress.")
+                return
             }
 
             try {

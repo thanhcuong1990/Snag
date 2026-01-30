@@ -210,3 +210,86 @@ class SnagCryptoTests: XCTestCase {
         
         XCTAssertEqual(computedHash, expectedHashHex, "Mac Hash does not match Android Hash")
     }
+
+    func testHandshakeAndEncryptedDataFlow() throws {
+        // This test simulates the exact sequence an iOS or Android client follows.
+        
+        let deviceId = "test-device-uuid"
+        let pin = "123456"
+        let projectName = "TestProject"
+        
+        // Let's verify the Authenticator's role in the flow.
+        let store = SnagPublisherStore()
+        let authenticator = SnagPublisherAuthenticator(store: store)
+        
+        // Simulate connection
+        let connection = NWConnection(to: .hostPort(host: "localhost", port: 8080), using: .tcp)
+        
+        // Phase A: Receive Hello -> Generate Challenge
+        let saltHex = authenticator.generateSalt(for: connection)
+        XCTAssertFalse(saltHex.isEmpty)
+        
+        // Phase B: Client Derives Key & Computes Hash (Simulating iOS/Android SnagCrypto)
+        var saltData = Data()
+        var hex = saltHex
+        while hex.count > 0 {
+            let subIndex = hex.index(hex.startIndex, offsetBy: 2)
+            let c = String(hex[..<subIndex])
+            hex = String(hex[subIndex...])
+            var ch: UInt32 = 0
+            Scanner(string: c).scanHexInt32(&ch)
+            var char = UInt8(ch)
+            saltData.append(&char, count: 1)
+        }
+        
+        let clientKey = SnagCrypto.deriveKey(pin: pin, salt: saltData)
+        var dataToHash = Data()
+        clientKey.withUnsafeBytes { dataToHash.append(contentsOf: $0) }
+        dataToHash.append(Data("Client".utf8))
+        let clientHash = SHA256.hash(data: dataToHash).map { String(format: "%02x", $0) }.joined()
+        
+        // Phase C: Server Verifies Hash
+        authenticator.registerPendingVerification(connection: connection, hash: clientHash)
+        
+        // Simulate authorizeDeviceLocked
+        let authSuccess = authenticator.authorizeDeviceLocked(
+            connection: connection,
+            deviceId: deviceId,
+            pin: pin,
+            onAuthenticated: { _ in },
+            sendPacket: { _, _ in }
+        )
+        
+        XCTAssertTrue(authSuccess, "Authentication should succeed with correct PIN")
+        
+        // Phase D: Encrypted Data Flow
+        let secretMessage = "Top Secret"
+        var dataPacket = SnagPacket()
+        dataPacket.requestInfo = SnagRequestInfo(url: "https://api.example.com", method: "GET")
+        dataPacket.project = SnagProject(projectName: projectName)
+        dataPacket.device = SnagDevice(id: deviceId)
+        
+        let encoder = JSONEncoder()
+        encoder.dateEncodingStrategy = .secondsSince1970
+        let plaintext = try encoder.encode(dataPacket)
+        
+        let (ciphertext, nonce) = try SnagCrypto.encrypt(data: plaintext, key: clientKey)
+        
+        // Wrap in outer packet (The part we just fixed in iOS!)
+        var wrapperPacket = SnagPacket()
+        wrapperPacket.control = SnagControl(type: "data", encryptedPayload: ciphertext, encryptedNonce: nonce)
+        wrapperPacket.device = dataPacket.device
+        wrapperPacket.project = dataPacket.project // THIS IS THE FIELD WE ADDED
+        
+        // Phase E: Server Decrypts
+        let decryptedPacket = try authenticator.decrypt(packet: wrapperPacket, deviceId: deviceId)
+        
+        XCTAssertNotNil(decryptedPacket)
+        XCTAssertEqual(decryptedPacket?.requestInfo?.url, "https://api.example.com")
+        XCTAssertEqual(decryptedPacket?.project?.projectName, projectName)
+    }
+}
+
+class MockPublisherDelegate_Flow: SnagPublisherDelegate {
+    func didGetPacket(publisher: SnagPublisher, packet: SnagPacket) {}
+}

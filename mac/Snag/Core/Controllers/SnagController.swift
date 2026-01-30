@@ -191,7 +191,7 @@ class SnagController: NSObject, @MainActor SnagPublisherDelegate, ObservableObje
         
         // 4. Create New Project Controller
         let projectController = SnagProjectController()
-        projectController.projectName = newPacket.project?.projectName
+        projectController.projectName = (newPacket.project?.projectName == nil || newPacket.project?.projectName?.isEmpty == true) ? "Unknown" : newPacket.project?.projectName
         projectController.addPacket(newPacket: newPacket)
         
         self.projectControllers.append(projectController)
