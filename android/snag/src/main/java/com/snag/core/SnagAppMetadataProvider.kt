@@ -34,7 +34,7 @@ object SnagAppMetadataProvider {
         val prefs = context.getSharedPreferences("snag_prefs", Context.MODE_PRIVATE)
         var stableId = prefs.getString("device_id", null)
         if (stableId == null) {
-            stableId = java.util.UUID.randomUUID().toString()
+            stableId = java.util.UUID.randomUUID().toString().lowercase()
             prefs.edit().putString("device_id", stableId).apply()
         }
         

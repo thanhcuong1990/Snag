@@ -27,6 +27,12 @@ class DataRepresentationParser {
         if let contentType = contentType?.lowercased() {
             if contentType.contains("image/") {
                 if let image = NSImage(data: data) {
+                    // Normalize image size to its pixel dimensions.
+                    // This fixes the blurriness issue for high-DPI images (e.g. from iOS).
+                    if let cgImage = image.cgImage(forProposedRect: nil, context: nil, hints: nil) {
+                        image.size = NSSize(width: cgImage.width, height: cgImage.height)
+                    }
+                    
                     let imageData = DataImageRepresentation(data: data)
                     imageData.image = image
                     
@@ -56,7 +62,11 @@ class DataRepresentationParser {
                 }
             }
             
-        }else if let image = NSImage(data: data) {
+        } else if let image = NSImage(data: data) {
+            // Normalize image size to its pixel dimensions.
+            if let cgImage = image.cgImage(forProposedRect: nil, context: nil, hints: nil) {
+                image.size = NSSize(width: cgImage.width, height: cgImage.height)
+            }
             
             let textAttachmentCell = NSTextAttachmentCell(imageCell: image)
             let textAttachment = NSTextAttachment()
@@ -154,8 +164,9 @@ class DataRepresentationParser {
             representation.type = .json
             return representation
             
-        case .image(let cgImage, let size):
-            let image = NSImage(cgImage: cgImage, size: size)
+        case .image(let cgImage, _):
+            let pixelSize = NSSize(width: cgImage.width, height: cgImage.height)
+            let image = NSImage(cgImage: cgImage, size: pixelSize)
             let imageData = DataImageRepresentation(data: data)
             imageData.image = image
             imageData.type = .image

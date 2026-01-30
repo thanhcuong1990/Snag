@@ -27,7 +27,7 @@ internal class ConnectionManager(
     private val json: Json,
     private val onPacketReceived: (SnagPacket) -> Unit
 ) {
-    private val socketConnections = ConcurrentHashMap<String, MutableMap<String, Socket>>()
+    private val socketConnections = ConcurrentHashMap<String, ConcurrentHashMap<String, Socket>>()
     private val pendingBuffers = LinkedBlockingQueue<ByteArray>(MAX_OFFLINE_BUFFER)
     private val lastReconnectAttempt = AtomicLong(0)
 
@@ -46,7 +46,11 @@ internal class ConnectionManager(
     init {
         scope.launch(Dispatchers.IO) {
             for (packet in packetChannel) {
-                processPacket(packet)
+                try {
+                    processPacket(packet)
+                } catch (e: Exception) {
+                    Timber.e(e, "Snag: Error processing packet in IO loop")
+                }
             }
         }
     }
@@ -56,8 +60,9 @@ internal class ConnectionManager(
     }
 
     fun connectToHost(hostAddress: String, port: Int, serviceName: String, onConnected: () -> Unit = {}) {
-        val connections = socketConnections.getOrPut(serviceName) { mutableMapOf() }
+        val connections = socketConnections.getOrPut(serviceName) { ConcurrentHashMap() }
         
+        var shouldTriggerConnected = false
         synchronized(connections) {
             val existing = connections[hostAddress]
             if (existing != null) {
@@ -87,17 +92,17 @@ internal class ConnectionManager(
                     Timber.d("Connected to $serviceName at $hostAddress:$port")
                     connections[hostAddress] = socket
                     
-                    if (config?.isSecurityEnabled == true) {
-                        sendHelloPacket(socket)
-                    }
-                    
                     startReceiving(socket)
-                    onConnected()
-                    flushPending()
+                    shouldTriggerConnected = true
                 }
             } catch (e: Exception) {
                 Timber.w("Connection failed to $hostAddress:$port: ${e.message}")
             }
+        }
+        
+        if (shouldTriggerConnected) {
+            onConnected()
+            flushPending()
         }
     }
 
@@ -240,45 +245,6 @@ internal class ConnectionManager(
         return lastReconnectAttempt.compareAndSet(last, now)
     }
 
-    private fun sendHelloPacket(socket: Socket) {
-        val currentConfig = config ?: return
-        
-        // Use SnagAppMetadataProvider to ensure consistent Project and Device info
-        val context = com.snag.Snag.appContext
-        
-        val project = if (context != null) {
-            com.snag.core.SnagAppMetadataProvider.getProject(context, currentConfig.projectName)
-        } else {
-            com.snag.models.SnagProject(projectName = currentConfig.projectName)
-        }
-
-        val device = if (context != null) {
-            com.snag.core.SnagAppMetadataProvider.getDevice(context)
-        } else {
-             com.snag.models.SnagDevice(
-                deviceName = "${android.os.Build.MANUFACTURER} ${android.os.Build.MODEL}",
-                deviceId = java.util.UUID.randomUUID().toString()
-            )
-        }
-        
-        // Send Hello
-        val helloControl = SnagControl(type = "hello", deviceId = device.deviceId)
-        
-        val helloPacket = SnagPacket(
-            control = helloControl,
-            project = project,
-            device = device
-        )
-        
-        try {
-            val payload = json.encodeToString(helloPacket).toByteArray()
-            val data = PacketFraming.frame(payload)
-            socket.getOutputStream().write(data)
-            socket.getOutputStream().flush()
-        } catch (e: Exception) {
-            Timber.e(e, "Snag: Failed to send hello packet")
-        }
-    }
 
     @android.annotation.SuppressLint("CustomX509TrustManager")
     private fun createSSLSocket(host: String, port: Int): Socket {

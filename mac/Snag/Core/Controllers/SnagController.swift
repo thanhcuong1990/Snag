@@ -130,10 +130,32 @@ class SnagController: NSObject, @MainActor SnagPublisherDelegate, ObservableObje
         // 1. Prioritize finding an existing device controller across all projects
         // Handshake packets (auth_required) often miss project info, but contain DeviceID.
         // We should route them to the *existing* device/project if known.
-        if let deviceId = newPacket.device?.deviceId {
+        let deviceId = (newPacket.device?.deviceId ?? newPacket.control?.deviceId)?.lowercased()
+        
+        if let id = deviceId {
             for projectController in self.projectControllers {
-                // Check if this project already has this device
-                if projectController.deviceControllers.contains(where: { $0.deviceId == deviceId }) {
+                // 1a. Direct Device ID Match (Prioritize this above all else)
+                if let existingDeviceController = projectController.deviceControllers.first(where: { $0.deviceId == id }) {
+                    // Force update device metadata if it's currently missing or generic
+                    if let deviceModel = newPacket.device {
+                        if existingDeviceController.deviceName == nil || existingDeviceController.deviceName == "Unknown Device" {
+                            existingDeviceController.deviceName = deviceModel.deviceName
+                        }
+                        if existingDeviceController.deviceDescription == nil {
+                            existingDeviceController.deviceDescription = deviceModel.deviceDescription
+                        }
+                    }
+                    
+                    // Update project name and app icon if they are currently "Unknown" or nil
+                    if let newProjectName = newPacket.project?.projectName,
+                       (projectController.projectName == nil || projectController.projectName == "Unknown" || projectController.projectName != newProjectName) {
+                        projectController.projectName = newProjectName
+                    }
+                    
+                    if let newAppIcon = newPacket.project?.appIcon, (projectController.appIcon == nil || projectController.appIcon != newAppIcon) {
+                        projectController.appIcon = newAppIcon
+                    }
+                    
                     return projectController.addPacket(newPacket: newPacket)
                 }
             }
@@ -143,6 +165,15 @@ class SnagController: NSObject, @MainActor SnagPublisherDelegate, ObservableObje
         if let newBundleId = newPacket.project?.bundleId {
             for projectController in self.projectControllers {
                 if projectController.bundleId == newBundleId {
+                    // Update project name and app icon if they are currently "Unknown" or nil
+                    if let newProjectName = newPacket.project?.projectName,
+                       (projectController.projectName == nil || projectController.projectName == "Unknown" || projectController.projectName != newProjectName) {
+                        projectController.projectName = newProjectName
+                    }
+                    
+                    if let newAppIcon = newPacket.project?.appIcon, (projectController.appIcon == nil || projectController.appIcon != newAppIcon) {
+                        projectController.appIcon = newAppIcon
+                    }
                     return projectController.addPacket(newPacket: newPacket)
                 }
             }

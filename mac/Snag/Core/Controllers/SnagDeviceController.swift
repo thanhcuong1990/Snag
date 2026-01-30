@@ -74,16 +74,16 @@ class SnagDeviceController: NSObject, ObservableObject {
             self.isAuthenticated = false
             return true
         } else if newPacket.control?.type == "auth_success" {
-            // Local injected packet to confirm auth
+            // Local or remote success packet to confirm auth
             self.isAuthenticated = true
             return true
         } else if newPacket.isUnauthenticated {
              // Legacy fallback
              self.isAuthenticated = false
              return true
-        } else {
-             // If we are receiving normal packets, we assume authenticated (unless explicitly marked unauth)
-             // But valid packets only arrive if we are authorized now.
+        } else if newPacket.requestInfo != nil || newPacket.log != nil {
+             // If we are receiving normal data packets, we MUST be authenticated
+             // because the publisher only sends data for authenticated connections.
              if !self.isAuthenticated {
                  self.isAuthenticated = true
              }

@@ -26,35 +26,36 @@ class SnagPublisherAuthenticator {
     // MARK: - Handshake Interaction
     
     func getSessionKey(for deviceId: String) -> SymmetricKey? {
-        return sessionKeys[deviceId]
+        return sessionKeys[deviceId.lowercased()]
     }
     
     func hasSession(for deviceId: String) -> Bool {
-        return sessionKeys[deviceId] != nil
+        return sessionKeys[deviceId.lowercased()] != nil
     }
     
     func getSalt(for deviceId: String) -> Data? {
-        return connectionSalts[deviceId]
+        return connectionSalts[deviceId.lowercased()]
     }
     
     func generateSalt(for deviceId: String) -> String {
+        let id = deviceId.lowercased()
         let salt = SnagCrypto.randomSalt()
-        connectionSalts[deviceId] = salt
+        connectionSalts[id] = salt
         return salt.map { String(format: "%02x", $0) }.joined()
     }
     
     func registerPendingVerification(deviceId: String, hash: String) {
-        pendingAuthVerifications[deviceId] = hash
+        pendingAuthVerifications[deviceId.lowercased()] = hash
     }
     
     func getCachedPIN(for deviceId: String) -> String? {
-        return store.knownPINs[deviceId]
+        return store.knownPINs[deviceId.lowercased()]
     }
     
     // MARK: - Encryption
     
     func decrypt(packet: SnagPacket, deviceId: String) throws -> SnagPacket? {
-        guard let key = sessionKeys[deviceId],
+        guard let key = sessionKeys[deviceId.lowercased()],
               let ciphertext = packet.control?.encryptedPayload,
               let nonce = packet.control?.encryptedNonce else {
             return nil
@@ -69,20 +70,21 @@ class SnagPublisherAuthenticator {
     // MARK: - Authorization Logic
     
     func authorizeDeviceLocked(deviceId: String, pin: String, onAuthenticated: (NWConnection) -> Void, sendPacket: (SnagPacket, NWConnection) -> Void, getConnection: (String) -> NWConnection?) -> Bool {
+        let id = deviceId.lowercased()
         // 1. Check Lockout
-        if let lockoutExpiry = store.lockedOutDevices[deviceId] {
+        if let lockoutExpiry = store.lockedOutDevices[id] {
             if Date() < lockoutExpiry {
-                print("Authenticator: Device \(deviceId) is locked out until \(lockoutExpiry)")
+                print("Authenticator: Device \(id) is locked out until \(lockoutExpiry)")
                 return false
             } else {
-                store.clearLockout(deviceId: deviceId)
+                store.clearLockout(deviceId: id)
             }
         }
         
         // 2. Validate IDs
-        guard let connection = getConnection(deviceId),
-              let salt = connectionSalts[deviceId],
-              let clientHash = pendingAuthVerifications[deviceId] else {
+        guard let connection = getConnection(id),
+              let salt = connectionSalts[id],
+              let clientHash = pendingAuthVerifications[id] else {
             return false
         }
         
@@ -97,8 +99,8 @@ class SnagPublisherAuthenticator {
         
         if computedHash == clientHash {
             // SUCCESS
-            sessionKeys[deviceId] = key
-            store.authorizeDevice(deviceId: deviceId, pin: pin)
+            sessionKeys[id] = key
+            store.authorizeDevice(deviceId: id, pin: pin)
             onAuthenticated(connection)
             
             let successPacket = SnagPacket()
@@ -108,13 +110,13 @@ class SnagPublisherAuthenticator {
             return true
         } else {
             // FAILURE
-            store.recordFailedAttempt(deviceId: deviceId, maxFailedAttempts: maxFailedAttempts, lockoutDuration: lockoutDuration)
+            store.recordFailedAttempt(deviceId: id, maxFailedAttempts: maxFailedAttempts, lockoutDuration: lockoutDuration)
             return false
         }
     }
     
     func getLockoutStatus(deviceId: String) -> (locked: Bool, remainingSeconds: Int?) {
-        if let lockoutExpiry = store.lockedOutDevices[deviceId] {
+        if let lockoutExpiry = store.lockedOutDevices[deviceId.lowercased()] {
             let remaining = lockoutExpiry.timeIntervalSince(Date())
             if remaining > 0 {
                 return (true, Int(remaining))

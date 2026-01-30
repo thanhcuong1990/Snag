@@ -23,22 +23,23 @@ class SnagProjectController: NSObject, ObservableObject {
     @discardableResult
     func addPacket(newPacket: SnagPacket) -> Bool {
         
-        if let newProjectName = newPacket.project?.projectName, self.projectName != newProjectName {
+        if let newProjectName = newPacket.project?.projectName, 
+           (self.projectName == nil || self.projectName == "Unknown" || self.projectName != newProjectName) {
             self.projectName = newProjectName
         }
         
-        if let newAppIcon = newPacket.project?.appIcon, self.appIcon != newAppIcon {
+        if let newAppIcon = newPacket.project?.appIcon, (self.appIcon == nil || self.appIcon != newAppIcon) {
             self.appIcon = newAppIcon
         }
         
-        if let newBundleId = newPacket.project?.bundleId, self.bundleId != newBundleId {
+        if let newBundleId = newPacket.project?.bundleId, (self.bundleId == nil || self.bundleId != newBundleId) {
             self.bundleId = newBundleId
         }
         
+        let id = (newPacket.device?.deviceId ?? newPacket.control?.deviceId)?.lowercased()
+        
         for deviceController in self.deviceControllers {
-            
-            if deviceController.deviceId == newPacket.device?.deviceId {
-                
+            if deviceController.deviceId == id {
                 let result = deviceController.addPacket(newPacket: newPacket)
                 
                 // Propagate bundleId from device appInfo if available
@@ -52,7 +53,7 @@ class SnagProjectController: NSObject, ObservableObject {
             }
         }
         let deviceController = SnagDeviceController()
-        deviceController.deviceId = newPacket.device?.deviceId
+        deviceController.deviceId = id
         
         deviceController.addPacket(newPacket: newPacket)
         

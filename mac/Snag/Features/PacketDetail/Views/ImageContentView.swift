@@ -12,13 +12,24 @@ struct ImageContentView: View {
     }
     
     var body: some View {
-        if let nsImage = image ?? (data != nil ? NSImage(data: data!) : nil) {
+        let nsImage: NSImage? = {
+            if let existing = image { return existing }
+            guard let rawData = data, let newImage = NSImage(data: rawData) else { return nil }
+            
+            // Normalize image size to its pixel dimensions to fix high-DPI blurriness
+            if let cgImage = newImage.cgImage(forProposedRect: nil, context: nil, hints: nil) {
+                newImage.size = NSSize(width: cgImage.width, height: cgImage.height)
+            }
+            return newImage
+        }()
+        
+        if let imageToDisplay = nsImage {
             GeometryReader { geometry in
                 VStack {
                     Spacer()
                     HStack {
                         Spacer()
-                        Image(nsImage: nsImage)
+                        Image(nsImage: imageToDisplay)
                             .resizable()
                             .aspectRatio(contentMode: .fit)
                             .frame(
