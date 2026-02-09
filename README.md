@@ -25,58 +25,24 @@
 
 Snag uses a secure connection flow to ensure your network traffic remains private. It balances high security with a "zero-config" developer experience:
 
-### Smart Security (Double Encryption)
+### Smart Security (TLS)
 
-Traffic is encrypted via **TLS** (Transport Layer) AND **AES-GCM** (Application Layer). The application layer encryption uses a Session Key derived from your **Security PIN**, ensuring that even if the TLS connection is intercepted (MITM), the data remains unreadable.
+Traffic is protected by **TLS** (Transport Layer Security). After TLS is established, clients send packets in clear JSON over the encrypted transport channel.
 
-- **Auto-Trust**: Connections from **Simulators** or via **USB/Wired** are automatically trusted and use cleartext credentials (over TLS) for zero-latency performance.
-- **Interactive Pairing**: For remote connections over **Wi-Fi**, devices appear in the Mac app sidebar with a **Locked (🔒)** icon. To trust a device, click **"Authorize Device"** and enter the **Security PIN** that you configured on the client (iOS/Android).
-- **Persistent Trust**: Once authorized, the device is remembered.
-- **Rate Limiting**: After 5 failed PIN attempts, the device is locked out for 5 minutes to prevent brute-force attacks.
-
-> [!TIP]
-> For stronger security, use an alphanumeric PIN (8+ characters recommended) instead of a 6-digit numeric code. Example: `MySecretPin123!`
-
-> [!NOTE]
-> **Privacy Isolation**: By default, new Wi-Fi devices are blocked (locked) until you explicitly authorize them. The client sends a "Hello" packet, but no logs or sensitive data are transmitted until the secure handshake generates a shared session key.
+- **No PIN pairing flow**: Clients no longer require interactive PIN verification.
+- **Security boundary**: Data remains protected in transit by TLS, which prevents other apps on the network from reading captured payloads.
+- **Zero-config flow**: Clients connect, exchange `hello`/`auth_success`, and start streaming data.
 
 ```mermaid
 sequenceDiagram
     participant Client as iOS/Android Client
     participant Server as Mac App (Snag)
-    participant User as Developer
 
     Client->>Server: Connect (TLS)
     Client->>Server: Hello (Device ID)
-
-    alt Auto-Trust (Simulator/USB)
-        Server->>Server: Check NWPath (Loopback/Wired)
-        Server-->>Client: Auth Success (Mode: Cleartext)
+    Server-->>Client: Auth Success (Mode: Cleartext)
+    loop Secure Data Stream
         Client->>Server: Send Data (Cleartext over TLS)
-    else Wi-Fi Connection (Remote)
-        Server-->>Client: Auth Required (Salt)
-        Client->>Client: Derive Key (PBKDF2(PIN, Salt))
-        Client->>Server: Auth Verify (Hash(Key))
-
-        Server->>Server: Show "Locked" Device in Sidebar
-
-        opt User Clicks "Authorize"
-            Server->>User: Prompt for PIN
-            User->>Server: Input PIN
-            Server->>Server: Derive Key (PBKDF2(PIN, Salt))
-
-            alt Keys Match
-                Server->>Server: Mark Device Trusted
-                Server-->>Client: Auth Success (Mode: Encrypted)
-                loop Secure Data Stream
-                    Client->>Client: Encrypt Packet (AES-GCM)
-                    Client->>Server: Send Encrypted Data
-                    Server->>Server: Decrypt Packet
-                end
-            else PIN Mismatch
-                 Server->>User: Show Error
-            end
-        end
     end
 ```
 
@@ -114,14 +80,9 @@ sudo xattr -rd com.apple.quarantine "/Applications/Snag.app/"
 2. Open `mac/Snag.xcodeproj` in Xcode.
 3. Build and Run.
 
-### 🔐 Device Authorization
+### 🔐 Device Connection
 
-When a new device connects via **Wi-Fi**, it will appear in the sidebar with a **Locked (🔒)** icon.
-
-1. Select the locked device in the sidebar.
-2. Click the **"Authorize Device"** button at the bottom of the sidebar.
-3. Enter the **Security PIN** that was configured on that client.
-4. The device is now trusted and logs will start flowing immediately.
+When a new device connects over your local network, it appears in the sidebar and starts streaming after TLS + handshake (`hello`/`auth_success`).
 
 ![Device Authorization](https://raw.githubusercontent.com/thanhcuong1990/Snag/main/assets/device_auth.png)
 
@@ -176,14 +137,13 @@ By default, Snag only runs in DEBUG builds. To force-enable it (e.g. for Staging
 
 ### Enable via Launch Argument (Xcode Scheme)
 
-You can force-enable Snag or set the security PIN using launch arguments:
+You can force-enable Snag using launch arguments:
 
 1.  In Xcode, go to **Product** > **Scheme** > **Edit Scheme...**
 2.  Select **Run** from the left sidebar.
 3.  Go to the **Arguments** tab.
 4.  Under **Arguments Passed On Launch**, click **+** and add:
     - `-SnagEnabled` (to force-enable Snag)
-    - `-SnagSecurityPIN MySecretPin123!` (to set the security PIN)
 
 ### Configure via Info.plist
 
@@ -193,10 +153,6 @@ You can also configure Snag via your `Info.plist`:
 <!-- Force enable Snag (e.g. for Staging) -->
 <key>SnagEnabled</key>
 <true/>
-
-<!-- Set security PIN -->
-<key>SnagSecurityPIN</key>
-<string>MySecretPin123!</string>
 ```
 
 ### Manual Initialization (Optional)
@@ -231,7 +187,6 @@ config.device?.name = "Developer iPhone"
 
 // Security Configuration
 config.isSecurityEnabled = true
-config.securityPIN = "MySecretPin123!" // Alphanumeric PIN for stronger security
 
 Snag.start(configuration: config)
 ```
@@ -289,7 +244,7 @@ Snag.addInterceptor(builder) // Safe to call multiple times
 
 ### Enable/Configure via Manifest (e.g. for Staging)
 
-By default, Snag only runs in debug builds or simulators, and security is enabled. To force-enable it, disable security, or set a custom PIN, add this to your `AndroidManifest.xml`:
+By default, Snag only runs in debug builds or simulators, and security is enabled. To force-enable it or disable transport security, add this to your `AndroidManifest.xml`:
 
 ```xml
 <!-- Force enable Snag -->
@@ -301,15 +256,7 @@ By default, Snag only runs in debug builds or simulators, and security is enable
 <meta-data
     android:name="com.snag.SECURITY_ENABLED"
     android:value="false" />
-
-<!-- Set security PIN -->
-<meta-data
-    android:name="com.snag.SECURITY_PIN"
-    android:value="MySecretPin123!" />
 ```
-
-> [!TIP]
-> You can also set the PIN via System Properties (e.g., in tests or via ADB) by setting `SnagSecurityPIN`.
 
 ### Manual Initialization (Optional)
 
@@ -322,8 +269,7 @@ import com.snag.core.SnagConfiguration
 val config = SnagConfiguration(
     projectName = "Custom Project Name",
     enableLogs = true,
-    isSecurityEnabled = true,
-    securityPIN = "MySecretPin123!" // This PIN must be entered on the Mac app for authorization
+    isSecurityEnabled = true
 )
 Snag.start(context, config)
 ```

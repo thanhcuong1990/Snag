@@ -269,4 +269,21 @@ class SnagController: SnagSessionInjectorDelegate, SnagConnectionInjectorDelegat
             break
         }
     }
+
+    func metricsSnapshot() -> SnagMetrics {
+        let queueSnapshot = browser.queueMetricsSnapshot()
+        let trustSnapshot = SnagTrustStore.shared.metricsSnapshot()
+
+        return SnagMetrics(
+            preAuthQueue: SnagQueueMetrics(
+                queuedPackets: queueSnapshot.queuedPackets,
+                droppedPackets: queueSnapshot.droppedPackets,
+                enqueuedPackets: queueSnapshot.enqueuedPackets
+            ),
+            trust: SnagTrustMetrics(
+                trustedServerCount: trustSnapshot.trustedServerCount,
+                mismatchCount: trustSnapshot.mismatchCount
+            )
+        )
+    }
 }

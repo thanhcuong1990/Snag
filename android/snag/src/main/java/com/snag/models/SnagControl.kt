@@ -2,7 +2,6 @@ package com.snag.models
 
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
-import kotlinx.serialization.Contextual
 
 @Serializable
 data class SnagControl(
@@ -12,16 +11,10 @@ data class SnagControl(
     val appInfo: SnagAppInfo? = null,
     @SerialName("shouldStreamLogs")
     val shouldStreamLogs: Boolean? = null,
-    @SerialName("authPIN")
-    val authPIN: String? = null,
     
     // Handshake
     @SerialName("deviceId")
     val deviceId: String? = null,
-    @SerialName("salt")
-    val salt: String? = null,
-    @SerialName("authHash")
-    val authHash: String? = null,
     @SerialName("authMode")
     val authMode: String? = null,
     

@@ -8,6 +8,7 @@ import com.snag.interceptors.SnagInterceptor
 import com.snag.models.*
 import com.snag.network.SnagBrowser
 import com.snag.network.SnagBrowserImpl
+import com.snag.network.SnagTrustStore
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.MainScope
 import kotlinx.coroutines.launch
@@ -70,6 +71,32 @@ object Snag {
     @JvmStatic
     fun isEnabled(): Boolean {
         return SnagBrowser.isInitialized()
+    }
+
+    @JvmStatic
+    @JvmOverloads
+    fun resetTrustedServers(context: Context? = appContext) {
+        context?.let {
+            SnagTrustStore.getInstance(it).resetAll()
+        }
+    }
+
+    @JvmStatic
+    @JvmOverloads
+    fun metrics(context: Context? = appContext): SnagMetrics {
+        val browserMetrics = (SnagBrowser.getInstance() as? SnagBrowserImpl)?.metricsSnapshot()
+        if (browserMetrics != null) {
+            return browserMetrics
+        }
+
+        val trustMetrics = context?.let { SnagTrustStore.getInstance(it).metricsSnapshot() }
+            ?: SnagTrustMetrics(trustedServerCount = 0, mismatchCount = 0)
+        val emptyQueue = SnagQueueMetrics(queuedPackets = 0, droppedPackets = 0, enqueuedPackets = 0)
+        return SnagMetrics(
+            preAuthQueue = emptyQueue,
+            transportQueue = emptyQueue,
+            trust = trustMetrics
+        )
     }
 
     /**

@@ -175,19 +175,4 @@ class SnagUtility {
         #endif
     }
     
-    static func securityPIN() -> String? {
-        // 1. Check Launch Arguments (e.g. -SnagSecurityPIN MySecretPin123!)
-        let arguments = ProcessInfo.processInfo.arguments
-        if let index = arguments.firstIndex(of: "-SnagSecurityPIN"), index + 1 < arguments.count {
-            return arguments[index + 1]
-        }
-        
-        // 2. Check Environment Variables
-        if let envPin = ProcessInfo.processInfo.environment["SnagSecurityPIN"] {
-            return envPin
-        }
-        
-        // 3. Check Info.plist
-        return Bundle.main.object(forInfoDictionaryKey: "SnagSecurityPIN") as? String
-    }
 }

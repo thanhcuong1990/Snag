@@ -22,6 +22,11 @@ let package = Package(
             dependencies: [],
             path: "ios/SnagObjC",
             publicHeadersPath: "include"
+        ),
+        .testTarget(
+            name: "SnagTests",
+            dependencies: ["Snag"],
+            path: "ios/Tests"
         )
     ]
 )

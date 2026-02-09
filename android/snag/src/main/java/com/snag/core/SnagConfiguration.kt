@@ -10,7 +10,7 @@ data class SnagConfiguration(
     val debugPort: Int = 43435,
     val enableLogs: Boolean = true,
     val isSecurityEnabled: Boolean = true,
-    val securityPIN: String? = null
+    val securityListener: SnagSecurityListener? = null
 ) {
     companion object {
         fun getDefault(context: Context): SnagConfiguration {
@@ -35,17 +35,12 @@ data class SnagConfiguration(
                 null
             }
 
-            val manifestPin = metaData?.get("com.snag.SECURITY_PIN")?.toString()
             val securityEnabled = metaData?.getBoolean("com.snag.SECURITY_ENABLED", true) ?: true
-            
-            // Check System Property as a fallback (similar to iOS environment/launch args)
-            val systemPin = System.getProperty("SnagSecurityPIN")
 
             return SnagConfiguration(
                 projectName = context.applicationInfo.loadLabel(context.packageManager).toString(),
                 debugHost = if (isEmulator) "10.0.2.2" else null,
-                isSecurityEnabled = securityEnabled,
-                securityPIN = systemPin ?: manifestPin
+                isSecurityEnabled = securityEnabled
             )
         }
     }

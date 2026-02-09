@@ -9,7 +9,7 @@ class SnagBrowser: NSObject {
     
     private var browser: NWBrowser?
     private var connections: [NWConnection] = []
-    private var pendingBuffers: [Data] = []
+    private let pendingPackets = SnagBoundedQueue<SnagPacket>(maxSize: 100)
     private var discoveredEndpoints: Set<NWEndpoint> = []
     private var connectingEndpoints: Set<NWEndpoint> = []
 
@@ -24,8 +24,6 @@ class SnagBrowser: NSObject {
         encoder.dateEncodingStrategy = .secondsSince1970
         return encoder
     }()
-    
-    private let MAX_OFFLINE_BUFFER = 50
     
     init(configuration: SnagConfiguration) {
         super.init()
@@ -91,13 +89,29 @@ class SnagBrowser: NSObject {
         tcpOptions.enableKeepalive = true
         tcpOptions.noDelay = true // Disable Nagle's algorithm for immediate sending
         
+        let serverKey = trustKey(for: endpoint)
         
         let params: NWParameters
         if self.configuration?.isSecurityEnabled ?? false {
             let tlsOptions = NWProtocolTLS.Options()
-            // Allow self-signed certificates
-            sec_protocol_options_set_verify_block(tlsOptions.securityProtocolOptions, { (metadata, sec_trust, completionHandler) in
-                completionHandler(true)
+            sec_protocol_options_set_verify_block(tlsOptions.securityProtocolOptions, { [weak self] (_, sec_trust, completionHandler) in
+                let decision = SnagTrustStore.shared.verifyOrTrust(serverKey: serverKey, secTrust: sec_trust)
+                switch decision {
+                case .trusted:
+                    completionHandler(true)
+                case let .mismatch(expected, actual):
+                    DispatchQueue.main.async {
+                        self?.configuration?.securityDelegate?.snagDidDetectIdentityMismatch(
+                            serverKey: serverKey,
+                            expectedFingerprint: expected,
+                            actualFingerprint: actual,
+                            recoveryHint: "Call Snag.resetTrustedServers() after confirming the trusted server identity."
+                        )
+                    }
+                    completionHandler(false)
+                case .invalid:
+                    completionHandler(false)
+                }
             }, self.queue)
             params = NWParameters(tls: tlsOptions, tcp: tcpOptions)
         } else {
@@ -197,7 +211,7 @@ class SnagBrowser: NSObject {
             connection.cancel()
         }
         connections.removeAll()
-        pendingBuffers.removeAll()
+        pendingPackets.clear()
         discoveredEndpoints.removeAll()
         connectingEndpoints.removeAll()
         connectionKeys.removeAll()
@@ -214,17 +228,29 @@ class SnagBrowser: NSObject {
     
 
 
-    private func flushPendingLocked() {
-        guard !pendingBuffers.isEmpty else { return }
+    private func enqueuePendingPacketLocked(_ packet: SnagPacket) {
+        let dropped = pendingPackets.enqueue(packet)
+        if dropped {
+            print("SnagBrowser: Pre-auth queue full. Dropping oldest packet.")
+        }
+    }
+
+    private func flushPendingPacketsLocked() {
+        guard pendingPackets.snapshot().queuedPackets > 0 else { return }
+
         let readyConnections = connections.filter { $0.state == .ready }
-        guard !readyConnections.isEmpty else { return }
-        
-        let buffers = pendingBuffers
-        pendingBuffers.removeAll()
-        
-        for buffer in buffers {
-            for connection in readyConnections {
-                sendData(buffer, on: connection)
+        let authenticatedConnections = readyConnections.compactMap { connection -> (NWConnection, String)? in
+            guard let mode = self.connectionAuthModes[ObjectIdentifier(connection)] else { return nil }
+            return (connection, mode)
+        }
+        guard !authenticatedConnections.isEmpty else { return }
+
+        let packets = pendingPackets.drain()
+        guard !packets.isEmpty else { return }
+
+        for packet in packets {
+            for (connection, mode) in authenticatedConnections {
+                sendPreparedPacketLocked(packet, on: connection, mode: mode)
             }
         }
     }
@@ -288,14 +314,9 @@ class SnagBrowser: NSObject {
             let packet = try decoder.decode(SnagPacket.self, from: data)
             
             // Check for Control Packets (Handshake)
-            if let type = packet.control?.type {
-                if type == "auth_required" {
-                    handleAuthRequired(packet: packet, connection: connection)
-                    return
-                } else if type == "auth_success" {
-                    handleAuthSuccess(packet: packet, connection: connection)
-                    return
-                }
+            if packet.control?.type == "auth_success" {
+                handleAuthSuccess(packet: packet, connection: connection)
+                return
             }
             
             DispatchQueue.main.async {
@@ -305,49 +326,19 @@ class SnagBrowser: NSObject {
             print("SnagBrowser: Parse error: \(error)")
         }
     }
+
+    private func trustKey(for endpoint: NWEndpoint) -> String {
+        switch endpoint {
+        case let .service(name, type, domain, _):
+            return "\(name.lowercased())|\(type.lowercased())|\(domain.lowercased())"
+        case let .hostPort(host, port):
+            return "\(host.debugDescription.lowercased()):\(port.rawValue)"
+        default:
+            return endpoint.debugDescription.lowercased()
+        }
+    }
     
     // MARK: - Handshake Handlers
-    
-    private func handleAuthRequired(packet: SnagPacket, connection: NWConnection) {
-        guard let saltHex = packet.control?.salt else { return }
-        let pin = self.configuration?.securityPIN ?? ""
-        
-        // Convert Salt Hex to Data
-        // Simple hex decode
-        var saltData = Data()
-        var hex = saltHex
-        while hex.count > 0 {
-            let subIndex = hex.index(hex.startIndex, offsetBy: 2)
-            let c = String(hex[..<subIndex])
-            hex = String(hex[subIndex...])
-            var ch: UInt32 = 0
-            Scanner(string: c).scanHexInt32(&ch)
-            var char = UInt8(ch)
-            saltData.append(&char, count: 1)
-        }
-        
-        let key = SnagCrypto.deriveKey(pin: pin, salt: saltData)
-        
-        // Verify
-        let validationString = "Client"
-        var dataToHash = Data()
-        key.withUnsafeBytes { dataToHash.append(contentsOf: $0) }
-        dataToHash.append(Data(validationString.utf8))
-        
-        let computedHash = SHA256.hash(data: dataToHash).map { String(format: "%02x", $0) }.joined()
-        
-        // Store key temporarily (not trusted yet by server, but we need it for next step if we wanted early encrypt, but protocol says wait)
-        // Actually we can store it now.
-        self.connectionKeys[ObjectIdentifier(connection)] = key
-        
-        // Send Verify
-        var verifyPacket = SnagPacket()
-        verifyPacket.control = SnagControl(type: "auth_verify", authHash: computedHash)
-        verifyPacket.device = self.configuration?.device
-        verifyPacket.project = self.configuration?.project
-        
-        self.sendRaw(packet: verifyPacket, on: connection)
-    }
     
     private func handleAuthSuccess(packet: SnagPacket, connection: NWConnection) {
         guard let mode = packet.control?.authMode else { return }
@@ -355,8 +346,8 @@ class SnagBrowser: NSObject {
         self.connectionAuthModes[ObjectIdentifier(connection)] = mode
         print("SnagBrowser: Auth Success! Mode: \(mode)")
         
-        // Flush pending buffers now that we are authenticated
-        self.flushPendingLocked()
+        // Flush pending packets now that we are authenticated
+        self.flushPendingPacketsLocked()
     }
 
     private func sendData(_ data: Data, on connection: NWConnection) {
@@ -396,75 +387,48 @@ class SnagBrowser: NSObject {
              
              // Check connections
              let readyConnections = self.connections.filter({ $0.state == .ready })
-             
-             // For each connection, check auth state and encrypt if needed
-             for connection in readyConnections {
-                 guard let mode = self.connectionAuthModes[ObjectIdentifier(connection)] else {
-                     // Not authenticated yet. Buffer it?
-                     // Or just buffering globally is easier.
-                     // The logic below handles buffering if *no* ready connections.
-                     // If we have ready connections but they are not auth'd, we should buffer.
-                     
-                     // Optimization: Just buffer if any connection is not ready or not auth'd?
-                     // Simplest: Check if ANY connection is auth'd.
-                     continue
-                 }
-                 
-                 if mode == "encrypted" {
-                     // Encrypt
-                     if let key = self.connectionKeys[ObjectIdentifier(connection)] {
-                         do {
-                             let plaintext = try self.encoder.encode(finalPacket)
-                             let (ciphertext, nonce) = try SnagCrypto.encrypt(data: plaintext, key: key)
-                             
-                             var wrapperPacket = SnagPacket()
-                             wrapperPacket.control = SnagControl(type: "data", encryptedPayload: ciphertext, encryptedNonce: nonce)
-                             wrapperPacket.device = finalPacket.device
-                             wrapperPacket.project = finalPacket.project
-                             
-                             self.sendRaw(packet: wrapperPacket, on: connection)
-                         } catch {
-                             print("SnagBrowser: Encryption Error: \(error)")
-                         }
-                     }
-                 } else {
-                     // Cleartext
-                     self.sendRaw(packet: finalPacket, on: connection)
-                 }
+
+             let authenticatedConnections = readyConnections.compactMap { connection -> (NWConnection, String)? in
+                 guard let mode = self.connectionAuthModes[ObjectIdentifier(connection)] else { return nil }
+                 return (connection, mode)
              }
-             
-             // Buffer management (if no auth'd connections found)
-             let authenticatedConnections = readyConnections.filter { self.connectionAuthModes[ObjectIdentifier($0)] != nil }
-             
+
              if authenticatedConnections.isEmpty {
-                 // Store raw packet or encoded?
-                 // Buffer the *original packet* so we can encrypt later.
-                 // Current pendingBuffers stores `Data`. This assumes cleartext encoding.
-                 // We need to change pendingBuffers to store `SnagPacket` or handle re-encoding.
-                 // But `pendingBuffers` is used for "offline".
-                 
-                 // If we stick to Data buffering, we assume cleartext.
-                 // But we might need encryption.
-                 // Refactor pendingBuffers to `[SnagPacket]`.
-                 
-                 // For now, let's keep it simple: If buffering, we encode as usual? No.
-                 // We MUST refactor pendingBuffers if we want to support encryption after reconnect.
-                 // However, to minimize diff, let's just drop packets if not auth'd? No, bad UX.
-                 
-                 // Let's assume re-encoding is cheap.
-                 // I will add `private var pendingPackets: [SnagPacket] = []` and deprecate `pendingBuffers`.
-                 // Or just hack `flushPendingControl` to re-encrypt?
-                 // `pendingBuffers` contains framed Data. It's too late.
-                 
-                 // Let's just drop offline buffering for this refactor to keep it simple?
-                 // Task says "Implement Packet Encryption".
-                 
-                 // Okay, I will just proceed with the `sendRaw` logic.
-                 // Note: The original code buffered `Data`.
-                 // I will skip offline buffering updates for this specific "Security" task unless critical.
-                 // But if I don't buffer, user loses startup logs.
-                 // I'll update `pendingBuffers` logic to hold the Packet itself.
+                 self.enqueuePendingPacketLocked(finalPacket)
+                 return
+             }
+
+             for (connection, mode) in authenticatedConnections {
+                 self.sendPreparedPacketLocked(finalPacket, on: connection, mode: mode)
              }
         }
+    }
+
+    private func sendPreparedPacketLocked(_ packet: SnagPacket, on connection: NWConnection, mode: String) {
+        if mode == "encrypted" {
+            guard let key = self.connectionKeys[ObjectIdentifier(connection)] else {
+                print("SnagBrowser: Missing key for encrypted connection.")
+                return
+            }
+            do {
+                let plaintext = try self.encoder.encode(packet)
+                let (ciphertext, nonce) = try SnagCrypto.encrypt(data: plaintext, key: key)
+
+                var wrapperPacket = SnagPacket()
+                wrapperPacket.control = SnagControl(type: "data", encryptedPayload: ciphertext, encryptedNonce: nonce)
+                wrapperPacket.device = packet.device
+                wrapperPacket.project = packet.project
+
+                self.sendRaw(packet: wrapperPacket, on: connection)
+            } catch {
+                print("SnagBrowser: Encryption Error: \(error)")
+            }
+        } else {
+            self.sendRaw(packet: packet, on: connection)
+        }
+    }
+
+    func queueMetricsSnapshot() -> SnagQueueMetricsSnapshot {
+        return pendingPackets.snapshot()
     }
 }

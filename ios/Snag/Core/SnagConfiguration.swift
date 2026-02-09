@@ -1,10 +1,20 @@
 import Foundation
 
+@objc public protocol SnagSecurityDelegate: AnyObject {
+    func snagDidDetectIdentityMismatch(
+        serverKey: String,
+        expectedFingerprint: String,
+        actualFingerprint: String,
+        recoveryHint: String
+    )
+}
+
 public class SnagConfiguration {
     public var project: SnagProject?
     public var device: SnagDevice?
     
     public weak var carrierDelegate: SnagCarrierDelegate?
+    public weak var securityDelegate: SnagSecurityDelegate?
     
     var netservicePort: UInt16 = 0
     var netserviceType: String?
@@ -16,7 +26,6 @@ public class SnagConfiguration {
     
     public var enableLogs: Bool = true
     public var isSecurityEnabled: Bool = true
-    public var securityPIN: String?
     
     public static let defaultConfiguration: SnagConfiguration = {
         let config = SnagConfiguration()
@@ -47,7 +56,5 @@ public class SnagConfiguration {
     public init() {
         self.project = SnagProject()
         self.device = SnagDevice()
-        
-        self.securityPIN = SnagUtility.securityPIN()
     }
 }

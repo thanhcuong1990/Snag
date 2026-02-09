@@ -1,6 +1,5 @@
 import Cocoa
 import Network
-import CryptoKit
 
 protocol SnagPublisherDelegate {
     func didGetPacket(publisher: SnagPublisher, packet: SnagPacket)
@@ -14,9 +13,6 @@ class SnagPublisher: NSObject {
     private var connections: [NWConnection] = []
     private var authenticatedConnections: Set<ObjectIdentifier> = []
     private var deviceConnections: [String: NWConnection] = [:]
-    
-    private let store = SnagPublisherStore()
-    private lazy var authenticator = SnagPublisherAuthenticator(store: store)
     
     private let queue = DispatchQueue(label: "com.snag.publisher.queue")
     
@@ -35,7 +31,6 @@ class SnagPublisher: NSObject {
     func startPublishing() {
         queue.async { [weak self] in
             guard let self = self else { return }
-            self.store.loadAll()
             self.stopPublishingLocked()
             
             do {
@@ -103,17 +98,13 @@ class SnagPublisher: NSObject {
             self.queue.async {
                 switch state {
                 case .ready:
-                    let isTrusted = self.authenticator.isAutoTrusted(connection: connection, localIPs: self.getLocalIPAddresses())
-                    if isTrusted {
-                        self.authenticatedConnections.insert(ObjectIdentifier(connection))
-                    }
                     DispatchQueue.main.async {
-                        SnagController.shared.publisherStatus = "Connected: \(connection.endpoint) (Trusted: \(isTrusted))"
+                        SnagController.shared.publisherStatus = "Connected: \(connection.endpoint)"
                     }
                     self.receiveData(on: connection)
                 case .failed(let error):
                     print("SnagPublisher: Connection failed: \(error)")
-                    self.removeConnection(connection)
+                    self.evictConnection(connection, reason: "state_failed")
                 case .cancelled:
                     self.removeConnection(connection)
                 default:
@@ -172,13 +163,9 @@ class SnagPublisher: NSObject {
             
             if type == "hello" {
                 handleHello(packet: snagPacket, connection: connection)
-            } else if type == "auth_verify" {
-                handleAuthVerify(packet: snagPacket, connection: connection)
-            } else if type == "data" {
-                handleEncryptedData(packet: snagPacket, connection: connection)
             } else if let deviceId = (snagPacket.device?.deviceId ?? snagPacket.control?.deviceId)?.lowercased() {
                 // Regular packet
-                if isTrusted(connection: connection, packet: snagPacket) {
+                if isTrusted(connection: connection, packetType: type ?? "data") {
                     self.deviceConnections[deviceId] = connection
                     DispatchQueue.main.async {
                         SnagController.shared.publisherStatus = "Packet from \(snagPacket.device?.deviceName ?? "Unknown")"
@@ -191,14 +178,10 @@ class SnagPublisher: NSObject {
         }
     }
     
-    private func isTrusted(connection: NWConnection, packet: SnagPacket) -> Bool {
-        let isHandshake = packet.control?.type != nil && packet.control?.type != "data"
-        if isHandshake { return true }
-        
+    private func isTrusted(connection: NWConnection, packetType: String) -> Bool {
         let isTrusted = authenticatedConnections.contains(ObjectIdentifier(connection))
         if SnagConfiguration.isSecurityEnabled && !isTrusted {
-            let type = packet.control?.type ?? "data"
-            print("SnagPublisher: Dropped unauthorized [\(type)] packet from \(connection.endpoint)")
+            print("SnagPublisher: Dropped unauthorized [\(packetType)] packet from \(connection.endpoint)")
             return false
         }
         return true
@@ -206,136 +189,29 @@ class SnagPublisher: NSObject {
 
     private func handleHello(packet: SnagPacket, connection: NWConnection) {
         guard let deviceId = (packet.device?.deviceId ?? packet.control?.deviceId)?.lowercased() else { return }
+        
+        // 0. Close existing connection for this device if it's different
+        if let existing = self.deviceConnections[deviceId], existing !== connection {
+            print("SnagPublisher: Closing stale connection for \(deviceId)")
+            self.removeConnection(existing)
+            existing.cancel()
+        }
+        
         self.deviceConnections[deviceId] = connection
-        
-        // 1. Existing Session?
-        if authenticator.hasSession(for: deviceId) {
-            self.authenticatedConnections.insert(ObjectIdentifier(connection))
-            let successPacket = SnagPacket()
-            successPacket.control = SnagControl(type: "auth_success", deviceId: deviceId, authMode: "encrypted")
-            successPacket.device = packet.device
-            successPacket.project = packet.project
-            self.send(packet: successPacket, toConnection: connection)
-            DispatchQueue.main.async {
-                self.delegate?.didGetPacket(publisher: self, packet: packet) 
-                self.delegate?.didGetPacket(publisher: self, packet: successPacket) 
-            }
-            return
-        }
-        
-        // 2. Pending Handshake?
-        if let _ = authenticator.getSalt(for: connection) {
-            sendChallenge(deviceId: deviceId, connection: connection)
-            DispatchQueue.main.async { self.delegate?.didGetPacket(publisher: self, packet: packet) }
-            return
-        }
 
-        // 3. Auto-Trust?
-        if authenticator.isAutoTrusted(connection: connection, localIPs: getLocalIPAddresses()) {
-             self.authenticatedConnections.insert(ObjectIdentifier(connection))
-             let successPacket = SnagPacket()
-             successPacket.control = SnagControl(type: "auth_success", deviceId: deviceId, authMode: "cleartext")
-             successPacket.device = packet.device
-             successPacket.project = packet.project
-             self.send(packet: successPacket, toConnection: connection)
-             DispatchQueue.main.async {
-                 self.delegate?.didGetPacket(publisher: self, packet: packet)
-                 self.delegate?.didGetPacket(publisher: self, packet: successPacket)
-             }
-             return
-        }
-        
-        // 4. Start Handshake
-        sendChallenge(deviceId: deviceId, connection: connection)
+        self.authenticatedConnections.insert(ObjectIdentifier(connection))
+
+        let successPacket = SnagPacket()
+        successPacket.control = SnagControl(type: "auth_success", deviceId: deviceId, authMode: "cleartext")
+        successPacket.device = packet.device
+        successPacket.project = packet.project
+        self.send(packet: successPacket, toConnection: connection)
+
         DispatchQueue.main.async {
             self.delegate?.didGetPacket(publisher: self, packet: packet)
-            SnagController.shared.publisherStatus = "Waiting for Auth: \(packet.device?.deviceName ?? "Unknown")"
+            self.delegate?.didGetPacket(publisher: self, packet: successPacket)
+            SnagController.shared.publisherStatus = "Authenticated: \(packet.device?.deviceName ?? "Unknown")"
         }
-    }
-    
-    private func sendChallenge(deviceId: String, connection: NWConnection) {
-        let saltHex = authenticator.generateSalt(for: connection)
-        let challengePacket = SnagPacket()
-        challengePacket.control = SnagControl(type: "auth_required", deviceId: deviceId, salt: saltHex)
-        self.send(packet: challengePacket, toConnection: connection)
-    }
-    
-    private func handleAuthVerify(packet: SnagPacket, connection: NWConnection) {
-        guard let hash = packet.control?.authHash, let deviceId = (packet.device?.deviceId ?? packet.control?.deviceId)?.lowercased() else { return }
-        authenticator.registerPendingVerification(connection: connection, hash: hash)
-        
-        if let cachedPIN = authenticator.getCachedPIN(for: deviceId) {
-             let result = self.authorizeDeviceLocked(connection: connection, deviceId: deviceId, pin: cachedPIN)
-             if result {
-                 // Notify UI of the success even if it was automated
-                 let successPacket = SnagPacket()
-                 successPacket.control = SnagControl(type: "auth_success", deviceId: deviceId, authMode: "encrypted")
-                 successPacket.device = packet.device
-                 successPacket.project = packet.project
-                 DispatchQueue.main.async { self.delegate?.didGetPacket(publisher: self, packet: successPacket) }
-                 return
-             } else {
-                 // ONLY remove PIN if it was WRONG, not if verify state was missing (salt etc)
-                 // If salt is missing, authorizeDeviceLocked returns false without checking PIN.
-                 // We can check if verification was even possible.
-                 if authenticator.getSalt(for: connection) != nil {
-                     print("SnagPublisher: Auto-auth failed with cached PIN for \(deviceId). Removing PIN.")
-                     store.removeKnownPIN(deviceId: deviceId)
-                 }
-             }
-        }
-        
-        DispatchQueue.main.async { self.delegate?.didGetPacket(publisher: self, packet: packet) }
-    }
-    
-    private func handleEncryptedData(packet: SnagPacket, connection: NWConnection) {
-        let deviceId = (packet.device?.deviceId ?? packet.control?.deviceId ?? deviceConnections.first(where: { $0.value === connection })?.key)?.lowercased()
-        guard let resolvedDeviceId = deviceId else { return }
-        
-        do {
-            if let decryptedPacket = try authenticator.decrypt(packet: packet, deviceId: resolvedDeviceId) {
-                // FALLBACK: If decrypted packet is missing metadata, copy from wrapper
-                if decryptedPacket.device == nil { decryptedPacket.device = packet.device }
-                if decryptedPacket.project == nil { decryptedPacket.project = packet.project }
-                
-                // Ensure deviceId is set for routing
-                let currentId = decryptedPacket.device?.deviceId
-                if currentId == nil || currentId?.isEmpty == true {
-                    if decryptedPacket.device == nil {
-                        let d = SnagDeviceModel()
-                        d.deviceId = resolvedDeviceId
-                        decryptedPacket.device = d
-                    } else {
-                        decryptedPacket.device?.deviceId = resolvedDeviceId
-                    }
-                }
-                
-                DispatchQueue.main.async { self.delegate?.didGetPacket(publisher: self, packet: decryptedPacket) }
-            }
-        } catch {
-            print("SnagPublisher: Decryption failed")
-        }
-    }
-    
-    func authorizeDevice(deviceId: String, pin: String) -> Bool {
-        return queue.sync {
-            guard let connection = deviceConnections[deviceId.lowercased()] else { return false }
-            return authorizeDeviceLocked(connection: connection, deviceId: deviceId, pin: pin)
-        }
-    }
-    
-    private func authorizeDeviceLocked(connection: NWConnection, deviceId: String, pin: String) -> Bool {
-        return authenticator.authorizeDeviceLocked(
-            connection: connection,
-            deviceId: deviceId,
-            pin: pin,
-            onAuthenticated: { conn in self.authenticatedConnections.insert(ObjectIdentifier(conn)) },
-            sendPacket: { packet, conn in self.send(packet: packet, toConnection: conn) }
-        )
-    }
-    
-    func getLockoutStatus(deviceId: String) -> (locked: Bool, remainingSeconds: Int?) {
-        return queue.sync { authenticator.getLockoutStatus(deviceId: deviceId) }
     }
 
     func stopPublishing() {
@@ -349,7 +225,6 @@ class SnagPublisher: NSObject {
         connections.removeAll()
         deviceConnections.removeAll()
         authenticatedConnections.removeAll()
-        authenticator.reset()
     }
     
     private func removeConnection(_ connection: NWConnection) {
@@ -367,52 +242,51 @@ class SnagPublisher: NSObject {
     }
 
     private func send(packet: SnagPacket, toConnection connection: NWConnection) {
+        guard connection.state == .ready else {
+            evictConnection(connection, reason: "send_on_non_ready_connection")
+            return
+        }
+
         do {
             let data = try jsonEncoder.encode(packet)
             var length = UInt64(data.count)
             var buffer = Data(bytes: &length, count: 8)
             buffer.append(data)
-            connection.send(content: buffer, completion: .contentProcessed { _ in })
+            connection.send(content: buffer, completion: .contentProcessed { [weak self] error in
+                guard let self = self else { return }
+                if let error = error {
+                    self.queue.async {
+                        print("SnagPublisher: Send failed (\(connection.endpoint)): \(error)")
+                        self.evictConnection(connection, reason: "send_failed")
+                    }
+                }
+            })
         } catch { print("SnagPublisher: Encode error") }
     }
     
     func send(packet: SnagPacket, toDeviceId deviceId: String) {
         queue.async {
-            guard let conn = self.deviceConnections[deviceId], conn.state == .ready else { return }
+            guard let conn = self.deviceConnections[deviceId.lowercased()] else { return }
+            guard conn.state == .ready else {
+                self.evictConnection(conn, reason: "device_send_non_ready")
+                return
+            }
             self.send(packet: packet, toConnection: conn)
         }
     }
     
     func broadcast(packet: SnagPacket) {
         queue.async {
-            for (_, conn) in self.deviceConnections where conn.state == .ready {
+            let connections = Array(self.deviceConnections.values)
+            for conn in connections where conn.state == .ready {
                 self.send(packet: packet, toConnection: conn)
+            }
+            for conn in connections where conn.state != .ready {
+                self.evictConnection(conn, reason: "broadcast_non_ready")
             }
         }
     }
 
-    private func getLocalIPAddresses() -> [String] {
-        var addresses: [String] = []
-        var ifaddr: UnsafeMutablePointer<ifaddrs>?
-        if getifaddrs(&ifaddr) == 0 {
-            var ptr = ifaddr
-            while ptr != nil {
-                defer { ptr = ptr?.pointee.ifa_next }
-                let interface = ptr?.pointee
-                let addrFamily = interface?.ifa_addr.pointee.sa_family
-                if addrFamily == UInt8(AF_INET) || addrFamily == UInt8(AF_INET6) {
-                    var hostname = [CChar](repeating: 0, count: Int(NI_MAXHOST))
-                    getnameinfo(interface?.ifa_addr, socklen_t(interface?.ifa_addr.pointee.sa_len ?? 0),
-                                &hostname, socklen_t(hostname.count),
-                                nil, socklen_t(0), NI_NUMERICHOST)
-                    addresses.append(String(cString: hostname))
-                }
-            }
-            freeifaddrs(ifaddr)
-        }
-        return addresses
-    }
-    
     private var publishRetryScheduled = false
     private func schedulePublishRetryLocked() {
         if publishRetryScheduled { return }
@@ -421,5 +295,11 @@ class SnagPublisher: NSObject {
             self?.publishRetryScheduled = false
             self?.startPublishing()
         }
+    }
+
+    private func evictConnection(_ connection: NWConnection, reason: String) {
+        print("SnagPublisher: Evicting connection (\(connection.endpoint)) reason=\(reason)")
+        self.removeConnection(connection)
+        connection.cancel()
     }
 }

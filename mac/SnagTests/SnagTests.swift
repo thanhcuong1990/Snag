@@ -25,32 +25,4 @@ class SnagTests: XCTestCase {
         }
     }
     
-    func testCrossPlatformGoldenVectors() throws {
-        // Shared Golden Values
-        let pin = "MySecretPin123!"
-        let saltHex = "0102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f20"
-        
-        // Convert hex to Data helper
-        func dataFromHex(_ hex: String) -> Data {
-             var data = Data()
-             var hexStr = hex
-             while hexStr.count > 0 {
-                 let c = String(hexStr.prefix(2))
-                 hexStr = String(hexStr.dropFirst(2))
-                 if let b = UInt8(c, radix: 16) {
-                     data.append(b)
-                 }
-             }
-             return data
-        }
-        
-        let salt = dataFromHex(saltHex)
-        let key = SnagCrypto.deriveKey(pin: pin, salt: salt)
-        let keyHex = key.withUnsafeBytes { Data($0) }.map { String(format: "%02x", $0) }.joined()
-        
-        // Key (Standard Verified): 7531498fa22ed53d8211b73d8b92b5fc98d209c0a3eefbadfba61352f7660aea
-        let expectedKeyHex = "7531498fa22ed53d8211b73d8b92b5fc98d209c0a3eefbadfba61352f7660aea"
-        XCTAssertEqual(keyHex, expectedKeyHex, "Key derivation mismatch! Mac and Android must agree.")
-    }
-    
 }

@@ -10,17 +10,15 @@ import com.snag.models.SnagDevice
 import com.snag.models.SnagPacket
 import com.snag.models.SnagProject
 import com.snag.models.SnagRequestInfo
-import com.snag.core.SnagCrypto
 import com.snag.models.SnagLog
+import com.snag.models.SnagMetrics
+import com.snag.models.SnagQueueMetrics
 import kotlinx.coroutines.Dispatchers
-import java.util.Base64
-import javax.crypto.SecretKey
 import kotlinx.coroutines.MainScope
 import kotlinx.coroutines.launch
 import kotlinx.serialization.json.Json
-import kotlinx.serialization.encodeToString
-import kotlinx.serialization.decodeFromString
 import timber.log.Timber
+import java.util.concurrent.ConcurrentHashMap
 
 internal class SnagBrowserImpl(
     private val context: Context,
@@ -43,13 +41,12 @@ internal class SnagBrowserImpl(
     private val packetListeners = java.util.concurrent.CopyOnWriteArrayList<SnagBrowser.PacketListener>()
     
     private val connectionManager = ConnectionManager(
+        context = context,
         scope = snagScope,
         json = json,
-        onPacketReceived = { packet ->
-            if (handleHandshakePacket(packet)) {
+        onPacketReceived = { serviceName, packet ->
+            if (handleHandshakePacket(serviceName = serviceName, packet = packet)) {
                 // Handled
-            } else if (packet.control?.type == "data") {
-                handleEncryptedPacket(packet)
             } else {
                 packetListeners.forEach { it.onPacketReceived(packet) }
             }
@@ -58,29 +55,7 @@ internal class SnagBrowserImpl(
         setConfig(config)
     }
 
-    private var sessionKey: SecretKey? = null
-    private var authMode: String? = null
-
-    init {
-        // Redefine callback wrapper or handle logic here?
-        // Since we pass callback in constructor, we can't redefine connectionManager easily.
-        // Wait, onPacketReceived is a val? No, it's a lambda.
-        // ConnectionManager constructor takes it.
-        // We can't change it.
-        // But we can check packet types in the existing listener forwarding?
-        // Ah, `packetListeners.forEach`.
-        // We need to INTERCEPT before listeners.
-        // Refactor ConnectionManager construction?
-        // Or add this logic to `packetListeners`?
-        // If we add it as a listener, we might be too late or race condition?
-        // No, listeners are called in order? CopyOnWriteArrayList.
-        // But `SnagBrowser` itself implements `PacketListener`? No.
-        // ConnectionManager calls `onPacketReceived` -> `packetListeners.forEach`.
-        // I should have injected `this::handlePacket` instead of lambda.
-    }
-    
-    // Changing ConnectionManager construction
-
+    private val serviceAuthModes = ConcurrentHashMap<String, String>()
 
     private val discoveryManager = DiscoveryManager(
         context = context,
@@ -90,23 +65,11 @@ internal class SnagBrowserImpl(
 
     private var multicastLock: WifiManager.MulticastLock? = null
     
-    private val pendingPackets = java.util.Collections.synchronizedList(mutableListOf<SnagPacket>())
+    private val pendingPackets = SnagBoundedQueue<SnagPacket>(maxSize = MAX_PENDING_PACKETS)
 
     fun start(project: SnagProject, device: SnagDevice) {
         this.project = project
         this.device = device
-        
-        // Flush pending packets with new metadata
-        synchronized(pendingPackets) {
-            val iterator = pendingPackets.iterator()
-            while (iterator.hasNext()) {
-                val packet = iterator.next()
-                // Update packet with metadata before sending
-                val enrichedPacket = packet.copy(project = project, device = device)
-                connectionManager.send(enrichedPacket)
-                iterator.remove()
-            }
-        }
         
         // Acquire multicast lock for NSD discovery
         try {
@@ -126,7 +89,8 @@ internal class SnagBrowserImpl(
         config.debugHost?.let { host ->
             snagScope.launch(Dispatchers.IO) {
                 connectionManager.connectToHost(host, config.debugPort, "DebugHost") {
-                    sendHelloPacket()
+                    clearServiceAuth("DebugHost")
+                    sendHelloPacket("DebugHost")
                 }
             }
         }
@@ -134,31 +98,32 @@ internal class SnagBrowserImpl(
 
 
     override fun onServiceFound(serviceInfo: NsdServiceInfo) {
-        val addresses = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
-            serviceInfo.hostAddresses
+        val address = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
+            serviceInfo.hostAddresses.firstOrNull()
         } else {
             @Suppress("DEPRECATION")
-            listOf(serviceInfo.host)
+            serviceInfo.host
         }
 
-        addresses.forEach { address ->
-            address.hostAddress?.let { hostAddress ->
-                connectionManager.connectToHost(hostAddress, serviceInfo.port, serviceInfo.serviceName) {
-                    sendHelloPacket()
-                }
+        address?.hostAddress?.let { hostAddress ->
+            connectionManager.connectToHost(hostAddress, serviceInfo.port, serviceInfo.serviceName) {
+                clearServiceAuth(serviceInfo.serviceName)
+                sendHelloPacket(serviceInfo.serviceName)
             }
         }
     }
 
     override fun onServiceLost(serviceInfo: NsdServiceInfo) {
+        clearServiceAuth(serviceInfo.serviceName)
         connectionManager.disconnectService(serviceInfo.serviceName)
     }
 
-    private fun sendHelloPacket() {
+    private fun sendHelloPacket(serviceName: String) {
         val proj = project ?: return
         val dev = device ?: return
         val helloControl = com.snag.models.SnagControl(type = "hello", deviceId = dev.deviceId)
-        sendPacket(SnagPacket(control = helloControl, device = dev, project = proj))
+        val packet = SnagPacket(control = helloControl, device = dev, project = proj)
+        connectionManager.send(packet, preferredServiceName = normalizeServiceName(serviceName))
     }
 
     override fun sendPacket(requestInfo: SnagRequestInfo) {
@@ -176,8 +141,8 @@ internal class SnagBrowserImpl(
             device = dev
         )
         
-        if (proj == null || dev == null || (config.isSecurityEnabled && authMode == null)) {
-            pendingPackets.add(packet)
+        if (proj == null || dev == null || (config.isSecurityEnabled && !hasAuthenticatedService())) {
+            enqueuePendingPacket(packet, reason = "request_info_not_ready")
         } else {
             sendEncryptedIfRequired(packet)
         }
@@ -193,8 +158,8 @@ internal class SnagBrowserImpl(
             log = log
         )
         
-        if (proj == null || dev == null || (config.isSecurityEnabled && authMode == null)) {
-            pendingPackets.add(packet)
+        if (proj == null || dev == null || (config.isSecurityEnabled && !hasAuthenticatedService())) {
+            enqueuePendingPacket(packet, reason = "log_not_ready")
         } else {
             sendEncryptedIfRequired(packet)
         }
@@ -205,10 +170,15 @@ internal class SnagBrowserImpl(
          val dev = device
          
          val type = packet.control?.type
-         val isHandshake = type == "hello" || type == "auth_verify"
-         
-         if (!isHandshake && (proj == null || dev == null || (config.isSecurityEnabled && authMode == null))) {
-             pendingPackets.add(packet)
+         val isHandshake = type == "hello"
+
+         if (isHandshake) {
+             connectionManager.send(packet, preferredServiceName = null)
+             return
+         }
+
+         if (proj == null || dev == null || (config.isSecurityEnabled && !hasAuthenticatedService())) {
+             enqueuePendingPacket(packet, reason = "packet_not_ready")
          } else {
              sendEncryptedIfRequired(packet)
          }
@@ -221,35 +191,16 @@ internal class SnagBrowserImpl(
     override fun removePacketListener(listener: SnagBrowser.PacketListener) {
         packetListeners.remove(listener)
     }
-    // MARK: - Handshake & Encryption
+    // MARK: - Handshake
 
-    private fun handleHandshakePacket(packet: SnagPacket): Boolean {
+    private fun handleHandshakePacket(serviceName: String, packet: SnagPacket): Boolean {
         val type = packet.control?.type ?: return false
         
-        if (type == "auth_required") {
-            val saltHex = packet.control.salt ?: return true
-            val pin = config.securityPIN ?: ""
-            val salt = SnagCrypto.hexToBytes(saltHex)
-            val key = SnagCrypto.deriveKey(pin, salt)
-            this.sessionKey = key
-            
-            // Verify
-            // Hash(Key + "Client")
-            val validation = "Client".toByteArray(Charsets.UTF_8)
-            val keyBytes = key.encoded // SecretKeySpec returns encoded.
-            // Concatenate
-            val dataToHash = keyBytes + validation
-            val hashBytes = java.security.MessageDigest.getInstance("SHA-256").digest(dataToHash)
-            val hashHex = SnagCrypto.bytesToHex(hashBytes)
-            
-            val verifyControl = com.snag.models.SnagControl(type = "auth_verify", authHash = hashHex)
-            val verifyPacket = SnagPacket(control = verifyControl, project = project, device = device)
-            
-            connectionManager.send(verifyPacket)
-            return true
-        } else if (type == "auth_success") {
-            this.authMode = packet.control.authMode
-            Timber.d("Auth Success. Mode: ${this.authMode}")
+        if (type == "auth_success") {
+            val normalizedService = normalizeServiceName(serviceName)
+            val authMode = packet.control.authMode ?: "cleartext"
+            serviceAuthModes[normalizedService] = authMode
+            Timber.d("Auth Success. service=%s mode=%s", normalizedService, authMode)
             flushPendingPackets()
             return true
         }
@@ -257,87 +208,99 @@ internal class SnagBrowserImpl(
         return false
     }
 
-    private fun handleEncryptedPacket(packet: SnagPacket) {
-        val payloadBase64 = packet.control?.encryptedPayload ?: return
-        val nonceBase64 = packet.control?.encryptedNonce ?: return
-        val key = this.sessionKey ?: return
-        
-        try {
-            val ciphertext = if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
-                Base64.getDecoder().decode(payloadBase64)
-            } else {
-                 android.util.Base64.decode(payloadBase64, android.util.Base64.DEFAULT)
-            }
-            
-            val nonce = if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
-                Base64.getDecoder().decode(nonceBase64)
-            } else {
-                android.util.Base64.decode(nonceBase64, android.util.Base64.DEFAULT)
-            }
-            
-            val plaintext = SnagCrypto.decrypt(ciphertext, nonce, key)
-            val jsonString = String(plaintext, Charsets.UTF_8)
-            val decryptedPacket = json.decodeFromString<SnagPacket>(jsonString)
-            
-            packetListeners.forEach { it.onPacketReceived(decryptedPacket) }
-        } catch (e: Exception) {
-            Timber.e(e, "Decryption failed")
+    private fun sendEncryptedIfRequired(packet: SnagPacket) {
+        val preferredServiceName = if (config.isSecurityEnabled) {
+            firstAuthenticatedService()
+        } else {
+            null
         }
+
+        if (config.isSecurityEnabled && preferredServiceName == null) {
+            enqueuePendingPacket(packet, reason = "no_authenticated_service")
+            return
+        }
+
+        connectionManager.send(packet, preferredServiceName = preferredServiceName)
     }
 
-    private fun sendEncryptedIfRequired(packet: SnagPacket) {
-        if (authMode == "encrypted") {
-            val key = sessionKey
-            if (key != null) {
-                try {
-                    val jsonString = json.encodeToString(packet)
-                    val plaintext = jsonString.toByteArray(Charsets.UTF_8)
-                    val result = SnagCrypto.encrypt(plaintext, key) // (ciphertext, nonce)
-                    
-                    val cipherBase64 = if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
-                        Base64.getEncoder().encodeToString(result.first)
-                    } else {
-                        android.util.Base64.encodeToString(result.first, android.util.Base64.NO_WRAP)
-                    }
-                    
-                    val nonceBase64 = if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
-                        Base64.getEncoder().encodeToString(result.second)
-                    } else {
-                         android.util.Base64.encodeToString(result.second, android.util.Base64.NO_WRAP)
-                    }
-                    
-                    val wrapperControl = com.snag.models.SnagControl(
-                        type = "data",
-                        encryptedPayload = cipherBase64,
-                        encryptedNonce = nonceBase64
-                    )
-                    
-                    val wrapperPacket = SnagPacket(
-                        control = wrapperControl,
-                        device = packet.device, // Header
-                        project = packet.project
-                    )
-                    
-                    connectionManager.send(wrapperPacket)
-                    return
-                } catch (e: Exception) {
-                    Timber.e(e, "Encryption failed")
-                }
-            }
+    private fun enqueuePendingPacket(packet: SnagPacket, reason: String) {
+        val dropped = pendingPackets.enqueue(packet)
+        val snapshot = pendingPackets.snapshot()
+        if (dropped) {
+            Timber.w(
+                "Pending packet queue full (%d). Dropping oldest packet. dropped=%d reason=%s",
+                MAX_PENDING_PACKETS,
+                snapshot.droppedCount,
+                reason
+            )
         }
-        // Fallback or Cleartext
-        connectionManager.send(packet)
+        if (snapshot.size == MAX_PENDING_PACKETS || snapshot.size % 50 == 0) {
+            Timber.d(
+                "Pending packet queue size=%d dropped=%d reason=%s",
+                snapshot.size,
+                snapshot.droppedCount,
+                reason
+            )
+        }
     }
 
     private fun flushPendingPackets() {
-         synchronized(pendingPackets) {
-            val iterator = pendingPackets.iterator()
-            while (iterator.hasNext()) {
-                val packet = iterator.next()
-                val enrichedPacket = packet.copy(project = project, device = device)
-                sendEncryptedIfRequired(enrichedPacket)
-                iterator.remove()
-            }
+        val pendingToFlush = pendingPackets.drain()
+
+        if (pendingToFlush.isNotEmpty()) {
+            val snapshot = pendingPackets.snapshot()
+            Timber.d(
+                "Flushing %d pending packets (dropped=%d)",
+                pendingToFlush.size,
+                snapshot.droppedCount
+            )
         }
+
+        pendingToFlush.forEach { packet ->
+            val enrichedPacket = packet.copy(project = project, device = device)
+            sendEncryptedIfRequired(enrichedPacket)
+        }
+    }
+
+    private fun hasAuthenticatedService(): Boolean {
+        return serviceAuthModes.isNotEmpty()
+    }
+
+    private fun firstAuthenticatedService(): String? {
+        val iterator = serviceAuthModes.keys.iterator()
+        while (iterator.hasNext()) {
+            val serviceName = iterator.next()
+            if (connectionManager.hasActiveConnection(serviceName)) {
+                return serviceName
+            }
+            serviceAuthModes.remove(serviceName)
+        }
+        return null
+    }
+
+    private fun clearServiceAuth(serviceName: String) {
+        serviceAuthModes.remove(normalizeServiceName(serviceName))
+    }
+
+    private fun normalizeServiceName(serviceName: String): String {
+        return serviceName.lowercase()
+    }
+
+    internal fun metricsSnapshot() = SnagMetrics(
+        preAuthQueue = pendingPackets.snapshot().toExportedMetrics(),
+        transportQueue = connectionManager.transportQueueMetricsSnapshot(),
+        trust = connectionManager.trustMetricsSnapshot()
+    )
+
+    companion object {
+        private const val MAX_PENDING_PACKETS = 500
+    }
+
+    private fun SnagBoundedQueueSnapshot.toExportedMetrics(): SnagQueueMetrics {
+        return SnagQueueMetrics(
+            queuedPackets = size,
+            droppedPackets = droppedCount,
+            enqueuedPackets = enqueuedCount
+        )
     }
 }

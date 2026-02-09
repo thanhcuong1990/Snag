@@ -12,6 +12,25 @@ public class Snag: NSObject {
     @objc public static func isEnabled() -> Bool {
         return controller != nil
     }
+
+    @objc public static func resetTrustedServers() {
+        SnagTrustStore.shared.resetAll()
+    }
+
+    @objc public static func metrics() -> SnagMetrics {
+        if let controller = controller {
+            return controller.metricsSnapshot()
+        }
+
+        let trust = SnagTrustStore.shared.metricsSnapshot()
+        return SnagMetrics(
+            preAuthQueue: SnagQueueMetrics(queuedPackets: 0, droppedPackets: 0, enqueuedPackets: 0),
+            trust: SnagTrustMetrics(
+                trustedServerCount: trust.trustedServerCount,
+                mismatchCount: trust.mismatchCount
+            )
+        )
+    }
     
     public static func start(configuration: SnagConfiguration) {
         if controller != nil { return }

@@ -1,7 +1,10 @@
 package com.snag.network
 
+import android.content.Context
+import com.snag.core.SnagIdentityMismatchEvent
 import com.snag.models.SnagPacket
-import com.snag.models.SnagControl
+import com.snag.models.SnagQueueMetrics
+import com.snag.models.SnagTrustMetrics
 import kotlinx.coroutines.*
 import kotlinx.coroutines.channels.BufferOverflow
 import kotlinx.coroutines.channels.Channel
@@ -10,6 +13,7 @@ import kotlinx.serialization.json.Json
 import timber.log.Timber
 import java.net.InetSocketAddress
 import java.net.Socket
+import java.security.MessageDigest
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.LinkedBlockingQueue
 import java.util.concurrent.atomic.AtomicLong
@@ -23,19 +27,23 @@ import java.security.cert.X509Certificate
  * Manages active socket connections, packet serialization, and delivery.
  */
 internal class ConnectionManager(
+    context: Context,
     private val scope: CoroutineScope,
     private val json: Json,
-    private val onPacketReceived: (SnagPacket) -> Unit
+    private val onPacketReceived: (serviceName: String, packet: SnagPacket) -> Unit
 ) {
     private val socketConnections = ConcurrentHashMap<String, ConcurrentHashMap<String, Socket>>()
-    private val pendingBuffers = LinkedBlockingQueue<ByteArray>(MAX_OFFLINE_BUFFER)
+    private val pendingBuffers = LinkedBlockingQueue<PendingBuffer>(MAX_OFFLINE_BUFFER)
     private val lastReconnectAttempt = AtomicLong(0)
+    private val enqueuedPendingBuffers = AtomicLong(0)
+    private val droppedPendingBuffers = AtomicLong(0)
 
     // Packet ingestion channel
-    private val packetChannel = Channel<SnagPacket>(
+    private val packetChannel = Channel<OutboundPacket>(
         capacity = MAX_PACKET_BUFFER,
         onBufferOverflow = BufferOverflow.DROP_OLDEST
     )
+    private val trustStore = SnagTrustStore.getInstance(context)
 
     private var config: com.snag.core.SnagConfiguration? = null
 
@@ -45,9 +53,9 @@ internal class ConnectionManager(
 
     init {
         scope.launch(Dispatchers.IO) {
-            for (packet in packetChannel) {
+            for (outbound in packetChannel) {
                 try {
-                    processPacket(packet)
+                    processPacket(outbound)
                 } catch (e: Exception) {
                     Timber.e(e, "Snag: Error processing packet in IO loop")
                 }
@@ -55,12 +63,13 @@ internal class ConnectionManager(
         }
     }
 
-    fun send(packet: SnagPacket) {
-        packetChannel.trySend(packet)
+    fun send(packet: SnagPacket, preferredServiceName: String? = null) {
+        packetChannel.trySend(OutboundPacket(packet = packet, preferredServiceName = preferredServiceName?.lowercase()))
     }
 
     fun connectToHost(hostAddress: String, port: Int, serviceName: String, onConnected: () -> Unit = {}) {
-        val connections = socketConnections.getOrPut(serviceName) { ConcurrentHashMap() }
+        val normalizedServiceName = serviceName.lowercase()
+        val connections = socketConnections.getOrPut(normalizedServiceName) { ConcurrentHashMap() }
         
         var shouldTriggerConnected = false
         synchronized(connections) {
@@ -69,7 +78,7 @@ internal class ConnectionManager(
             // connect simultaneously and challenges/responses get mixed up.
             val activeConnection = connections.values.firstOrNull { it.isConnected && !it.isClosed }
             if (activeConnection != null) {
-                Timber.d("Already connected to service $serviceName. Skipping $hostAddress.")
+                Timber.d("Already connected to service %s. Skipping %s.", normalizedServiceName, hostAddress)
                 return
             }
 
@@ -89,10 +98,16 @@ internal class ConnectionManager(
                 }
 
                 if (socket.isConnected) {
-                    Timber.d("Connected to $serviceName at $hostAddress:$port")
+                    val trustKey = trustKeyFor(serviceName = normalizedServiceName, hostAddress = hostAddress, port = port)
+                    if (!validateServerTrust(socket = socket, trustKey = trustKey)) {
+                        closeSocketSilently(socket, normalizedServiceName, hostAddress)
+                        return
+                    }
+
+                    Timber.d("Connected to %s at %s:%d", normalizedServiceName, hostAddress, port)
                     connections[hostAddress] = socket
                     
-                    startReceiving(socket)
+                    startReceiving(socket = socket, serviceName = normalizedServiceName, hostAddress = hostAddress)
                     shouldTriggerConnected = true
                 }
             } catch (e: Exception) {
@@ -107,7 +122,7 @@ internal class ConnectionManager(
     }
 
     fun disconnectService(serviceName: String) {
-        socketConnections.remove(serviceName)?.values?.forEach { socket ->
+        socketConnections.remove(serviceName.lowercase())?.values?.forEach { socket ->
             try {
                 if (socket.isConnected) socket.close()
             } catch (e: Exception) {
@@ -116,31 +131,44 @@ internal class ConnectionManager(
         }
     }
 
-    private fun processPacket(packet: SnagPacket) {
+    fun hasActiveConnection(serviceName: String): Boolean {
+        val normalized = serviceName.lowercase()
+        val serviceConnections = socketConnections[normalized] ?: return false
+        return serviceConnections.values.any { socket -> socket.isConnected && !socket.isClosed }
+    }
+
+    private fun processPacket(outbound: OutboundPacket) {
         val payload = try {
-            json.encodeToString(packet).toByteArray()
+            json.encodeToString(outbound.packet).toByteArray()
         } catch (e: Exception) {
             Timber.e(e, "Failed to encode packet")
             return
         }
 
         val data = PacketFraming.frame(payload)
-        
-        val firstTarget = getFirstAvailableTarget()
-        if (firstTarget == null) {
-            pendingBuffers.offer(data)
+
+        val target = getAvailableTarget(preferredServiceName = outbound.preferredServiceName)
+        if (target == null) {
+            enqueuePendingBuffer(PendingBuffer(data = data, preferredServiceName = outbound.preferredServiceName))
             return
         }
 
-        val (serviceName, hostAddress, socket) = firstTarget
+        val (serviceName, hostAddress, socket) = target
         val succeeded = writeToSocket(socket, data, serviceName, hostAddress)
 
         if (!succeeded) {
-            pendingBuffers.offer(data)
+            enqueuePendingBuffer(PendingBuffer(data = data, preferredServiceName = outbound.preferredServiceName))
         }
     }
 
-    private fun getFirstAvailableTarget(): Triple<String, String, Socket>? {
+    private fun getAvailableTarget(preferredServiceName: String?): Triple<String, String, Socket>? {
+        if (preferredServiceName != null) {
+            val preferredTargets = socketConnections[preferredServiceName] ?: return null
+            return preferredTargets.entries.firstOrNull()?.let { hostEntry ->
+                Triple(preferredServiceName, hostEntry.key, hostEntry.value)
+            }
+        }
+
         return socketConnections.entries.firstNotNullOfOrNull { serviceEntry ->
             serviceEntry.value.entries.firstOrNull()?.let { hostEntry ->
                 Triple(serviceEntry.key, hostEntry.key, hostEntry.value)
@@ -174,30 +202,92 @@ internal class ConnectionManager(
         socketConnections[serviceName]?.remove(hostAddress)
     }
 
-    private fun flushPending() {
-        val targets = socketConnections.entries.flatMap { serviceEntry ->
-            serviceEntry.value.entries.map { hostEntry ->
-                Triple(serviceEntry.key, hostEntry.key, hostEntry.value)
-            }
+    private fun trustKeyFor(serviceName: String, hostAddress: String, port: Int): String {
+        if (serviceName.equals("DebugHost", ignoreCase = true)) {
+            return "debug|${hostAddress.lowercase()}:$port"
         }
-        if (targets.isEmpty()) return
+        return "bonjour|${serviceName.lowercase()}"
+    }
 
+    private fun validateServerTrust(socket: Socket, trustKey: String): Boolean {
+        if (socket !is SSLSocket) return true
+
+        return try {
+            val cert = socket.session.peerCertificates.firstOrNull() as? X509Certificate
+            if (cert == null) {
+                Timber.e("TLS peer certificate is missing for key=%s", trustKey)
+                false
+            } else {
+                val fingerprint = sha256Hex(cert.encoded)
+                when (val decision = trustStore.verifyOrTrust(trustKey, fingerprint)) {
+                    is SnagTrustDecision.Trusted -> true
+                    is SnagTrustDecision.Mismatch -> {
+                        notifyIdentityMismatch(
+                            trustKey = trustKey,
+                            expected = decision.expectedFingerprint,
+                            actual = decision.actualFingerprint
+                        )
+                        false
+                    }
+                }
+            }
+        } catch (e: Exception) {
+            Timber.e(e, "Failed to validate TLS trust for key=%s", trustKey)
+            false
+        }
+    }
+
+    private fun sha256Hex(input: ByteArray): String {
+        val digest = MessageDigest.getInstance("SHA-256").digest(input)
+        return digest.joinToString(separator = "") { byte -> "%02x".format(byte) }
+    }
+
+    private fun flushPending() {
         scope.launch(Dispatchers.IO) {
-            while (true) {
-                val payload = pendingBuffers.poll() ?: break
+            val itemsToProcess = pendingBuffers.size
+            repeat(itemsToProcess) {
+                val pending = pendingBuffers.poll() ?: return@repeat
+                val targets = targetsForPending(preferredServiceName = pending.preferredServiceName)
+                if (targets.isEmpty()) {
+                    enqueuePendingBuffer(pending)
+                    return@repeat
+                }
+
                 val succeeded = targets.any { (serviceName, hostAddress, socket) ->
-                    writeToSocket(socket, payload, serviceName, hostAddress)
+                    writeToSocket(socket, pending.data, serviceName, hostAddress)
                 }
 
                 if (!succeeded) {
-                    pendingBuffers.offer(payload)
-                    break
+                    enqueuePendingBuffer(pending)
                 }
             }
         }
     }
 
-    private fun startReceiving(socket: Socket) {
+    private fun enqueuePendingBuffer(buffer: PendingBuffer) {
+        enqueuedPendingBuffers.incrementAndGet()
+        val offered = pendingBuffers.offer(buffer)
+        if (!offered) {
+            droppedPendingBuffers.incrementAndGet()
+            Timber.w("Transport queue full (%d). Dropping packet.", MAX_OFFLINE_BUFFER)
+        }
+    }
+
+    private fun targetsForPending(preferredServiceName: String?): List<Triple<String, String, Socket>> {
+        if (preferredServiceName != null) {
+            val preferredTargets = socketConnections[preferredServiceName] ?: return emptyList()
+            return preferredTargets.entries.map { hostEntry ->
+                Triple(preferredServiceName, hostEntry.key, hostEntry.value)
+            }
+        }
+        return socketConnections.entries.flatMap { serviceEntry ->
+            serviceEntry.value.entries.map { hostEntry ->
+                Triple(serviceEntry.key, hostEntry.key, hostEntry.value)
+            }
+        }
+    }
+
+    private fun startReceiving(socket: Socket, serviceName: String, hostAddress: String) {
         scope.launch(Dispatchers.IO) {
             val inputStream = socket.getInputStream()
             val headerBuffer = ByteArray(PacketFraming.HEADER_SIZE)
@@ -215,7 +305,7 @@ internal class ConnectionManager(
                     try {
                         val packet = json.decodeFromString<SnagPacket>(packetString)
                         withContext(Dispatchers.Main) {
-                            onPacketReceived(packet)
+                            onPacketReceived(serviceName, packet)
                         }
                     } catch (e: Exception) {
                         Timber.e(e, "Snag: Failed to decode packet: $packetString")
@@ -225,6 +315,30 @@ internal class ConnectionManager(
                     break
                 }
             }
+
+            closeSocketSilently(socket, serviceName, hostAddress)
+        }
+    }
+
+    private fun notifyIdentityMismatch(trustKey: String, expected: String, actual: String) {
+        val listener = config?.securityListener
+        if (listener == null) {
+            Timber.e(
+                "Snag identity mismatch for key=%s. expected=%s actual=%s. Recovery: Call Snag.resetTrustedServers() after confirming trusted server identity.",
+                trustKey,
+                expected,
+                actual
+            )
+            return
+        }
+        scope.launch(Dispatchers.Main) {
+            listener.onServerIdentityMismatch(
+                SnagIdentityMismatchEvent(
+                    serverKey = trustKey,
+                    expectedFingerprint = expected,
+                    actualFingerprint = actual
+                )
+            )
         }
     }
 
@@ -243,6 +357,18 @@ internal class ConnectionManager(
         val last = lastReconnectAttempt.get()
         if (now - last < RECONNECT_THROTTLE_MS) return false
         return lastReconnectAttempt.compareAndSet(last, now)
+    }
+
+    fun transportQueueMetricsSnapshot(): SnagQueueMetrics {
+        return SnagQueueMetrics(
+            queuedPackets = pendingBuffers.size,
+            droppedPackets = droppedPendingBuffers.get(),
+            enqueuedPackets = enqueuedPendingBuffers.get()
+        )
+    }
+
+    fun trustMetricsSnapshot(): SnagTrustMetrics {
+        return trustStore.metricsSnapshot()
     }
 
 
@@ -268,4 +394,14 @@ internal class ConnectionManager(
         private const val MAX_OFFLINE_BUFFER = 50
         private const val RECONNECT_THROTTLE_MS = 2000L
     }
+
+    private data class OutboundPacket(
+        val packet: SnagPacket,
+        val preferredServiceName: String?
+    )
+
+    private data class PendingBuffer(
+        val data: ByteArray,
+        val preferredServiceName: String?
+    )
 }

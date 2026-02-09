@@ -40,12 +40,9 @@
 	<key>NSLocalNetworkUsageDescription</key>
 	<string>This app uses the local network to discover nearby devices using Bonjour.</string>
 	<key>NSBonjourServices</key>
-	<array>
-		<string>_http._tcp</string>
-		<string>_Snag._tcp</string>
-	</array>
-	<key>SnagSecurityPIN</key>
-	<string>MySecretPin123!</string>
-</dict>
+		<array>
+			<string>_http._tcp</string>
+			<string>_Snag._tcp</string>
+		</array>
+	</dict>
 </plist>
-

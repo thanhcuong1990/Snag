@@ -69,18 +69,9 @@ class SnagDeviceController: NSObject, ObservableObject {
             self.ipAddress = newPacket.device?.ipAddress
         }
 
-        // New Handshake Logic: "auth_verify" means device is waiting for PIN
-        if newPacket.control?.type == "auth_verify" {
-            self.isAuthenticated = false
-            return true
-        } else if newPacket.control?.type == "auth_success" {
-            // Local or remote success packet to confirm auth
+        if newPacket.control?.type == "auth_success" {
             self.isAuthenticated = true
             return true
-        } else if newPacket.isUnauthenticated {
-             // Legacy fallback
-             self.isAuthenticated = false
-             return true
         } else if newPacket.requestInfo != nil || newPacket.log != nil {
              // If we are receiving normal data packets, we MUST be authenticated
              // because the publisher only sends data for authenticated connections.

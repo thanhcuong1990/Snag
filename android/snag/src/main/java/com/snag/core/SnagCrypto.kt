@@ -17,46 +17,10 @@ object SnagCrypto {
     private const val KEY_LENGTH_BITS = 256
 
     fun deriveKey(pin: String, salt: ByteArray): SecretKey {
-        // Manually implement PBKDF2 to ensure UTF-8 handling of the PIN
-        // and consistency across all Android devices/providers.
-        val passwordBytes = pin.toByteArray(Charsets.UTF_8)
-        val keyBytes = pbkdf2HmacSha256(passwordBytes, salt, PBKDF2_ITERATIONS, KEY_LENGTH_BITS / 8)
+        val spec = PBEKeySpec(pin.toCharArray(), salt, PBKDF2_ITERATIONS, KEY_LENGTH_BITS)
+        val factory = SecretKeyFactory.getInstance("PBKDF2WithHmacSHA256")
+        val keyBytes = factory.generateSecret(spec).encoded
         return SecretKeySpec(keyBytes, KEY_ALGORITHM)
-    }
-
-    private fun pbkdf2HmacSha256(password: ByteArray, salt: ByteArray, iterations: Int, keyLengthBytes: Int): ByteArray {
-        val mac = javax.crypto.Mac.getInstance("HmacSHA256")
-        mac.init(SecretKeySpec(password, "HmacSHA256"))
-        
-        val dk = ByteArray(keyLengthBytes)
-        val hLen = mac.macLength // 32
-        val l = (keyLengthBytes + hLen - 1) / hLen
-        val r = keyLengthBytes - (l - 1) * hLen
-        
-        var outputOffset = 0
-        
-        for (i in 1..l) {
-            // U1 = PRF(P, S || INT_32_BE(i))
-            val intBuffer = java.nio.ByteBuffer.allocate(4).putInt(i).array()
-            mac.update(salt)
-            mac.update(intBuffer)
-            var u = mac.doFinal() // U1
-            
-            // XOR sum (F function)
-            val t = u.clone()
-            
-            for (j in 2..iterations) {
-                u = mac.doFinal(u) // Uj
-                for (k in u.indices) {
-                    t[k] = (t[k].toInt() xor u[k].toInt()).toByte()
-                }
-            }
-            
-            val len = if (i == l) r else hLen
-            System.arraycopy(t, 0, dk, outputOffset, len)
-            outputOffset += hLen
-        }
-        return dk
     }
 
     /**

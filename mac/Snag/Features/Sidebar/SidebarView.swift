@@ -104,33 +104,12 @@ struct SidebarView: View {
                     Text(snagController.publisherStatus)
                         .font(.system(size: 10))
                         .lineLimit(1)
-                    
-                    Spacer()
-                    
-                    Toggle("", isOn: Binding(
-                        get: { SettingsManager.shared.forceInteractiveAuth },
-                        set: { SettingsManager.shared.forceInteractiveAuth = $0 }
-                    ))
-                    .toggleStyle(CheckboxToggleStyle())
-                    .labelsHidden()
-                    .help("Force PIN prompt on Simulators/USB")
-                    
-                    Text("Force PIN".localized)
-                        .font(.system(size: 9))
-                        .foregroundColor(.secondary)
                 }
                 
                 if !snagController.isSecurityEnabled {
                     Text("Security Disabled")
                         .font(.system(size: 10))
                         .foregroundColor(.secondary)
-                }
-                
-                if snagController.publisherStatus.contains("Connected") && !snagController.publisherStatus.contains("Trusted") {
-                    Text("Connection Locked".localized)
-                        .font(.system(size: 10, weight: .semibold))
-                        .foregroundColor(.secondary)
-                        .padding(.top, 4)
                 }
             }
             .padding(12)

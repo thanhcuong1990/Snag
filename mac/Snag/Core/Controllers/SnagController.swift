@@ -48,7 +48,6 @@ class SnagController: NSObject, @MainActor SnagPublisherDelegate, ObservableObje
     
     @Published var publisherStatus: String = "Stopped"
     @Published var isSecurityEnabled: Bool = SnagConfiguration.isSecurityEnabled
-    @Published var securityPIN: String = SnagConfiguration.securityPIN ?? ""
     
     var publisher = SnagPublisher()
     
@@ -60,24 +59,6 @@ class SnagController: NSObject, @MainActor SnagPublisherDelegate, ObservableObje
         self.publisherStatus = "Starting..."
         
         NotificationCenter.default.addObserver(self, selector: #selector(handleDeviceSelection), name: SnagNotifications.didSelectDevice, object: nil)
-        
-        // Observe Force PIN setting change to restart listener if needed (or just disconnect clients to force re-auth)
-        // Since SettingsManager is a singleton and might not emit KVO nicely, we might need to check how SidebarView updates it.
-        // SidebarView uses a Binding to SettingsManager.shared.forceInteractiveAuth.
-        // We can add a notification or just observe it if SettingsManager supports it.
-        // For now, assuming SettingsManager doesn't post notifications, we'll patch SettingsManager or SidebarView?
-        // Actually, let's just make SnagController observe a custom notification we'll verify.
-        NotificationCenter.default.addObserver(self, selector: #selector(handleSettingsChange), name: NSNotification.Name("SnagSettingsChanged"), object: nil)
-    }
-    
-    @objc private func handleSettingsChange() {
-        // Restart publishing or just disconnect all to force re-handshake
-        print("SnagController: Settings changed. Restarting publisher to apply new security policy.")
-        self.publisherStatus = "Restarting..."
-        self.publisher.stopPublishing() // We need to expose stopPublishing or add restart
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
-             self.publisher.startPublishing()
-        }
     }
     
     @objc private func handleDeviceSelection() {
@@ -127,9 +108,7 @@ class SnagController: NSObject, @MainActor SnagPublisherDelegate, ObservableObje
     @discardableResult
     func addPacket(newPacket: SnagPacket) -> Bool {
         
-        // 1. Prioritize finding an existing device controller across all projects
-        // Handshake packets (auth_required) often miss project info, but contain DeviceID.
-        // We should route them to the *existing* device/project if known.
+        // 1. Prioritize finding an existing device controller across all projects.
         let deviceId = (newPacket.device?.deviceId ?? newPacket.control?.deviceId)?.lowercased()
         
         if let id = deviceId {
@@ -222,21 +201,4 @@ class SnagController: NSObject, @MainActor SnagPublisherDelegate, ObservableObje
         }
     }
     
-    func authorizeDevice(_ deviceController: SnagDeviceController, enteredPIN: String) -> Bool {
-        guard let deviceId = deviceController.deviceId else { return false }
-        
-        // Verification happens in the Publisher via Crypto
-        if publisher.authorizeDevice(deviceId: deviceId, pin: enteredPIN) {
-            // Refresh the device state
-            deviceController.isAuthenticated = true
-            deviceController.requestAppInfo()
-            return true
-        }
-        
-        return false
-    }
-    
-    func isDeviceLocked(deviceId: String) -> (locked: Bool, remainingSeconds: Int?) {
-        return publisher.getLockoutStatus(deviceId: deviceId)
-    }
 }

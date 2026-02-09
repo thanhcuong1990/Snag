@@ -853,64 +853,6 @@
         }
       }
     },
-    "Enter Security PIN": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Enter Security PIN"
-          }
-        },
-        "ja": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "セキュリティPINを入力"
-          }
-        },
-        "ko": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "보안 PIN 입력"
-          }
-        },
-        "vi": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Nhập mã PIN bảo mật"
-          }
-        }
-      }
-    },
-    "Enter the PIN from your %@ device.": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Enter the PIN from your %@ device."
-          }
-        },
-        "ja": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "%@デバイスのPINを入力してください。"
-          }
-        },
-        "ko": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "%@ 장치의 PIN을 입력하세요."
-          }
-        },
-        "vi": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Nhập mã PIN từ thiết bị %@ của bạn."
-          }
-        }
-      }
-    },
     "Fetch/XHR": {
       "extractionState": "manual",
       "localizations": {
@@ -1056,35 +998,6 @@
         }
       }
     },
-    "Force PIN": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Force PIN"
-          }
-        },
-        "ja": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "PINを強制"
-          }
-        },
-        "ko": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "PIN 강제"
-          }
-        },
-        "vi": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Bắt buộc mã PIN"
-          }
-        }
-      }
-    },
     "Found": {
       "extractionState": "manual",
       "localizations": {
@@ -1197,35 +1110,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "Ẩn Snag"
-          }
-        }
-      }
-    },
-    "Incorrect PIN. Please try again.": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Incorrect PIN. Please try again."
-          }
-        },
-        "ja": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "PINが正しくありません。もう一度お試しください。"
-          }
-        },
-        "ko": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "PIN이 올바르지 않습니다. 다시 시도하세요."
-          }
-        },
-        "vi": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Mã PIN không đúng. Vui lòng thử lại."
           }
         }
       }
@@ -2795,35 +2679,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "Đã xác thực: %@"
-          }
-        }
-      }
-    },
-    "Security PIN": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Security PIN"
-          }
-        },
-        "ja": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "セキュリティPIN"
-          }
-        },
-        "ko": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "보안 PIN"
-          }
-        },
-        "vi": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Mã PIN bảo mật"
           }
         }
       }
