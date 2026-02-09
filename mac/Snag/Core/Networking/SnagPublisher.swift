@@ -9,7 +9,14 @@ class SnagPublisher: NSObject {
 
     var delegate: SnagPublisherDelegate?
     
-    private var listener: NWListener?
+    private enum ListenerPurpose {
+        case primarySecure
+        case primaryCleartext
+        case legacyCompatibility
+    }
+
+    private var primaryListener: NWListener?
+    private var legacyCompatibilityListener: NWListener?
     private var connections: [NWConnection] = []
     private var authenticatedConnections: Set<ObjectIdentifier> = []
     private var deviceConnections: [String: NWConnection] = [:]
@@ -32,72 +39,162 @@ class SnagPublisher: NSObject {
         queue.async { [weak self] in
             guard let self = self else { return }
             self.stopPublishingLocked()
-            
-            do {
-                let tcpOptions = NWProtocolTCP.Options()
-                tcpOptions.enableKeepalive = true
-                tcpOptions.noDelay = true
 
-                let params: NWParameters
-                if SnagConfiguration.isSecurityEnabled {
-                    let tlsOptions = NWProtocolTLS.Options()
-                    sec_protocol_options_set_min_tls_protocol_version(tlsOptions.securityProtocolOptions, .TLSv12)
-                    sec_protocol_options_set_max_tls_protocol_version(tlsOptions.securityProtocolOptions, .TLSv13)
-                    
-                    if let identity = SnagIdentityManager.shared.getIdentity() {
-                        sec_protocol_options_set_local_identity(tlsOptions.securityProtocolOptions, identity)
-                    } else {
-                        print("SnagPublisher: ERROR - Failed to get TLS identity")
-                    }
-                    params = NWParameters(tls: tlsOptions, tcp: tcpOptions)
-                } else {
-                    params = NWParameters(tls: nil, tcp: tcpOptions)
-                }
-                
-                params.includePeerToPeer = true
-                
-                let port = NWEndpoint.Port(rawValue: UInt16(SnagConfiguration.netServicePort))!
-                let listener = try NWListener(using: params, on: port)
-                
-                listener.service = NWListener.Service(
-                    name: SnagConfiguration.netServiceName.isEmpty ? nil : SnagConfiguration.netServiceName,
-                    type: SnagConfiguration.netServiceType,
-                    domain: SnagConfiguration.netServiceDomain.isEmpty ? nil : SnagConfiguration.netServiceDomain
-                )
-                
-                listener.stateUpdateHandler = { state in
-                    DispatchQueue.main.async {
-                        switch state {
-                        case .ready:
-                            SnagController.shared.publisherStatus = "Listening on \(listener.port!)"
-                        case .failed(let error):
-                            SnagController.shared.publisherStatus = "Failed: \(error.localizedDescription)"
-                            self.schedulePublishRetryLocked()
-                        default:
-                            break
-                        }
-                    }
-                }
-                
-                listener.newConnectionHandler = { [weak self] connection in
-                    self?.setupConnection(connection)
-                }
-                
-                listener.start(queue: self.queue)
-                self.listener = listener
-            } catch {
-                print("SnagPublisher: Failed to start listener: \(error)")
+            guard let primaryPort = NWEndpoint.Port(rawValue: UInt16(SnagConfiguration.netServicePort)) else {
+                print("SnagPublisher: Invalid primary port \(SnagConfiguration.netServicePort)")
                 self.schedulePublishRetryLocked()
+                return
+            }
+
+            if SnagConfiguration.isSecurityEnabled {
+                self.primaryListener = self.startListenerLocked(
+                    purpose: .primarySecure,
+                    port: primaryPort,
+                    serviceName: SnagConfiguration.netServiceName,
+                    useTLS: true,
+                    retryOnFailure: true
+                )
+
+                if let legacyPort = self.legacyCompatibilityPort() {
+                    let legacyName = self.legacyCompatibilityServiceName()
+                    self.legacyCompatibilityListener = self.startListenerLocked(
+                        purpose: .legacyCompatibility,
+                        port: legacyPort,
+                        serviceName: legacyName,
+                        useTLS: false,
+                        retryOnFailure: false
+                    )
+                } else {
+                    print("SnagPublisher: Failed to start legacy compatibility listener: invalid port")
+                }
+            } else {
+                self.primaryListener = self.startListenerLocked(
+                    purpose: .primaryCleartext,
+                    port: primaryPort,
+                    serviceName: SnagConfiguration.netServiceName,
+                    useTLS: false,
+                    retryOnFailure: true
+                )
             }
         }
     }
 
-    private func setupConnection(_ connection: NWConnection) {
+    private func startListenerLocked(
+        purpose: ListenerPurpose,
+        port: NWEndpoint.Port,
+        serviceName: String,
+        useTLS: Bool,
+        retryOnFailure: Bool
+    ) -> NWListener? {
+        do {
+            let tcpOptions = NWProtocolTCP.Options()
+            tcpOptions.enableKeepalive = true
+            tcpOptions.noDelay = true
+
+            let params: NWParameters
+            if useTLS {
+                let tlsOptions = NWProtocolTLS.Options()
+                sec_protocol_options_set_min_tls_protocol_version(tlsOptions.securityProtocolOptions, .TLSv12)
+                sec_protocol_options_set_max_tls_protocol_version(tlsOptions.securityProtocolOptions, .TLSv13)
+
+                if let identity = SnagIdentityManager.shared.getIdentity() {
+                    sec_protocol_options_set_local_identity(tlsOptions.securityProtocolOptions, identity)
+                } else {
+                    print("SnagPublisher: ERROR - Failed to get TLS identity")
+                }
+                params = NWParameters(tls: tlsOptions, tcp: tcpOptions)
+            } else {
+                params = NWParameters(tls: nil, tcp: tcpOptions)
+            }
+
+            params.includePeerToPeer = true
+
+            let listener = try NWListener(using: params, on: port)
+
+            listener.service = NWListener.Service(
+                name: serviceName.isEmpty ? nil : serviceName,
+                type: SnagConfiguration.netServiceType,
+                domain: SnagConfiguration.netServiceDomain.isEmpty ? nil : SnagConfiguration.netServiceDomain
+            )
+
+            listener.stateUpdateHandler = { [weak self] state in
+                self?.handleListenerStateUpdate(
+                    state,
+                    purpose: purpose,
+                    port: port,
+                    retryOnFailure: retryOnFailure
+                )
+            }
+
+            listener.newConnectionHandler = { [weak self] connection in
+                self?.setupConnection(connection, purpose: purpose)
+            }
+
+            listener.start(queue: self.queue)
+            return listener
+        } catch {
+            print("SnagPublisher: Failed to start \(purpose) listener on \(port): \(error)")
+            if retryOnFailure {
+                schedulePublishRetryLocked()
+            }
+            return nil
+        }
+    }
+
+    private func handleListenerStateUpdate(
+        _ state: NWListener.State,
+        purpose: ListenerPurpose,
+        port: NWEndpoint.Port,
+        retryOnFailure: Bool
+    ) {
+        switch state {
+        case .ready:
+            DispatchQueue.main.async {
+                switch purpose {
+                case .primarySecure:
+                    let legacyPort = self.legacyCompatibilityListener?.port.map { String($0.rawValue) } ?? "off"
+                    SnagController.shared.publisherStatus = "Secure \(port.rawValue) | Legacy \(legacyPort)"
+                case .primaryCleartext:
+                    SnagController.shared.publisherStatus = "Listening on \(port.rawValue)"
+                case .legacyCompatibility:
+                    // Keep status driven by primary listener.
+                    break
+                }
+            }
+        case .failed(let error):
+            print("SnagPublisher: \(purpose) listener failed on \(port): \(error)")
+            DispatchQueue.main.async {
+                switch purpose {
+                case .legacyCompatibility:
+                    SnagController.shared.publisherStatus = "Secure mode (legacy compatibility unavailable)"
+                default:
+                    SnagController.shared.publisherStatus = "Failed: \(error.localizedDescription)"
+                }
+            }
+
+            if purpose == .primarySecure || purpose == .primaryCleartext {
+                self.primaryListener = nil
+            } else if purpose == .legacyCompatibility {
+                self.legacyCompatibilityListener = nil
+            }
+
+            if retryOnFailure {
+                schedulePublishRetryLocked()
+            }
+        default:
+            break
+        }
+    }
+
+    private func setupConnection(_ connection: NWConnection, purpose: ListenerPurpose) {
         connection.stateUpdateHandler = { [weak self] state in
             guard let self = self else { return }
             self.queue.async {
                 switch state {
                 case .ready:
+                    if purpose == .legacyCompatibility {
+                        self.authenticatedConnections.insert(ObjectIdentifier(connection))
+                    }
                     DispatchQueue.main.async {
                         SnagController.shared.publisherStatus = "Connected: \(connection.endpoint)"
                     }
@@ -160,21 +257,81 @@ class SnagPublisher: NSObject {
         do {
             let snagPacket = try jsonDecoder.decode(SnagPacket.self, from: data)
             let type = snagPacket.control?.type
+            let deviceId = (snagPacket.device?.deviceId ?? snagPacket.control?.deviceId)?.lowercased()
             
             if type == "hello" {
                 handleHello(packet: snagPacket, connection: connection)
-            } else if let deviceId = (snagPacket.device?.deviceId ?? snagPacket.control?.deviceId)?.lowercased() {
-                // Regular packet
-                if isTrusted(connection: connection, packetType: type ?? "data") {
-                    self.deviceConnections[deviceId] = connection
-                    DispatchQueue.main.async {
-                        SnagController.shared.publisherStatus = "Packet from \(snagPacket.device?.deviceName ?? "Unknown")"
-                        self.delegate?.didGetPacket(publisher: self, packet: snagPacket)
-                    }
-                }
+                return
+            }
+
+            if isTrusted(connection: connection, packetType: type ?? "data") {
+                forwardPacketToUI(snagPacket, from: connection, deviceId: deviceId)
+                return
+            }
+
+            if shouldAcceptLegacyPacket(snagPacket) {
+                promoteLegacyConnection(connection: connection, deviceId: deviceId, packet: snagPacket)
+                forwardPacketToUI(snagPacket, from: connection, deviceId: deviceId)
             }
         } catch {
             DispatchQueue.main.async { SnagController.shared.publisherStatus = "Parse Error" }
+        }
+    }
+
+    private func shouldAcceptLegacyPacket(_ packet: SnagPacket) -> Bool {
+        if packet.requestInfo != nil || packet.log != nil {
+            return true
+        }
+
+        // Older Android clients may send an initial metadata-only packet
+        // (device/project without control/request/log) before any request data.
+        if packet.device != nil || packet.project != nil {
+            return true
+        }
+
+        guard let controlType = packet.control?.type else { return false }
+        let legacyControlTypes: Set<String> = [
+            "appInfoResponse",
+            "logStreamingControl",
+            "logStreamingStatusRequest",
+            "logStreamingStatusResponse",
+            "appInfoRequest",
+            "ping"
+        ]
+        return legacyControlTypes.contains(controlType)
+    }
+
+    private func promoteLegacyConnection(connection: NWConnection, deviceId: String?, packet: SnagPacket) {
+        self.authenticatedConnections.insert(ObjectIdentifier(connection))
+        if let deviceId = deviceId {
+            self.deviceConnections[deviceId] = connection
+        }
+
+        print("SnagPublisher: Accepted legacy packet stream from \(connection.endpoint)")
+
+        guard let deviceId = deviceId else { return }
+        let successPacket = SnagPacket()
+        successPacket.control = SnagControl(type: "auth_success", deviceId: deviceId, authMode: "cleartext")
+        successPacket.device = packet.device
+        successPacket.project = packet.project
+        self.send(packet: successPacket, toConnection: connection)
+    }
+
+    private func forwardPacketToUI(_ packet: SnagPacket, from connection: NWConnection, deviceId: String?) {
+        if packet.device?.deviceId == nil, let deviceId = deviceId {
+            if packet.device == nil {
+                packet.device = SnagDeviceModel()
+            }
+            packet.device?.deviceId = deviceId
+        }
+
+        if let deviceId = deviceId {
+            self.deviceConnections[deviceId] = connection
+        }
+
+        DispatchQueue.main.async {
+            SnagController.shared.publisherStatus = "Packet from \(packet.device?.deviceName ?? "Unknown")"
+            self.delegate?.didGetPacket(publisher: self, packet: packet)
         }
     }
     
@@ -219,8 +376,10 @@ class SnagPublisher: NSObject {
     }
 
     private func stopPublishingLocked() {
-        listener?.cancel()
-        listener = nil
+        primaryListener?.cancel()
+        primaryListener = nil
+        legacyCompatibilityListener?.cancel()
+        legacyCompatibilityListener = nil
         connections.forEach { $0.cancel() }
         connections.removeAll()
         deviceConnections.removeAll()
@@ -301,5 +460,18 @@ class SnagPublisher: NSObject {
         print("SnagPublisher: Evicting connection (\(connection.endpoint)) reason=\(reason)")
         self.removeConnection(connection)
         connection.cancel()
+    }
+
+    private func legacyCompatibilityPort() -> NWEndpoint.Port? {
+        let candidate = Int(SnagConfiguration.netServicePort) + 1
+        guard candidate > 0 && candidate <= Int(UInt16.max) else { return nil }
+        return NWEndpoint.Port(rawValue: UInt16(candidate))
+    }
+
+    private func legacyCompatibilityServiceName() -> String {
+        if SnagConfiguration.netServiceName.isEmpty {
+            return "SnagLegacy"
+        }
+        return "\(SnagConfiguration.netServiceName)-legacy"
     }
 }
