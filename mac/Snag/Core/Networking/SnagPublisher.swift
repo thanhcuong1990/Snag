@@ -12,11 +12,10 @@ class SnagPublisher: NSObject {
     private enum ListenerPurpose {
         case primarySecure
         case primaryCleartext
-        case legacyCompatibility
     }
 
     private var primaryListener: NWListener?
-    private var legacyCompatibilityListener: NWListener?
+    private var legacyPublisher: SnagLegacyPublisher?
     private var connections: [NWConnection] = []
     private var authenticatedConnections: Set<ObjectIdentifier> = []
     private var deviceConnections: [String: NWConnection] = [:]
@@ -28,7 +27,7 @@ class SnagPublisher: NSObject {
         encoder.dateEncodingStrategy = .secondsSince1970
         return encoder
     }()
-
+    
     private lazy var jsonDecoder: JSONDecoder = {
         let decoder = JSONDecoder()
         decoder.dateDecodingStrategy = .secondsSince1970
@@ -55,18 +54,10 @@ class SnagPublisher: NSObject {
                     retryOnFailure: true
                 )
 
-                if let legacyPort = self.legacyCompatibilityPort() {
-                    let legacyName = self.legacyCompatibilityServiceName()
-                    self.legacyCompatibilityListener = self.startListenerLocked(
-                        purpose: .legacyCompatibility,
-                        port: legacyPort,
-                        serviceName: legacyName,
-                        useTLS: false,
-                        retryOnFailure: false
-                    )
-                } else {
-                    print("SnagPublisher: Failed to start legacy compatibility listener: invalid port")
-                }
+                self.legacyPublisher = SnagLegacyPublisher(queue: self.queue)
+                self.legacyPublisher?.delegate = self
+                self.legacyPublisher?.start()
+                
             } else {
                 self.primaryListener = self.startListenerLocked(
                     purpose: .primaryCleartext,
@@ -152,31 +143,19 @@ class SnagPublisher: NSObject {
             DispatchQueue.main.async {
                 switch purpose {
                 case .primarySecure:
-                    let legacyPort = self.legacyCompatibilityListener?.port.map { String($0.rawValue) } ?? "off"
+                    let legacyPort = self.legacyPublisher?.port.map { String($0.rawValue) } ?? "off"
                     SnagController.shared.publisherStatus = "Secure \(port.rawValue) | Legacy \(legacyPort)"
                 case .primaryCleartext:
                     SnagController.shared.publisherStatus = "Listening on \(port.rawValue)"
-                case .legacyCompatibility:
-                    // Keep status driven by primary listener.
-                    break
                 }
             }
         case .failed(let error):
             print("SnagPublisher: \(purpose) listener failed on \(port): \(error)")
             DispatchQueue.main.async {
-                switch purpose {
-                case .legacyCompatibility:
-                    SnagController.shared.publisherStatus = "Secure mode (legacy compatibility unavailable)"
-                default:
-                    SnagController.shared.publisherStatus = "Failed: \(error.localizedDescription)"
-                }
+                SnagController.shared.publisherStatus = "Failed: \(error.localizedDescription)"
             }
 
-            if purpose == .primarySecure || purpose == .primaryCleartext {
-                self.primaryListener = nil
-            } else if purpose == .legacyCompatibility {
-                self.legacyCompatibilityListener = nil
-            }
+            self.primaryListener = nil
 
             if retryOnFailure {
                 schedulePublishRetryLocked()
@@ -192,9 +171,6 @@ class SnagPublisher: NSObject {
             self.queue.async {
                 switch state {
                 case .ready:
-                    if purpose == .legacyCompatibility {
-                        self.authenticatedConnections.insert(ObjectIdentifier(connection))
-                    }
                     DispatchQueue.main.async {
                         SnagController.shared.publisherStatus = "Connected: \(connection.endpoint)"
                     }
@@ -268,53 +244,9 @@ class SnagPublisher: NSObject {
                 forwardPacketToUI(snagPacket, from: connection, deviceId: deviceId)
                 return
             }
-
-            if shouldAcceptLegacyPacket(snagPacket) {
-                promoteLegacyConnection(connection: connection, deviceId: deviceId, packet: snagPacket)
-                forwardPacketToUI(snagPacket, from: connection, deviceId: deviceId)
-            }
         } catch {
             DispatchQueue.main.async { SnagController.shared.publisherStatus = "Parse Error" }
         }
-    }
-
-    private func shouldAcceptLegacyPacket(_ packet: SnagPacket) -> Bool {
-        if packet.requestInfo != nil || packet.log != nil {
-            return true
-        }
-
-        // Older Android clients may send an initial metadata-only packet
-        // (device/project without control/request/log) before any request data.
-        if packet.device != nil || packet.project != nil {
-            return true
-        }
-
-        guard let controlType = packet.control?.type else { return false }
-        let legacyControlTypes: Set<String> = [
-            "appInfoResponse",
-            "logStreamingControl",
-            "logStreamingStatusRequest",
-            "logStreamingStatusResponse",
-            "appInfoRequest",
-            "ping"
-        ]
-        return legacyControlTypes.contains(controlType)
-    }
-
-    private func promoteLegacyConnection(connection: NWConnection, deviceId: String?, packet: SnagPacket) {
-        self.authenticatedConnections.insert(ObjectIdentifier(connection))
-        if let deviceId = deviceId {
-            self.deviceConnections[deviceId] = connection
-        }
-
-        print("SnagPublisher: Accepted legacy packet stream from \(connection.endpoint)")
-
-        guard let deviceId = deviceId else { return }
-        let successPacket = SnagPacket()
-        successPacket.control = SnagControl(type: "auth_success", deviceId: deviceId, authMode: "cleartext")
-        successPacket.device = packet.device
-        successPacket.project = packet.project
-        self.send(packet: successPacket, toConnection: connection)
     }
 
     private func forwardPacketToUI(_ packet: SnagPacket, from connection: NWConnection, deviceId: String?) {
@@ -378,8 +310,9 @@ class SnagPublisher: NSObject {
     private func stopPublishingLocked() {
         primaryListener?.cancel()
         primaryListener = nil
-        legacyCompatibilityListener?.cancel()
-        legacyCompatibilityListener = nil
+        legacyPublisher?.stop()
+        legacyPublisher = nil
+        
         connections.forEach { $0.cancel() }
         connections.removeAll()
         deviceConnections.removeAll()
@@ -461,17 +394,65 @@ class SnagPublisher: NSObject {
         self.removeConnection(connection)
         connection.cancel()
     }
+}
 
-    private func legacyCompatibilityPort() -> NWEndpoint.Port? {
-        let candidate = Int(SnagConfiguration.netServicePort) + 1
-        guard candidate > 0 && candidate <= Int(UInt16.max) else { return nil }
-        return NWEndpoint.Port(rawValue: UInt16(candidate))
-    }
-
-    private func legacyCompatibilityServiceName() -> String {
-        if SnagConfiguration.netServiceName.isEmpty {
-            return "SnagLegacy"
+extension SnagPublisher: SnagLegacyPublisherDelegate {
+    func legacyPublisher(_ publisher: SnagLegacyPublisher, didPromoteConnection connection: NWConnection, deviceId: String?, packet: SnagPacket) {
+        // The connection is already started and processing data in LegacyPublisher
+        // We need to take over management of this connection.
+        
+        self.queue.async {
+            print("SnagPublisher: Taking over legacy connection from \(connection.endpoint)")
+            
+            // Add to our lists
+            self.connections.append(connection)
+            self.authenticatedConnections.insert(ObjectIdentifier(connection))
+            
+            if let deviceId = deviceId {
+                self.deviceConnections[deviceId] = connection
+                
+                 // Send Auth Success
+                let successPacket = SnagPacket()
+                successPacket.control = SnagControl(type: "auth_success", deviceId: deviceId, authMode: "cleartext")
+                successPacket.device = packet.device
+                successPacket.project = packet.project
+                self.send(packet: successPacket, toConnection: connection)
+            }
+            
+            // Set up our own state handler (replacing the one from legacy publisher?)
+            // Actually, we should probably just monitor it.
+            // But wait, the receive loop is running in LegacyPublisher.
+            // We need to ensure that subsequent reads happen here.
+            
+            // In SnagLegacyPublisher, we stopped reading after promoting.
+            // So we need to start reading here.
+            
+            connection.stateUpdateHandler = { [weak self] state in
+                 guard let self = self else { return }
+                 self.queue.async {
+                     switch state {
+                     case .failed(let error):
+                         print("SnagPublisher: Legacy Connection failed: \(error)")
+                         self.evictConnection(connection, reason: "legacy_state_failed")
+                     case .cancelled:
+                         self.removeConnection(connection)
+                     default:
+                         break
+                     }
+                 }
+             }
+            
+            self.receiveData(on: connection)
+            
+            // Process the packet that triggered promotion
+            self.forwardPacketToUI(packet, from: connection, deviceId: deviceId)
         }
-        return "\(SnagConfiguration.netServiceName)-legacy"
+    }
+    
+    func legacyPublisher(_ publisher: SnagLegacyPublisher, didFailWithError error: Error) {
+        print("SnagPublisher: Legacy publisher error: \(error)")
+        DispatchQueue.main.async {
+             SnagController.shared.publisherStatus = "Legacy Error: \(error.localizedDescription)"
+        }
     }
 }
