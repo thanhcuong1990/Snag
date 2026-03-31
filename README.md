@@ -118,7 +118,7 @@ Minimum supported iOS version: **iOS 15.0+**
 #### CocoaPods
 
 ```ruby
-pod 'Snag', '~> 1.0.21'
+pod 'Snag', '~> 1.1.0'
 ```
 
 ### Usage
