@@ -9,6 +9,7 @@ data class SnagConfiguration(
     val debugHost: String? = null,
     val debugPort: Int = 43435,
     val enableLogs: Boolean = true,
+    val enableInternalLogging: Boolean = false,
     val isSecurityEnabled: Boolean = true,
     val securityListener: SnagSecurityListener? = null
 ) {

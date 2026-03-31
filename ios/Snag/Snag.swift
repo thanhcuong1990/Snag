@@ -4,6 +4,9 @@ import Foundation
 public class Snag: NSObject {
 
     static var controller: SnagController?
+    static var isInternalLoggingEnabled: Bool {
+        return controller?.configuration.enableInternalLogging == true
+    }
     
     @objc public static func start() {
         start(configuration: SnagConfiguration.defaultConfiguration)
@@ -58,5 +61,15 @@ public class Snag: NSObject {
         Task {
             await SnagLogInterceptor.shared.startCapturing()
         }
+    }
+
+    static func internalDebugLog(_ message: @autoclosure () -> String) {
+        guard isInternalLoggingEnabled else { return }
+        print(message())
+    }
+
+    static func internalErrorLog(_ message: @autoclosure () -> String) {
+        guard isInternalLoggingEnabled else { return }
+        print(message())
     }
 }

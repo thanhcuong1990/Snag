@@ -2,14 +2,14 @@ package com.snag.discovery
 
 import android.net.nsd.NsdManager
 import android.net.nsd.NsdServiceInfo
-import timber.log.Timber
+import com.snag.core.log.SnagInternalLogger
 
 internal interface NsdResolveListener : NsdManager.ResolveListener {
     override fun onResolveFailed(serviceInfo: NsdServiceInfo?, errorCode: Int) {
-        Timber.d("onResolveFailed for $serviceInfo with errorCode $errorCode")
+        SnagInternalLogger.d("onResolveFailed for $serviceInfo with errorCode $errorCode")
     }
 
     override fun onServiceResolved(serviceInfo: NsdServiceInfo?) {
-        Timber.d("onServiceResolved for $serviceInfo")
+        SnagInternalLogger.d("onServiceResolved for $serviceInfo")
     }
 }

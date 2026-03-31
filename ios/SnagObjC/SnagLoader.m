@@ -47,9 +47,6 @@
       }
     };
     RCTSetLogFunction((__bridge void *)logHook);
-  } else {
-    NSLog(
-        @"[Snag] RCTSetLogFunction NOT found. Zero-config logs may not work.");
   }
 }
 
@@ -85,8 +82,6 @@
 
       // Try to hook RCTLog for React Native zero-config support
       [self hookRCTLog:snagClass];
-    } else {
-      NSLog(@"[Snag] Failed to auto-start: 'Snag' class not found.");
     }
   }
 }

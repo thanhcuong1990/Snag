@@ -12,12 +12,14 @@ class SnagBrowser: NSObject {
     private let pendingPackets = SnagBoundedQueue<SnagPacket>(maxSize: 100)
     private var discoveredEndpoints: Set<NWEndpoint> = []
     private var connectingEndpoints: Set<NWEndpoint> = []
+    private var lastPreAuthDropLogCount: Int = 0
 
     
     private var connectionKeys: [ObjectIdentifier: SymmetricKey] = [:]
     private var connectionAuthModes: [ObjectIdentifier: String] = [:] // "encrypted", "cleartext"
     
     private let queue = DispatchQueue(label: "com.snag.browser.queue")
+    private let preAuthDropLogInterval = 100
     
     private let encoder: JSONEncoder = {
         let encoder = JSONEncoder()
@@ -54,7 +56,7 @@ class SnagBrowser: NSObject {
             browser.stateUpdateHandler = { state in
                 switch state {
                 case .failed(let error):
-                    print("SnagBrowser: Browser failed with error: \(error)")
+                    Snag.internalErrorLog("SnagBrowser: Browser failed with error: \(error)")
                     self.resetAndBrowse()
                 default:
                     break
@@ -68,7 +70,7 @@ class SnagBrowser: NSObject {
     
     private func handleResultsChanged(results: Set<NWBrowser.Result>) {
         queue.async {
-            print("SnagBrowser: Browser results changed. Found \(results.count) results.")
+            Snag.internalDebugLog("SnagBrowser: Browser results changed. Found \(results.count) results.")
             self.discoveredEndpoints = Set(results.map { $0.endpoint })
             for endpoint in self.discoveredEndpoints {
                 let existingConnections = self.connections.filter { $0.endpoint == endpoint }
@@ -134,7 +136,7 @@ class SnagBrowser: NSObject {
                 self?.removeConnection(connection)
                 self?.scheduleReconnect(endpoint: endpoint)
             case .waiting(let error):
-                print("SnagBrowser: Connection to \(endpoint) is waiting: \(error). Reconnecting...")
+                Snag.internalDebugLog("SnagBrowser: Connection to \(endpoint) is waiting: \(error). Reconnecting...")
                 // If waiting for too long or in a bad state, we might want to recycle it
                 // For now, just log it. NWConnection usually handles recovery.
             default:
@@ -181,7 +183,7 @@ class SnagBrowser: NSObject {
              buffer.append(packetData)
              self.sendData(buffer, on: connection)
          } catch {
-             print("SnagBrowser: Encode error: \(error)")
+             Snag.internalErrorLog("SnagBrowser: Encode error: \(error)")
          }
     }
     
@@ -212,6 +214,7 @@ class SnagBrowser: NSObject {
         }
         connections.removeAll()
         pendingPackets.clear()
+        lastPreAuthDropLogCount = 0
         discoveredEndpoints.removeAll()
         connectingEndpoints.removeAll()
         connectionKeys.removeAll()
@@ -230,8 +233,15 @@ class SnagBrowser: NSObject {
 
     private func enqueuePendingPacketLocked(_ packet: SnagPacket) {
         let dropped = pendingPackets.enqueue(packet)
-        if dropped {
-            print("SnagBrowser: Pre-auth queue full. Dropping oldest packet.")
+        guard dropped else { return }
+
+        let snapshot = pendingPackets.snapshot()
+        let droppedPackets = snapshot.droppedPackets
+        let shouldLogDrop = droppedPackets == 1 || (droppedPackets - lastPreAuthDropLogCount) >= preAuthDropLogInterval
+
+        if shouldLogDrop {
+            lastPreAuthDropLogCount = droppedPackets
+            Snag.internalDebugLog("SnagBrowser: Pre-auth queue full. Dropping oldest packet. dropped=\(droppedPackets)")
         }
     }
 
@@ -258,7 +268,7 @@ class SnagBrowser: NSObject {
     private func receive(on connection: NWConnection) {
         connection.receive(minimumIncompleteLength: 8, maximumLength: 8) { [weak self] data, context, isComplete, error in
             if let error = error {
-                print("SnagBrowser: Receive header error: \(error)")
+                Snag.internalErrorLog("SnagBrowser: Receive header error: \(error)")
                 self?.removeConnection(connection)
                 return
             }
@@ -269,14 +279,14 @@ class SnagBrowser: NSObject {
             }
             
             guard let length = self?.lengthOf(data: data) else {
-                print("SnagBrowser: Invalid length header")
+                Snag.internalErrorLog("SnagBrowser: Invalid length header")
                 self?.removeConnection(connection)
                 return
             }
             
             connection.receive(minimumIncompleteLength: length, maximumLength: length) { data, context, isComplete, error in
                 if let error = error {
-                    print("SnagBrowser: Receive body error: \(error)")
+                    Snag.internalErrorLog("SnagBrowser: Receive body error: \(error)")
                     self?.removeConnection(connection)
                     return
                 }
@@ -323,7 +333,7 @@ class SnagBrowser: NSObject {
                 self.didReceivePacket?(packet)
             }
         } catch {
-            print("SnagBrowser: Parse error: \(error)")
+            Snag.internalErrorLog("SnagBrowser: Parse error: \(error)")
         }
     }
 
@@ -344,7 +354,7 @@ class SnagBrowser: NSObject {
         guard let mode = packet.control?.authMode else { return }
         
         self.connectionAuthModes[ObjectIdentifier(connection)] = mode
-        print("SnagBrowser: Auth Success! Mode: \(mode)")
+        Snag.internalDebugLog("SnagBrowser: Auth Success! Mode: \(mode)")
         
         // Flush pending packets now that we are authenticated
         self.flushPendingPacketsLocked()
@@ -353,7 +363,7 @@ class SnagBrowser: NSObject {
     private func sendData(_ data: Data, on connection: NWConnection) {
         connection.send(content: data, completion: .contentProcessed { error in
             if let error = error {
-                print("SnagBrowser: Send error: \(error)")
+                Snag.internalErrorLog("SnagBrowser: Send error: \(error)")
                 connection.cancel()
             }
         })
@@ -407,7 +417,7 @@ class SnagBrowser: NSObject {
     private func sendPreparedPacketLocked(_ packet: SnagPacket, on connection: NWConnection, mode: String) {
         if mode == "encrypted" {
             guard let key = self.connectionKeys[ObjectIdentifier(connection)] else {
-                print("SnagBrowser: Missing key for encrypted connection.")
+                Snag.internalErrorLog("SnagBrowser: Missing key for encrypted connection.")
                 return
             }
             do {
@@ -421,7 +431,7 @@ class SnagBrowser: NSObject {
 
                 self.sendRaw(packet: wrapperPacket, on: connection)
             } catch {
-                print("SnagBrowser: Encryption Error: \(error)")
+                Snag.internalErrorLog("SnagBrowser: Encryption Error: \(error)")
             }
         } else {
             self.sendRaw(packet: packet, on: connection)

@@ -94,7 +94,7 @@ class PBKDF2 {
         if status == kCCSuccess {
             return derivedKey
         } else {
-            print("PBKDF2 Error: \(status)")
+            Snag.internalErrorLog("PBKDF2 Error: \(status)")
             return Data()
         }
     }

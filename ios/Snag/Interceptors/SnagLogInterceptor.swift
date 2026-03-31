@@ -101,13 +101,13 @@ actor SnagLogInterceptor {
                             lastDate = entry.date
                         }
                     } catch {
-                        print("Snag: Log stream error: \(error)")
+                        Snag.internalDebugLog("Snag: Log stream error: \(error)")
                     }
                     
                     try? await Task.sleep(nanoseconds: 200_000_000) // 200ms polling
                 }
             } catch {
-                print("Snag: Failed to setup OSLogStore: \(error)")
+                Snag.internalDebugLog("Snag: Failed to setup OSLogStore: \(error)")
             }
         }
     }

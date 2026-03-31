@@ -6,7 +6,7 @@ import android.net.nsd.NsdServiceInfo
 import android.os.Build
 import androidx.annotation.RequiresApi
 import com.snag.core.SnagConfiguration
-import timber.log.Timber
+import com.snag.core.log.SnagInternalLogger
 import java.util.concurrent.Executor
 import java.util.concurrent.Executors
 
@@ -33,7 +33,7 @@ internal class DiscoveryManager(
     private val nsdDiscoveryListener = object : NsdDiscoveryListener {
         override fun onServiceFound(serviceInfo: NsdServiceInfo?) {
             serviceInfo ?: return
-            Timber.d("Service found: ${serviceInfo.serviceName}")
+            SnagInternalLogger.d("Service found: ${serviceInfo.serviceName}")
 
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
                 registerServiceInfoCallback(serviceInfo)
@@ -44,7 +44,7 @@ internal class DiscoveryManager(
 
         override fun onServiceLost(serviceInfo: NsdServiceInfo?) {
             serviceInfo ?: return
-            Timber.d("Service lost: ${serviceInfo.serviceName}")
+            SnagInternalLogger.d("Service lost: ${serviceInfo.serviceName}")
             listener.onServiceLost(serviceInfo)
         }
     }
@@ -54,12 +54,12 @@ internal class DiscoveryManager(
         nsdManager?.resolveService(serviceInfo, object : NsdResolveListener {
             override fun onServiceResolved(resolvedInfo: NsdServiceInfo?) {
                 resolvedInfo ?: return
-                Timber.d("Service resolved: ${resolvedInfo.serviceName} at ${resolvedInfo.host}:${resolvedInfo.port}")
+                SnagInternalLogger.d("Service resolved: ${resolvedInfo.serviceName} at ${resolvedInfo.host}:${resolvedInfo.port}")
                 listener.onServiceFound(resolvedInfo)
             }
 
             override fun onResolveFailed(failedInfo: NsdServiceInfo?, errorCode: Int) {
-                Timber.w("Resolve failed for ${failedInfo?.serviceName} with error: $errorCode. Attempt: $attempt")
+                SnagInternalLogger.w("Resolve failed for ${failedInfo?.serviceName} with error: $errorCode. Attempt: $attempt")
                 
                 if (errorCode == NsdManager.FAILURE_ALREADY_ACTIVE) {
                     // Just wait a bit and retry, likely collision
@@ -75,7 +75,7 @@ internal class DiscoveryManager(
                              resolveServiceWithRetry(serviceInfo, attempt + 1)
                         }
                     } else {
-                        Timber.e("Service resolution failed after $attempt attempts. Giving up on ${failedInfo?.serviceName}")
+                        SnagInternalLogger.w("Service resolution failed after $attempt attempts. Giving up on ${failedInfo?.serviceName}")
                     }
                 }
             }
@@ -86,7 +86,7 @@ internal class DiscoveryManager(
     private fun registerServiceInfoCallback(serviceInfo: NsdServiceInfo) {
         val callback = object : NsdServiceInfoCallback {
             override fun onServiceUpdated(serviceInfo: NsdServiceInfo) {
-                Timber.d("Service updated: ${serviceInfo.serviceName}")
+                SnagInternalLogger.d("Service updated: ${serviceInfo.serviceName}")
                 listener.onServiceFound(serviceInfo)
             }
 
@@ -99,7 +99,7 @@ internal class DiscoveryManager(
 
 
     fun startDiscovery() {
-        Timber.d("Starting NSD discovery for ${config.netServiceType}")
+        SnagInternalLogger.d("Starting NSD discovery for ${config.netServiceType}")
         try {
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
                 nsdManager?.discoverServices(
@@ -117,16 +117,16 @@ internal class DiscoveryManager(
                 )
             }
         } catch (e: Exception) {
-            Timber.e(e, "Failed to start discovery")
+            SnagInternalLogger.e(e, "Failed to start discovery")
         }
     }
 
     fun stopDiscovery() {
-        Timber.d("Stopping NSD discovery")
+        SnagInternalLogger.d("Stopping NSD discovery")
         try {
             nsdManager?.stopServiceDiscovery(nsdDiscoveryListener)
         } catch (e: Exception) {
-            Timber.e(e, "Failed to stop discovery")
+            SnagInternalLogger.e(e, "Failed to stop discovery")
         }
     }
 }

@@ -45,7 +45,7 @@ final class SnagTrustStore {
                 if existing != fingerprint {
                     let mismatchCount = defaults.integer(forKey: mismatchCountKey) + 1
                     defaults.set(mismatchCount, forKey: mismatchCountKey)
-                    print("SnagTrustStore: TLS fingerprint mismatch for \(serverKey)")
+                    Snag.internalErrorLog("SnagTrustStore: TLS fingerprint mismatch for \(serverKey)")
                     return .mismatch(expectedFingerprint: existing, actualFingerprint: fingerprint)
                 }
                 return .trusted
@@ -53,7 +53,7 @@ final class SnagTrustStore {
 
             map[serverKey] = fingerprint
             defaults.set(map, forKey: storageKey)
-            print("SnagTrustStore: Trusted new server fingerprint for \(serverKey)")
+            Snag.internalDebugLog("SnagTrustStore: Trusted new server fingerprint for \(serverKey)")
             return .trusted
         }
     }

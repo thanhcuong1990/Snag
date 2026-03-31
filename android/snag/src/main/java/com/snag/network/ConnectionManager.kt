@@ -2,6 +2,7 @@ package com.snag.network
 
 import android.content.Context
 import com.snag.core.SnagIdentityMismatchEvent
+import com.snag.core.log.SnagInternalLogger
 import com.snag.models.SnagPacket
 import com.snag.models.SnagQueueMetrics
 import com.snag.models.SnagTrustMetrics
@@ -10,7 +11,6 @@ import kotlinx.coroutines.channels.BufferOverflow
 import kotlinx.coroutines.channels.Channel
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
-import timber.log.Timber
 import java.net.InetSocketAddress
 import java.net.Socket
 import java.security.MessageDigest
@@ -57,7 +57,7 @@ internal class ConnectionManager(
                 try {
                     processPacket(outbound)
                 } catch (e: Exception) {
-                    Timber.e(e, "Snag: Error processing packet in IO loop")
+                    SnagInternalLogger.e(e, "Snag: Error processing packet in IO loop")
                 }
             }
         }
@@ -78,12 +78,12 @@ internal class ConnectionManager(
             // connect simultaneously and challenges/responses get mixed up.
             val activeConnection = connections.values.firstOrNull { it.isConnected && !it.isClosed }
             if (activeConnection != null) {
-                Timber.d("Already connected to service %s. Skipping %s.", normalizedServiceName, hostAddress)
+                SnagInternalLogger.d("Already connected to service %s. Skipping %s.", normalizedServiceName, hostAddress)
                 return
             }
 
             try {
-                Timber.d("Connecting to $hostAddress:$port")
+                SnagInternalLogger.d("Connecting to $hostAddress:$port")
                 
                 val socket = if (config?.isSecurityEnabled == true) {
                     createSSLSocket(hostAddress, port)
@@ -104,14 +104,14 @@ internal class ConnectionManager(
                         return
                     }
 
-                    Timber.d("Connected to %s at %s:%d", normalizedServiceName, hostAddress, port)
+                    SnagInternalLogger.d("Connected to %s at %s:%d", normalizedServiceName, hostAddress, port)
                     connections[hostAddress] = socket
                     
                     startReceiving(socket = socket, serviceName = normalizedServiceName, hostAddress = hostAddress)
                     shouldTriggerConnected = true
                 }
             } catch (e: Exception) {
-                Timber.w("Connection failed to $hostAddress:$port: ${e.message}")
+                SnagInternalLogger.w("Connection failed to $hostAddress:$port: ${e.message}")
             }
         }
         
@@ -126,7 +126,7 @@ internal class ConnectionManager(
             try {
                 if (socket.isConnected) socket.close()
             } catch (e: Exception) {
-                Timber.w("Error closing socket: ${e.message}")
+                SnagInternalLogger.w("Error closing socket: ${e.message}")
             }
         }
     }
@@ -141,7 +141,7 @@ internal class ConnectionManager(
         val payload = try {
             json.encodeToString(outbound.packet).toByteArray()
         } catch (e: Exception) {
-            Timber.e(e, "Failed to encode packet")
+            SnagInternalLogger.e(e, "Failed to encode packet")
             return
         }
 
@@ -189,7 +189,7 @@ internal class ConnectionManager(
                 false
             }
         } catch (e: Exception) {
-            Timber.w("Write failed to $hostAddress: ${e.message}")
+            SnagInternalLogger.w("Write failed to $hostAddress: ${e.message}")
             closeSocketSilently(socket, serviceName, hostAddress)
             false
         }
@@ -215,7 +215,7 @@ internal class ConnectionManager(
         return try {
             val cert = socket.session.peerCertificates.firstOrNull() as? X509Certificate
             if (cert == null) {
-                Timber.e("TLS peer certificate is missing for key=%s", trustKey)
+                SnagInternalLogger.e("TLS peer certificate is missing for key=%s", trustKey)
                 false
             } else {
                 val fingerprint = sha256Hex(cert.encoded)
@@ -232,7 +232,7 @@ internal class ConnectionManager(
                 }
             }
         } catch (e: Exception) {
-            Timber.e(e, "Failed to validate TLS trust for key=%s", trustKey)
+            SnagInternalLogger.e(e, "Failed to validate TLS trust for key=%s", trustKey)
             false
         }
     }
@@ -269,7 +269,7 @@ internal class ConnectionManager(
         val offered = pendingBuffers.offer(buffer)
         if (!offered) {
             droppedPendingBuffers.incrementAndGet()
-            Timber.w("Transport queue full (%d). Dropping packet.", MAX_OFFLINE_BUFFER)
+            SnagInternalLogger.w("Transport queue full (%d). Dropping packet.", MAX_OFFLINE_BUFFER)
         }
     }
 
@@ -308,10 +308,10 @@ internal class ConnectionManager(
                             onPacketReceived(serviceName, packet)
                         }
                     } catch (e: Exception) {
-                        Timber.e(e, "Snag: Failed to decode packet: $packetString")
+                        SnagInternalLogger.e(e, "Snag: Failed to decode packet: $packetString")
                     }
                 } catch (e: Exception) {
-                    Timber.w("Receive error: ${e.message}")
+                    SnagInternalLogger.w("Receive error: ${e.message}")
                     break
                 }
             }
@@ -323,7 +323,7 @@ internal class ConnectionManager(
     private fun notifyIdentityMismatch(trustKey: String, expected: String, actual: String) {
         val listener = config?.securityListener
         if (listener == null) {
-            Timber.e(
+            SnagInternalLogger.e(
                 "Snag identity mismatch for key=%s. expected=%s actual=%s. Recovery: Call Snag.resetTrustedServers() after confirming trusted server identity.",
                 trustKey,
                 expected,

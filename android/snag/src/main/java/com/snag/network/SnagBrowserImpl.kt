@@ -13,11 +13,11 @@ import com.snag.models.SnagRequestInfo
 import com.snag.models.SnagLog
 import com.snag.models.SnagMetrics
 import com.snag.models.SnagQueueMetrics
+import com.snag.core.log.SnagInternalLogger
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.MainScope
 import kotlinx.coroutines.launch
 import kotlinx.serialization.json.Json
-import timber.log.Timber
 import java.util.concurrent.ConcurrentHashMap
 
 internal class SnagBrowserImpl(
@@ -66,6 +66,7 @@ internal class SnagBrowserImpl(
     private var multicastLock: WifiManager.MulticastLock? = null
     
     private val pendingPackets = SnagBoundedQueue<SnagPacket>(maxSize = MAX_PENDING_PACKETS)
+    private var lastPendingDropWarningCount: Long = 0
 
     fun start(project: SnagProject, device: SnagDevice) {
         this.project = project
@@ -79,7 +80,7 @@ internal class SnagBrowserImpl(
                 acquire()
             }
         } catch (e: Exception) {
-            Timber.e(e, "Snag: Failed to acquire multicast lock")
+            SnagInternalLogger.e(e, "Snag: Failed to acquire multicast lock")
         }
 
         // Start discovery
@@ -200,7 +201,7 @@ internal class SnagBrowserImpl(
             val normalizedService = normalizeServiceName(serviceName)
             val authMode = packet.control.authMode ?: "cleartext"
             serviceAuthModes[normalizedService] = authMode
-            Timber.d("Auth Success. service=%s mode=%s", normalizedService, authMode)
+            SnagInternalLogger.d("Auth Success. service=%s mode=%s", normalizedService, authMode)
             flushPendingPackets()
             return true
         }
@@ -227,15 +228,26 @@ internal class SnagBrowserImpl(
         val dropped = pendingPackets.enqueue(packet)
         val snapshot = pendingPackets.snapshot()
         if (dropped) {
-            Timber.w(
-                "Pending packet queue full (%d). Dropping oldest packet. dropped=%d reason=%s",
-                MAX_PENDING_PACKETS,
-                snapshot.droppedCount,
-                reason
-            )
+            val shouldLogDrop = synchronized(this) {
+                val droppedCount = snapshot.droppedCount
+                val shouldLog = droppedCount == 1L || droppedCount - lastPendingDropWarningCount >= DROP_WARNING_LOG_INTERVAL
+                if (shouldLog) {
+                    lastPendingDropWarningCount = droppedCount
+                }
+                shouldLog
+            }
+
+            if (shouldLogDrop) {
+                SnagInternalLogger.w(
+                    "Pending packet queue full (%d). Dropping oldest packet. dropped=%d reason=%s",
+                    MAX_PENDING_PACKETS,
+                    snapshot.droppedCount,
+                    reason
+                )
+            }
         }
         if (snapshot.size == MAX_PENDING_PACKETS || snapshot.size % 50 == 0) {
-            Timber.d(
+            SnagInternalLogger.d(
                 "Pending packet queue size=%d dropped=%d reason=%s",
                 snapshot.size,
                 snapshot.droppedCount,
@@ -249,7 +261,7 @@ internal class SnagBrowserImpl(
 
         if (pendingToFlush.isNotEmpty()) {
             val snapshot = pendingPackets.snapshot()
-            Timber.d(
+            SnagInternalLogger.d(
                 "Flushing %d pending packets (dropped=%d)",
                 pendingToFlush.size,
                 snapshot.droppedCount
@@ -294,6 +306,7 @@ internal class SnagBrowserImpl(
 
     companion object {
         private const val MAX_PENDING_PACKETS = 500
+        private const val DROP_WARNING_LOG_INTERVAL = 100L
     }
 
     private fun SnagBoundedQueueSnapshot.toExportedMetrics(): SnagQueueMetrics {

@@ -2,30 +2,30 @@ package com.snag.discovery
 
 import android.net.nsd.NsdManager
 import android.net.nsd.NsdServiceInfo
-import timber.log.Timber
+import com.snag.core.log.SnagInternalLogger
 
 internal interface NsdDiscoveryListener : NsdManager.DiscoveryListener {
     override fun onStartDiscoveryFailed(serviceType: String?, errorCode: Int) {
-        Timber.d("onStartDiscoveryFailed for $serviceType with errorCode $errorCode")
+        SnagInternalLogger.d("onStartDiscoveryFailed for $serviceType with errorCode $errorCode")
     }
 
     override fun onStopDiscoveryFailed(serviceType: String?, errorCode: Int) {
-        Timber.d("onStopDiscoveryFailed for $serviceType with errorCode $errorCode")
+        SnagInternalLogger.d("onStopDiscoveryFailed for $serviceType with errorCode $errorCode")
     }
 
     override fun onDiscoveryStarted(serviceType: String?) {
-        Timber.d("onDiscoveryStarted for $serviceType")
+        SnagInternalLogger.d("onDiscoveryStarted for $serviceType")
     }
 
     override fun onDiscoveryStopped(serviceType: String?) {
-        Timber.d("onDiscoveryStopped for $serviceType")
+        SnagInternalLogger.d("onDiscoveryStopped for $serviceType")
     }
 
     override fun onServiceFound(serviceInfo: NsdServiceInfo?) {
-        Timber.d("onServiceFound for $serviceInfo")
+        SnagInternalLogger.d("onServiceFound for $serviceInfo")
     }
 
     override fun onServiceLost(serviceInfo: NsdServiceInfo?) {
-        Timber.d("onServiceLost for $serviceInfo")
+        SnagInternalLogger.d("onServiceLost for $serviceInfo")
     }
 }

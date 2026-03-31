@@ -4,23 +4,23 @@ import android.net.nsd.NsdManager
 import android.net.nsd.NsdServiceInfo
 import android.os.Build
 import androidx.annotation.RequiresApi
-import timber.log.Timber
+import com.snag.core.log.SnagInternalLogger
 
 @RequiresApi(Build.VERSION_CODES.UPSIDE_DOWN_CAKE)
 internal interface NsdServiceInfoCallback : NsdManager.ServiceInfoCallback {
     override fun onServiceInfoCallbackRegistrationFailed(errorCode: Int) {
-        Timber.d("onServiceInfoCallbackRegistrationFailed with errorCode $errorCode")
+        SnagInternalLogger.d("onServiceInfoCallbackRegistrationFailed with errorCode $errorCode")
     }
 
     override fun onServiceUpdated(serviceInfo: NsdServiceInfo) {
-        Timber.d("onServiceUpdated for $serviceInfo")
+        SnagInternalLogger.d("onServiceUpdated for $serviceInfo")
     }
 
     override fun onServiceLost() {
-        Timber.d("onServiceLost")
+        SnagInternalLogger.d("onServiceLost")
     }
 
     override fun onServiceInfoCallbackUnregistered() {
-        Timber.d("onServiceInfoCallbackUnregistered")
+        SnagInternalLogger.d("onServiceInfoCallbackUnregistered")
     }
 }

@@ -25,6 +25,7 @@ public class SnagConfiguration {
     var publicKeyName: String?
     
     public var enableLogs: Bool = true
+    public var enableInternalLogging: Bool = false
     public var isSecurityEnabled: Bool = true
     
     public static let defaultConfiguration: SnagConfiguration = {

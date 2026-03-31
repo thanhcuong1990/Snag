@@ -1,8 +1,8 @@
 package com.snag.network
 
 import android.content.Context
+import com.snag.core.log.SnagInternalLogger
 import com.snag.models.SnagTrustMetrics
-import timber.log.Timber
 import java.util.concurrent.atomic.AtomicLong
 
 internal sealed class SnagTrustDecision {
@@ -25,7 +25,7 @@ internal class SnagTrustStore private constructor(
 
         if (existing == null) {
             storage.putString(key, fingerprint)
-            Timber.i("SnagTrustStore: trusted new server fingerprint for key=%s", serverKey)
+            SnagInternalLogger.d("SnagTrustStore: trusted new server fingerprint for key=%s", serverKey)
             return SnagTrustDecision.Trusted
         }
 
@@ -33,7 +33,7 @@ internal class SnagTrustStore private constructor(
         if (!matched) {
             val mismatchCount = mismatchCounter.incrementAndGet()
             storage.putLong(MISMATCH_COUNT_KEY, mismatchCount)
-            Timber.e("SnagTrustStore: fingerprint mismatch for key=%s", serverKey)
+            SnagInternalLogger.e("SnagTrustStore: fingerprint mismatch for key=%s", serverKey)
             return SnagTrustDecision.Mismatch(
                 expectedFingerprint = existing,
                 actualFingerprint = fingerprint

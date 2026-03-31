@@ -1,13 +1,13 @@
 package com.snag.interceptors
 
 import android.util.Base64
+import com.snag.core.log.SnagInternalLogger
 import com.snag.network.SnagBrowser
 import com.snag.models.SnagRequestInfo
 import okhttp3.Interceptor
 import okhttp3.RequestBody
 import okhttp3.Response
 import okio.Buffer
-import timber.log.Timber
 import java.util.UUID
 
 /**
@@ -96,7 +96,7 @@ class SnagInterceptor private constructor() : Interceptor {
     private fun Response.safeResponseBase64(): String = try {
         Base64.encodeToString(peekBody(10 * 1024 * 1024).bytes(), Base64.NO_WRAP)
     } catch (e: Exception) {
-        Timber.e(e, "Snag: Failed to read response body")
+        SnagInternalLogger.e(e, "Snag: Failed to read response body")
         ""
     }
 
@@ -114,13 +114,13 @@ class SnagInterceptor private constructor() : Interceptor {
     private fun RequestBody.safeToBase64(): String? {
         // One-shot bodies have already been consumed by OkHttp
         if (isOneShot()) {
-            Timber.d("Snag: One-shot body already consumed (e.g., multipart upload)")
+            SnagInternalLogger.d("Snag: One-shot body already consumed (e.g., multipart upload)")
             return null
         }
 
         // Duplex bodies are streaming and can't be buffered
         if (isDuplex()) {
-            Timber.d("Snag: Duplex body cannot be captured (streaming)")
+            SnagInternalLogger.d("Snag: Duplex body cannot be captured (streaming)")
             return null
         }
 
@@ -129,7 +129,7 @@ class SnagInterceptor private constructor() : Interceptor {
             this.writeTo(buffer)
             Base64.encodeToString(buffer.readByteArray(), Base64.NO_WRAP)
         } catch (e: Exception) {
-            Timber.e(e, "Snag: Failed to read request body")
+            SnagInternalLogger.e(e, "Snag: Failed to read request body")
             null
         }
     }
@@ -145,4 +145,3 @@ class SnagInterceptor private constructor() : Interceptor {
             }
     }
 }
-

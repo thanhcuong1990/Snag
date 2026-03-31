@@ -3,6 +3,7 @@ package com.snag
 import android.content.Context
 import com.snag.core.SnagConfiguration
 import com.snag.core.log.SnagLogcatManager
+import com.snag.core.log.SnagInternalLogger
 import com.snag.core.SnagAppMetadataProvider
 import com.snag.interceptors.SnagInterceptor
 import com.snag.models.*
@@ -28,6 +29,7 @@ object Snag {
         try {
             val appCtx = context.applicationContext ?: context
             this.appContext = appCtx
+            SnagInternalLogger.setEnabled(config.enableInternalLogging)
 
             val browser = SnagBrowserImpl(
                 context = appCtx,
@@ -170,7 +172,7 @@ object Snag {
                 project = project
             ))
         } catch (e: Exception) {
-            timber.log.Timber.e(e, "Snag: Failed to send appInfoResponse")
+            SnagInternalLogger.e(e, "Snag: Failed to send appInfoResponse")
         }
     }
 }
