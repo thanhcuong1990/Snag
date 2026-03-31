@@ -1,7 +1,7 @@
 
 Pod::Spec.new do |s|
   s.name             = 'Snag'
-  s.version          = '1.1.1'
+  s.version          = '1.1.2'
   s.summary          = "Native cross-platform network debugger for iOS & Android - no proxies needed."
 
   s.description      = <<-DESC
