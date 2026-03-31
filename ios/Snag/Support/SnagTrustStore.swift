@@ -28,8 +28,8 @@ final class SnagTrustStore {
 
     func verifyOrTrust(serverKey: String, secTrust: sec_trust_t) -> SnagTrustDecision {
         let trust = sec_trust_copy_ref(secTrust).takeRetainedValue()
-        guard SecTrustGetCertificateCount(trust) > 0,
-              let leaf = SecTrustGetCertificateAtIndex(trust, 0) else {
+        guard let chain = SecTrustCopyCertificateChain(trust) as? [SecCertificate],
+              let leaf = chain.first else {
             return .invalid
         }
 

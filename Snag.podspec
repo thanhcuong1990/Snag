@@ -28,5 +28,8 @@ Pod::Spec.new do |s|
     'ENABLE_APP_INTENTS_METADATA_EXTRACTION' => 'NO'
   }
 
-end
+  s.user_target_xcconfig = {
+    'ENABLE_APP_INTENTS_METADATA_EXTRACTION' => 'NO'
+  }
 
+end
