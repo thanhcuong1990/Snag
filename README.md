@@ -113,6 +113,8 @@ This builds `Snag.app` (Release, signing disabled), creates `dist/Snag_<version>
 Add the package URL to your project:
 `https://github.com/thanhcuong1990/Snag.git`
 
+Minimum supported iOS version: **iOS 15.0+**
+
 #### CocoaPods
 
 ```ruby
@@ -214,7 +216,7 @@ Snag.start(configuration: config)
 
 ```groovy
 // Use debugImplementation to automatically exclude Snag from release builds
-debugImplementation 'io.github.thanhcuong1990:snag:1.0.5'
+debugImplementation 'io.github.thanhcuong1990:snag:1.0.21'
 ```
 
 > [!TIP]
