@@ -2,6 +2,14 @@ import Cocoa
 
 class OverviewRepresentation: ContentRepresentation  {
 
+    private static let durationFormatter: NumberFormatter = {
+        let f = NumberFormatter()
+        f.usesSignificantDigits = true
+        f.maximumSignificantDigits = 3
+        f.minimumSignificantDigits = 1
+        return f
+    }()
+
     @MainActor
     init(overviewString: String) {
         super.init()
@@ -25,8 +33,8 @@ class OverviewRepresentation: ContentRepresentation  {
         overviewString = overviewString + "Status: " + (requestInfo.statusCode ?? "") + "\n"
         
         if let start = requestInfo.startDate, let end = requestInfo.endDate {
-            let duration = end.timeIntervalSince(start)
-            overviewString = overviewString + String(format: "Duration: %.2fms\n", duration * 1000)
+            let ms = end.timeIntervalSince(start) * 1000
+            overviewString = overviewString + "Duration: " + formatDuration(ms) + "\n"
         }
         
         if let body = requestInfo.requestBody {
@@ -53,6 +61,13 @@ class OverviewRepresentation: ContentRepresentation  {
         return overviewString
     }
     
+    nonisolated static func formatDuration(_ ms: Double) -> String {
+        if ms < 0 { return "0 ms" }
+        let (value, unit) = ms < 1000 ? (ms, "ms") : (ms / 1000, "s")
+        let formatted = durationFormatter.string(from: NSNumber(value: value)) ?? "\(value)"
+        return "\(formatted) \(unit)"
+    }
+
     nonisolated static func formatBytes(_ bytes: Int) -> String {
         if bytes < 1024 {
             return "\(bytes) B"

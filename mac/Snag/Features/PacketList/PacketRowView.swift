@@ -11,6 +11,15 @@ struct PacketRowView: View {
         formatter.dateFormat = "HH:mm:ss.SSS"
         return formatter
     }()
+
+    // 3 significant digits, trailing zeros stripped — "228 ms", "1.23 s", "5 s".
+    private static let durationFormatter: NumberFormatter = {
+        let f = NumberFormatter()
+        f.usesSignificantDigits = true
+        f.maximumSignificantDigits = 3
+        f.minimumSignificantDigits = 1
+        return f
+    }()
     
     // MARK: - Computed Properties
     
@@ -84,13 +93,10 @@ struct PacketRowView: View {
     }
     
     private func formatMS(_ ms: Double) -> String {
-        if ms < 0 { return "0.0 ms" }
-        if ms < 1 {
-            return String(format: "%.2f ms", ms)
-        } else if ms < 1000 {
-            return String(format: "%.1f ms", ms)
-        }
-        return String(format: "%.2f s", ms / 1000)
+        if ms < 0 { return "0 ms" }
+        let (value, unit) = ms < 1000 ? (ms, "ms") : (ms / 1000, "s")
+        let formatted = Self.durationFormatter.string(from: NSNumber(value: value)) ?? "\(value)"
+        return "\(formatted) \(unit)"
     }
     
     private func formatByteCount(_ byteCount: Int?) -> String {
