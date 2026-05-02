@@ -1,8 +1,9 @@
 import Cocoa
 
+@MainActor
 class SnagMenu {
     static let shared = SnagMenu()
-    
+
     private init() {
         // Observe language changes and rebuild the menu
         NotificationCenter.default.addObserver(
@@ -12,7 +13,7 @@ class SnagMenu {
             object: nil
         )
     }
-    
+
     deinit {
         NotificationCenter.default.removeObserver(self)
     }
