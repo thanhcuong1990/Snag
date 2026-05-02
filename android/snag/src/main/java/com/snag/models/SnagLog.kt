@@ -2,7 +2,6 @@ package com.snag.models
 
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
-import java.util.Date
 
 @Serializable
 data class SnagLog(

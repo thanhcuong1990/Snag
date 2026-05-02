@@ -1,7 +1,5 @@
 package com.snag.core.log
 
-import com.snag.models.SnagLog
-
 class LogAccumulator(
     private val sendLogFn: (String, String, String?) -> Unit
 ) {

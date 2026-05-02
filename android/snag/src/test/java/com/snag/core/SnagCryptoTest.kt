@@ -2,8 +2,6 @@ package com.snag.core
 
 import org.junit.Assert.*
 import org.junit.Test
-import javax.crypto.spec.SecretKeySpec
-import java.util.Base64
 
 class SnagCryptoTest {
 
