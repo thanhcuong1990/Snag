@@ -95,7 +95,7 @@ struct SidebarView: View {
                             }
                         }
                     }
-                    .frame(maxHeight: 150)
+                    .frame(maxHeight: 100)
                 }
                 .padding(.bottom, 8)
             }
