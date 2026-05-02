@@ -114,12 +114,12 @@ struct DataDetailView: View {
             
             HStack(spacing: 8) {
                 // Show image info for image type
-                if viewModel.dataRepresentation?.type == .image, let imageData = viewModel.dataRepresentation?.originalData {
-                    if let image = NSImage(data: imageData) {
-                        Text("\(Int(image.size.width))×\(Int(image.size.height)) • \(formatBytes(imageData.count))")
-                            .font(.system(size: 10, weight: .regular))
-                            .foregroundColor(.secondary)
-                    }
+                if let imageRep = viewModel.dataRepresentation as? DataImageRepresentation,
+                   let image = imageRep.image,
+                   let imageData = imageRep.originalData {
+                    Text("\(Int(image.size.width))×\(Int(image.size.height)) • \(formatBytes(imageData.count))")
+                        .font(.system(size: 10, weight: .regular))
+                        .foregroundColor(.secondary)
                 }
                 
                 Spacer()

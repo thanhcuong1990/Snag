@@ -30,6 +30,7 @@ object Snag {
             val appCtx = context.applicationContext ?: context
             this.appContext = appCtx
             SnagInternalLogger.setEnabled(config.enableInternalLogging)
+            SnagInterceptor.configure(config.maxBodyCaptureBytes)
 
             val browser = SnagBrowserImpl(
                 context = appCtx,
@@ -73,6 +74,29 @@ object Snag {
     @JvmStatic
     fun isEnabled(): Boolean {
         return SnagBrowser.isInitialized()
+    }
+
+    /**
+     * Stops Snag and releases all background work (discovery, sockets, log capture, interceptor scope).
+     * Safe to call from `Application.onTerminate()` or your own DI scope teardown.
+     * After this returns, calling other Snag APIs is a no-op until `Snag.start(...)` is called again.
+     */
+    @JvmStatic
+    fun shutdown() {
+        try {
+            SnagLogcatManager.stopAutoLogCapture()
+        } catch (_: Exception) { }
+
+        try {
+            (SnagBrowser.getInstance() as? SnagBrowserImpl)?.shutdown()
+        } catch (_: Exception) { }
+        SnagBrowser.shutdown()
+
+        try {
+            SnagInterceptor.shutdownIfStarted()
+        } catch (_: Exception) { }
+
+        appContext = null
     }
 
     @JvmStatic

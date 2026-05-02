@@ -9,9 +9,12 @@ class SnagBoundedQueueTest {
     fun dropsOldestWhenFull() {
         val queue = SnagBoundedQueue<Int>(maxSize = 2)
 
-        assertEquals(false, queue.enqueue(1))
-        assertEquals(false, queue.enqueue(2))
-        assertEquals(true, queue.enqueue(3))
+        assertEquals(false, queue.enqueue(1).dropped)
+        assertEquals(false, queue.enqueue(2).dropped)
+        val overflow = queue.enqueue(3)
+        assertEquals(true, overflow.dropped)
+        assertEquals(2, overflow.size)
+        assertEquals(1, overflow.droppedCount)
 
         val drained = queue.drain()
         assertEquals(listOf(2, 3), drained)

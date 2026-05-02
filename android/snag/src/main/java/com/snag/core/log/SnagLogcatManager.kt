@@ -15,30 +15,46 @@ object SnagLogcatManager {
 
     fun isStreamingEnabled(): Boolean = isStreamingLogs
 
+    @Volatile
+    private var activeReader: LogcatReader? = null
+
+    fun stopAutoLogCapture() {
+        activeReader?.stop()
+        activeReader = null
+        captureJob?.cancel()
+        captureJob = null
+    }
+
     fun startAutoLogCapture() {
         if (captureJob?.isActive == true) return
-        
+
         captureJob = scope.launch(Dispatchers.IO) {
             val pid = android.os.Process.myPid().toString()
             val pidPattern = Regex("""\b$pid\b""")
-            
+
             val accumulator = LogAccumulator { message, level, tag ->
                 sendLog(message, level, tag)
             }
-            
-            val reader = LogcatReader(coroutineContext)
 
-            while (isActive) {
-                try {
-                    reader.readStream { line ->
-                        accumulator.processLine(line, isStreamingLogs, pidPattern)
+            val reader = LogcatReader(coroutineContext).also { activeReader = it }
+
+            try {
+                while (isActive) {
+                    try {
+                        reader.readStream { line ->
+                            accumulator.processLine(line, isStreamingLogs, pidPattern)
+                        }
+                    } catch (e: Exception) {
+                        // Retry after a brief pause if the underlying process dies.
+                    } finally {
+                        accumulator.flush()
                     }
-                } catch (e: Exception) {
-                    // Log error if needed, and retry
-                } finally {
-                    accumulator.flush()
+                    if (!isActive) break
+                    delay(2000)
                 }
-                delay(2000)
+            } finally {
+                reader.stop()
+                if (activeReader === reader) activeReader = null
             }
         }
     }

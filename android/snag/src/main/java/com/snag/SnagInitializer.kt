@@ -47,9 +47,11 @@ class SnagInitializer : Initializer<Unit> {
 
     private fun hookReactNativeLogs() {
         try {
-            val fLogClass = Class.forName("com.facebook.common.logging.FLog")
-            val loggingDelegateInterface = Class.forName("com.facebook.common.logging.LoggingDelegate")
-            
+            val fLogClass = cachedFLogClass
+                ?: Class.forName("com.facebook.common.logging.FLog").also { cachedFLogClass = it }
+            val loggingDelegateInterface = cachedLoggingDelegate
+                ?: Class.forName("com.facebook.common.logging.LoggingDelegate").also { cachedLoggingDelegate = it }
+
             val proxy = java.lang.reflect.Proxy.newProxyInstance(
                 loggingDelegateInterface.classLoader,
                 arrayOf(loggingDelegateInterface)
@@ -82,7 +84,8 @@ class SnagInitializer : Initializer<Unit> {
                 }
             }
             
-            val setDelegateMethod = fLogClass.getDeclaredMethod("setLoggingDelegate", loggingDelegateInterface)
+            val setDelegateMethod = cachedSetDelegateMethod
+                ?: fLogClass.getDeclaredMethod("setLoggingDelegate", loggingDelegateInterface).also { cachedSetDelegateMethod = it }
             setDelegateMethod.invoke(null, proxy)
         } catch (_: Exception) {
             // FLog not on classpath
@@ -119,4 +122,13 @@ class SnagInitializer : Initializer<Unit> {
     }
 
     override fun dependencies(): List<Class<out Initializer<*>>> = emptyList()
+
+    companion object {
+        @Volatile
+        private var cachedFLogClass: Class<*>? = null
+        @Volatile
+        private var cachedLoggingDelegate: Class<*>? = null
+        @Volatile
+        private var cachedSetDelegateMethod: java.lang.reflect.Method? = null
+    }
 }

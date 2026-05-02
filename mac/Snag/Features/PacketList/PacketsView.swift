@@ -30,11 +30,11 @@ struct PacketsView: View {
                         }
                         .background(Color(nsColor: ThemeColor.packetListAndDetailBackgroundColor))
                 ) {
-                    ForEach(Array(viewModelWrapper.items.enumerated()), id: \.element.id) { index, item in
+                    ForEach(viewModelWrapper.items, id: \.id) { item in
                         PacketRowView(
                             packet: item,
                             isSelected: viewModelWrapper.selectedPacket === item,
-                            isAlternate: index % 2 != 0
+                            isAlternate: item.id.hashValue & 1 != 0
                         )
                         .contentShape(Rectangle())
                         .onTapGesture {

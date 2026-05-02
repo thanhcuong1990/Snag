@@ -55,6 +55,12 @@ object LogParser {
      * This allows us to track nesting without full JSON parsing.
      */
     fun calculateBalanceChange(message: String): Int {
+        // Fast path: if no brace/bracket characters appear at all, skip the per-char walk.
+        if (!message.contains('{') && !message.contains('[') &&
+            !message.contains('}') && !message.contains(']')) {
+            return 0
+        }
+
         var balance = 0
         var insideString = false
         var escaped = false

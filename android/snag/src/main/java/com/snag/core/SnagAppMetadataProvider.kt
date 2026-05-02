@@ -10,6 +10,7 @@ import androidx.core.graphics.createBitmap
 import com.snag.models.SnagDevice
 import com.snag.models.SnagProject
 import java.io.ByteArrayOutputStream
+import java.io.File
 
 object SnagAppMetadataProvider {
 
@@ -161,9 +162,43 @@ object SnagAppMetadataProvider {
     fun getProject(context: Context, projectName: String): SnagProject {
         return SnagProject(
             projectName = projectName,
-            appIcon = getAppIconBase64(context),
+            appIcon = null,
             bundleId = context.packageName ?: "unknown"
         )
+    }
+
+    /**
+     * Reads the cached app icon, or returns null if not yet cached.
+     * Use [ensureAppIconCached] to populate the cache off the hot path.
+     */
+    fun getCachedAppIcon(context: Context): String? {
+        return try {
+            val file = appIconCacheFile(context)
+            if (file.exists()) file.readText() else null
+        } catch (_: Exception) {
+            null
+        }
+    }
+
+    /**
+     * Generates and persists the app icon Base64 to disk if not already cached.
+     * Safe to call repeatedly; the encoded icon is small enough to keep in cacheDir.
+     */
+    fun ensureAppIconCached(context: Context): String? {
+        val cached = getCachedAppIcon(context)
+        if (cached != null) return cached
+
+        val encoded = getAppIconBase64(context) ?: return null
+        try {
+            appIconCacheFile(context).writeText(encoded)
+        } catch (_: Exception) {
+            // Disk write failures are non-fatal; we still return the encoded icon.
+        }
+        return encoded
+    }
+
+    private fun appIconCacheFile(context: Context): File {
+        return File(context.cacheDir, "snag_app_icon.b64")
     }
 
     fun isReactNative(): Boolean {

@@ -33,6 +33,10 @@ class SnagPublisher: NSObject {
         decoder.dateDecodingStrategy = .secondsSince1970
         return decoder
     }()
+
+    private var pendingMainPackets: [SnagPacket] = []
+    private var mainFlushScheduled = false
+    private static let mainCoalesceInterval: DispatchTimeInterval = .milliseconds(16)
     
     func startPublishing() {
         queue.async { [weak self] in
@@ -261,9 +265,34 @@ class SnagPublisher: NSObject {
             self.deviceConnections[deviceId] = connection
         }
 
+        let statusName = packet.device?.deviceName ?? "Unknown"
         DispatchQueue.main.async {
-            SnagController.shared.publisherStatus = "Packet from \(packet.device?.deviceName ?? "Unknown")"
-            self.delegate?.didGetPacket(publisher: self, packet: packet)
+            SnagController.shared.publisherStatus = "Packet from \(statusName)"
+        }
+        self.enqueuePacketForMainLocked(packet)
+    }
+
+    // Coalesce per-packet main-thread hops into batches to reduce dispatch overhead under bursts.
+    private func enqueuePacketForMainLocked(_ packet: SnagPacket) {
+        self.pendingMainPackets.append(packet)
+        if !self.mainFlushScheduled {
+            self.mainFlushScheduled = true
+            self.queue.asyncAfter(deadline: .now() + Self.mainCoalesceInterval) { [weak self] in
+                self?.flushMainPacketsLocked()
+            }
+        }
+    }
+
+    private func flushMainPacketsLocked() {
+        self.mainFlushScheduled = false
+        guard !self.pendingMainPackets.isEmpty else { return }
+        let batch = self.pendingMainPackets
+        self.pendingMainPackets.removeAll(keepingCapacity: true)
+        DispatchQueue.main.async { [weak self] in
+            guard let self = self else { return }
+            for packet in batch {
+                self.delegate?.didGetPacket(publisher: self, packet: packet)
+            }
         }
     }
     
@@ -296,11 +325,12 @@ class SnagPublisher: NSObject {
         successPacket.project = packet.project
         self.send(packet: successPacket, toConnection: connection)
 
+        let statusName = packet.device?.deviceName ?? "Unknown"
         DispatchQueue.main.async {
-            self.delegate?.didGetPacket(publisher: self, packet: packet)
-            self.delegate?.didGetPacket(publisher: self, packet: successPacket)
-            SnagController.shared.publisherStatus = "Authenticated: \(packet.device?.deviceName ?? "Unknown")"
+            SnagController.shared.publisherStatus = "Authenticated: \(statusName)"
         }
+        self.enqueuePacketForMainLocked(packet)
+        self.enqueuePacketForMainLocked(successPacket)
     }
 
     func stopPublishing() {
@@ -312,11 +342,12 @@ class SnagPublisher: NSObject {
         primaryListener = nil
         legacyPublisher?.stop()
         legacyPublisher = nil
-        
+
         connections.forEach { $0.cancel() }
         connections.removeAll()
         deviceConnections.removeAll()
         authenticatedConnections.removeAll()
+        flushMainPacketsLocked()
     }
     
     private func removeConnection(_ connection: NWConnection) {

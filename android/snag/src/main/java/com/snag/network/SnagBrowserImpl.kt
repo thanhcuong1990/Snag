@@ -4,6 +4,7 @@ import android.content.Context
 import android.net.nsd.NsdServiceInfo
 import android.net.wifi.WifiManager
 import android.os.Build
+import com.snag.core.SnagAppMetadataProvider
 import com.snag.core.SnagConfiguration
 import com.snag.discovery.DiscoveryManager
 import com.snag.models.SnagDevice
@@ -16,7 +17,10 @@ import com.snag.models.SnagQueueMetrics
 import com.snag.core.log.SnagInternalLogger
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.MainScope
+import kotlinx.coroutines.cancel
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
+import java.util.concurrent.atomic.AtomicBoolean
 import kotlinx.serialization.json.Json
 import java.util.concurrent.ConcurrentHashMap
 
@@ -67,6 +71,7 @@ internal class SnagBrowserImpl(
     
     private val pendingPackets = SnagBoundedQueue<SnagPacket>(maxSize = MAX_PENDING_PACKETS)
     private var lastPendingDropWarningCount: Long = 0
+    private val iconRequested = AtomicBoolean(false)
 
     fun start(project: SnagProject, device: SnagDevice) {
         this.project = project
@@ -132,16 +137,17 @@ internal class SnagBrowserImpl(
     }
 
     override fun sendPacket(requestInfo: SnagRequestInfo, packetId: String) {
+        ensureAppIconLoaded()
         val proj = project
         val dev = device
-        
+
         val packet = SnagPacket(
             id = packetId,
             requestInfo = requestInfo,
             project = proj,
             device = dev
         )
-        
+
         if (proj == null || dev == null || (config.isSecurityEnabled && !hasAuthenticatedService())) {
             enqueuePendingPacket(packet, reason = "request_info_not_ready")
         } else {
@@ -150,19 +156,33 @@ internal class SnagBrowserImpl(
     }
 
     override fun sendLog(log: SnagLog) {
+        ensureAppIconLoaded()
         val proj = project
         val dev = device
-        
+
         val packet = SnagPacket(
             project = proj,
             device = dev,
             log = log
         )
-        
+
         if (proj == null || dev == null || (config.isSecurityEnabled && !hasAuthenticatedService())) {
             enqueuePendingPacket(packet, reason = "log_not_ready")
         } else {
             sendEncryptedIfRequired(packet)
+        }
+    }
+
+    private fun ensureAppIconLoaded() {
+        if (project?.appIcon != null) return
+        if (!iconRequested.compareAndSet(false, true)) return
+
+        snagScope.launch(Dispatchers.IO) {
+            val encoded = SnagAppMetadataProvider.ensureAppIconCached(context)
+                ?: return@launch
+            withContext(Dispatchers.Main) {
+                project = project?.copy(appIcon = encoded)
+            }
         }
     }
 
@@ -225,11 +245,10 @@ internal class SnagBrowserImpl(
     }
 
     private fun enqueuePendingPacket(packet: SnagPacket, reason: String) {
-        val dropped = pendingPackets.enqueue(packet)
-        val snapshot = pendingPackets.snapshot()
-        if (dropped) {
+        val result = pendingPackets.enqueue(packet)
+        if (result.dropped) {
             val shouldLogDrop = synchronized(this) {
-                val droppedCount = snapshot.droppedCount
+                val droppedCount = result.droppedCount
                 val shouldLog = droppedCount == 1L || droppedCount - lastPendingDropWarningCount >= DROP_WARNING_LOG_INTERVAL
                 if (shouldLog) {
                     lastPendingDropWarningCount = droppedCount
@@ -241,16 +260,16 @@ internal class SnagBrowserImpl(
                 SnagInternalLogger.w(
                     "Pending packet queue full (%d). Dropping oldest packet. dropped=%d reason=%s",
                     MAX_PENDING_PACKETS,
-                    snapshot.droppedCount,
+                    result.droppedCount,
                     reason
                 )
             }
         }
-        if (snapshot.size == MAX_PENDING_PACKETS || snapshot.size % 50 == 0) {
+        if (result.size == MAX_PENDING_PACKETS || result.size % 50 == 0) {
             SnagInternalLogger.d(
                 "Pending packet queue size=%d dropped=%d reason=%s",
-                snapshot.size,
-                snapshot.droppedCount,
+                result.size,
+                result.droppedCount,
                 reason
             )
         }
@@ -303,6 +322,21 @@ internal class SnagBrowserImpl(
         transportQueue = connectionManager.transportQueueMetricsSnapshot(),
         trust = connectionManager.trustMetricsSnapshot()
     )
+
+    internal fun shutdown() {
+        try {
+            discoveryManager.stopDiscovery()
+        } catch (_: Exception) { }
+
+        try {
+            multicastLock?.takeIf { it.isHeld }?.release()
+        } catch (_: Exception) { }
+        multicastLock = null
+
+        try {
+            snagScope.cancel()
+        } catch (_: Exception) { }
+    }
 
     companion object {
         private const val MAX_PENDING_PACKETS = 500

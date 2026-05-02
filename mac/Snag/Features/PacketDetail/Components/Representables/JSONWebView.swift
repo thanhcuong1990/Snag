@@ -4,11 +4,23 @@ import WebKit
 struct JSONWebView: NSViewRepresentable {
     let jsonString: String
     @Environment(\.colorScheme) var colorScheme
-    
+
+    private struct TemplateBundle {
+        let template: String
+        let baseURL: URL
+    }
+
+    private static let templateBundle: TemplateBundle? = {
+        let htmlPath = Bundle.main.path(forResource: "jsonviewer", ofType: "html", inDirectory: "jsonViewer") ??
+                       Bundle.main.path(forResource: "jsonviewer", ofType: "html")
+        guard let path = htmlPath, let template = try? String(contentsOfFile: path) else { return nil }
+        return TemplateBundle(template: template, baseURL: URL(fileURLWithPath: path).deletingLastPathComponent())
+    }()
+
     func makeCoordinator() -> Coordinator {
         Coordinator(self)
     }
-    
+
     func makeNSView(context: Context) -> WKWebView {
         let configuration = WKWebViewConfiguration()
         let webView = SearchableWebView(frame: .zero, configuration: configuration)
@@ -18,35 +30,33 @@ struct JSONWebView: NSViewRepresentable {
         webView.layer?.backgroundColor = DetailsTheme.jsonViewerBackgroundNSColor().cgColor
         return webView
     }
-    
+
     func updateNSView(_ nsView: WKWebView, context: Context) {
         context.coordinator.parent = self
-        
+
         // Update layer background color for theme changes
         nsView.layer?.backgroundColor = DetailsTheme.jsonViewerBackgroundNSColor().cgColor
-        
-        loadContent(nsView)
-    }
-    
-    private func loadContent(_ webView: WKWebView) {
-        let htmlPath = Bundle.main.path(forResource: "jsonviewer", ofType: "html", inDirectory: "jsonViewer") ??
-                       Bundle.main.path(forResource: "jsonviewer", ofType: "html")
-        
-        guard let path = htmlPath, let htmlTemplate = try? String(contentsOfFile: path) else {
-            return
+
+        if context.coordinator.isLoaded {
+            // Page is already loaded; re-render via JS instead of reloading HTML.
+            context.coordinator.renderJSON(nsView)
+        } else {
+            loadContent(nsView)
         }
-        
+    }
+
+    private func loadContent(_ webView: WKWebView) {
+        guard let bundle = Self.templateBundle else { return }
+
         let base64 = jsonString.data(using: .utf8)?.base64EncodedString() ?? ""
         let themeScript = colorScheme == .dark ? "changeThemeToDark()" : "changeThemeToLight()"
-        
-        let finalHtml = htmlTemplate.replacingOccurrences(of: "/* INJECTED_SCRIPT */", with: """
+
+        let finalHtml = bundle.template.replacingOccurrences(of: "/* INJECTED_SCRIPT */", with: """
             \(themeScript);
             renderJSONBase64('\(base64)');
         """)
-        
-        // Use loadHTMLString with a baseURL that allows reading other files in the same directory if needed
-        let baseURL = URL(fileURLWithPath: path).deletingLastPathComponent()
-        webView.loadHTMLString(finalHtml, baseURL: baseURL)
+
+        webView.loadHTMLString(finalHtml, baseURL: bundle.baseURL)
     }
     
     class Coordinator: NSObject, WKNavigationDelegate {

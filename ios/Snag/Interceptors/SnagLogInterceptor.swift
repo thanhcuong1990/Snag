@@ -3,59 +3,92 @@ import OSLog
 
 @available(iOS 15.0, *)
 actor SnagLogInterceptor {
-    
+
     static let shared = SnagLogInterceptor()
-    
+
     private let pipe = Pipe()
     private var isCapturing = false
     private var originalStdout: Int32 = -1
     private var originalStderr: Int32 = -1
-    
+
+    private let stdoutBatchQueue = DispatchQueue(label: "com.snag.log.stdoutBatch")
+    private var stdoutBuffer: String = ""
+    private var stdoutBatchScheduled: Bool = false
+    private let stdoutBatchInterval: DispatchTimeInterval = .milliseconds(100)
+    private let stdoutBatchMaxBytes: Int = 32_768
+
     func startCapturing() {
         guard !isCapturing else { return }
         isCapturing = true
-        
+
         // Capture stdout/stderr via dup2
         let pipeReadHandle = pipe.fileHandleForReading
         let pipeFileDescriptor = pipe.fileHandleForWriting.fileDescriptor
-        
+
         // Save original stdout/stderr to restore/echo
         let stdoutFd = dup(STDOUT_FILENO)
         let stderrFd = dup(STDERR_FILENO)
         originalStdout = stdoutFd
         originalStderr = stderrFd
-        
+
         dup2(pipeFileDescriptor, STDOUT_FILENO)
         dup2(pipeFileDescriptor, STDERR_FILENO)
-        
-        pipeReadHandle.readabilityHandler = { handle in
+
+        let batchQueue = self.stdoutBatchQueue
+        pipeReadHandle.readabilityHandler = { [weak self] handle in
             let data = handle.availableData
             if data.isEmpty { return }
-            
+
             // Echo back to original stdout so it shows in Xcode console
             if stdoutFd != -1 {
                 data.withUnsafeBytes { ptr in
                     _ = write(stdoutFd, ptr.baseAddress, data.count)
                 }
             }
-            
-            if let string = String(data: data, encoding: .utf8) {
-                // Limit message length to prevent excessive packet size
-                let maxLength = 10_000
-                let message = string.count > maxLength ? String(string.prefix(maxLength)) + "... (truncated in interceptor)" : string
-                
-                Snag.log(message, level: "info", tag: "stdout")
+
+            guard let chunk = String(data: data, encoding: .utf8) else { return }
+            // Coalesce reads on a serial queue and let the actor pull a batch on a timer.
+            batchQueue.async {
+                Task { [weak self] in
+                    await self?.appendStdoutChunk(chunk)
+                }
             }
         }
-        
+
         // Start OSLogStore polling/streaming
         startOSLogStream()
+    }
+
+    private func appendStdoutChunk(_ chunk: String) {
+        stdoutBuffer.append(chunk)
+        if stdoutBuffer.count >= stdoutBatchMaxBytes {
+            flushStdoutBuffer()
+            return
+        }
+        if !stdoutBatchScheduled {
+            stdoutBatchScheduled = true
+            Task { [weak self] in
+                try? await Task.sleep(nanoseconds: 100_000_000)
+                await self?.flushStdoutBuffer()
+            }
+        }
+    }
+
+    private func flushStdoutBuffer() {
+        stdoutBatchScheduled = false
+        guard !stdoutBuffer.isEmpty else { return }
+        let message = stdoutBuffer
+        stdoutBuffer.removeAll(keepingCapacity: true)
+
+        let maxLength = 10_000
+        let trimmed = message.count > maxLength ? String(message.prefix(maxLength)) + "... (truncated in interceptor)" : message
+        Snag.log(trimmed, level: "info", tag: "stdout")
     }
     
     func stopCapturing() {
         guard isCapturing else { return }
         isCapturing = false
-        
+
         // Restore stdout/stderr
         if originalStdout != -1 {
             dup2(originalStdout, STDOUT_FILENO)
@@ -67,8 +100,9 @@ actor SnagLogInterceptor {
             close(originalStderr)
             originalStderr = -1
         }
-        
+
         pipe.fileHandleForReading.readabilityHandler = nil
+        flushStdoutBuffer()
     }
     
     private func startOSLogStream() {

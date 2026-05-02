@@ -1,10 +1,9 @@
 import Cocoa
+import Combine
 
 
 struct SnagNotifications {
-    
-    static let didGetPacket = NSNotification.Name("DidGetPacket")
-    static let didUpdatePacket = NSNotification.Name("DidUpdatePacket")
+
     static let didSelectProject = NSNotification.Name("DidSelectProject")
     static let didSelectDevice = NSNotification.Name("DidSelectDevice")
     static let didSelectPacket = NSNotification.Name("DidSelectPacket")
@@ -48,7 +47,13 @@ class SnagController: NSObject, @MainActor SnagPublisherDelegate, ObservableObje
     
     @Published var publisherStatus: String = "Stopped"
     @Published var isSecurityEnabled: Bool = SnagConfiguration.isSecurityEnabled
-    
+
+    let packetReceivedPublisher = PassthroughSubject<SnagPacket, Never>()
+    let packetUpdatedPublisher = PassthroughSubject<SnagPacket, Never>()
+
+    // Fast O(1) lookup for the hot per-packet path.
+    private var deviceIndex: [String: (project: SnagProjectController, device: SnagDeviceController)] = [:]
+
     var publisher = SnagPublisher()
     
     override init() {
@@ -91,10 +96,10 @@ class SnagController: NSObject, @MainActor SnagPublisherDelegate, ObservableObje
         // self.objectWillChange.send()
 
         if self.addPacket(newPacket: packet) {
-            NotificationCenter.default.post(name: SnagNotifications.didGetPacket, object: nil, userInfo: ["packet": packet])
+            self.packetReceivedPublisher.send(packet)
             self.checkInitialSelection()
         } else {
-            NotificationCenter.default.post(name: SnagNotifications.didUpdatePacket, object: nil, userInfo: ["packet": packet])
+            self.packetUpdatedPublisher.send(packet)
         }
         
         // Ensure log streaming state is correct for new devices
@@ -107,81 +112,97 @@ class SnagController: NSObject, @MainActor SnagPublisherDelegate, ObservableObje
     
     @discardableResult
     func addPacket(newPacket: SnagPacket) -> Bool {
-        
+
         // 1. Prioritize finding an existing device controller across all projects.
         let deviceId = (newPacket.device?.deviceId ?? newPacket.control?.deviceId)?.lowercased()
-        
-        if let id = deviceId {
-            for projectController in self.projectControllers {
-                // 1a. Direct Device ID Match (Prioritize this above all else)
-                if let existingDeviceController = projectController.deviceControllers.first(where: { $0.deviceId == id }) {
-                    // Force update device metadata if it's currently missing or generic
-                    if let deviceModel = newPacket.device {
-                        if existingDeviceController.deviceName == nil || existingDeviceController.deviceName == "Unknown Device" {
-                            existingDeviceController.deviceName = deviceModel.deviceName
-                        }
-                        if existingDeviceController.deviceDescription == nil {
-                            existingDeviceController.deviceDescription = deviceModel.deviceDescription
-                        }
-                    }
-                    
-                    // Update project name and app icon if they are currently "Unknown" or nil
-                    if let newProjectName = newPacket.project?.projectName,
-                       (projectController.projectName == nil || projectController.projectName == "Unknown" || projectController.projectName != newProjectName) {
-                        projectController.projectName = newProjectName
-                    }
-                    
-                    if let newAppIcon = newPacket.project?.appIcon, (projectController.appIcon == nil || projectController.appIcon != newAppIcon) {
-                        projectController.appIcon = newAppIcon
-                    }
-                    
-                    return projectController.addPacket(newPacket: newPacket)
+
+        // 1a. Direct Device ID Match via O(1) dictionary lookup.
+        if let id = deviceId, let entry = deviceIndex[id] {
+            let projectController = entry.project
+            let existingDeviceController = entry.device
+
+            // Force update device metadata if it's currently missing or generic
+            if let deviceModel = newPacket.device {
+                if existingDeviceController.deviceName == nil || existingDeviceController.deviceName == "Unknown Device" {
+                    existingDeviceController.deviceName = deviceModel.deviceName
+                }
+                if existingDeviceController.deviceDescription == nil {
+                    existingDeviceController.deviceDescription = deviceModel.deviceDescription
                 }
             }
+
+            // Update project name and app icon if they are currently "Unknown" or nil
+            if let newProjectName = newPacket.project?.projectName,
+               (projectController.projectName == nil || projectController.projectName == "Unknown" || projectController.projectName != newProjectName) {
+                projectController.projectName = newProjectName
+            }
+
+            if let newAppIcon = newPacket.project?.appIcon, (projectController.appIcon == nil || projectController.appIcon != newAppIcon) {
+                projectController.appIcon = newAppIcon
+            }
+
+            return projectController.addPacket(newPacket: newPacket)
         }
-        
-        // 2. Fallback to Bundle ID matching
+
+        // 2. Fallback to Bundle ID matching (project count is small)
+        var matchedProject: SnagProjectController?
         if let newBundleId = newPacket.project?.bundleId {
-            for projectController in self.projectControllers {
-                if projectController.bundleId == newBundleId {
-                    // Update project name and app icon if they are currently "Unknown" or nil
-                    if let newProjectName = newPacket.project?.projectName,
-                       (projectController.projectName == nil || projectController.projectName == "Unknown" || projectController.projectName != newProjectName) {
-                        projectController.projectName = newProjectName
-                    }
-                    
-                    if let newAppIcon = newPacket.project?.appIcon, (projectController.appIcon == nil || projectController.appIcon != newAppIcon) {
-                        projectController.appIcon = newAppIcon
-                    }
-                    return projectController.addPacket(newPacket: newPacket)
+            for projectController in self.projectControllers where projectController.bundleId == newBundleId {
+                // Update project name and app icon if they are currently "Unknown" or nil
+                if let newProjectName = newPacket.project?.projectName,
+                   (projectController.projectName == nil || projectController.projectName == "Unknown" || projectController.projectName != newProjectName) {
+                    projectController.projectName = newProjectName
                 }
+
+                if let newAppIcon = newPacket.project?.appIcon, (projectController.appIcon == nil || projectController.appIcon != newAppIcon) {
+                    projectController.appIcon = newAppIcon
+                }
+                matchedProject = projectController
+                break
             }
         }
-        
+
         // 3. Fallback to Project Name matching
-        for projectController in self.projectControllers {
-            if projectController.projectName == newPacket.project?.projectName {
-                // Only match by name if the project doesn't have a different bundleId already
-                if projectController.bundleId == nil || projectController.bundleId == newPacket.project?.bundleId {
-                    return projectController.addPacket(newPacket: newPacket)
+        if matchedProject == nil {
+            for projectController in self.projectControllers {
+                if projectController.projectName == newPacket.project?.projectName,
+                   projectController.bundleId == nil || projectController.bundleId == newPacket.project?.bundleId {
+                    matchedProject = projectController
+                    break
                 }
             }
         }
-        
-        // 4. Create New Project Controller
-        let projectController = SnagProjectController()
-        projectController.projectName = (newPacket.project?.projectName == nil || newPacket.project?.projectName?.isEmpty == true) ? "Unknown" : newPacket.project?.projectName
-        projectController.addPacket(newPacket: newPacket)
-        
-        self.projectControllers.append(projectController)
-        
-        if self.projectControllers.count == 1 {
-            DispatchQueue.main.async {
-                self.selectedProjectController = self.projectControllers.first
+
+        let projectController: SnagProjectController
+        let isNewProject: Bool
+        if let existing = matchedProject {
+            projectController = existing
+            isNewProject = false
+        } else {
+            // 4. Create New Project Controller
+            projectController = SnagProjectController()
+            projectController.projectName = (newPacket.project?.projectName == nil || newPacket.project?.projectName?.isEmpty == true) ? "Unknown" : newPacket.project?.projectName
+            isNewProject = true
+        }
+
+        let result = projectController.addPacket(newPacket: newPacket)
+
+        if isNewProject {
+            self.projectControllers.append(projectController)
+            if self.projectControllers.count == 1 {
+                DispatchQueue.main.async {
+                    self.selectedProjectController = self.projectControllers.first
+                }
             }
         }
-        
-        return true
+
+        // Register the (possibly new) device in the index for future O(1) lookups.
+        if let id = deviceId, deviceIndex[id] == nil,
+           let device = projectController.deviceControllers.first(where: { $0.deviceId == id }) {
+            deviceIndex[id] = (projectController, device)
+        }
+
+        return result
     }
     
     

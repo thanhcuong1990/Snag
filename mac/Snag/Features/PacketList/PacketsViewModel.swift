@@ -1,4 +1,5 @@
 import Cocoa
+import Combine
 
 enum PacketFilterCategory: String, CaseIterable {
     case all = "All"
@@ -97,20 +98,24 @@ class PacketsViewModel: BaseListViewModel<SnagPacket>  {
     
     
     func register() {
-        NotificationCenter.default.addObserver(self, selector: #selector(self.refreshItems), name: SnagNotifications.didGetPacket, object: nil)
-        
-        NotificationCenter.default.addObserver(self, selector: #selector(self.refreshItems), name: SnagNotifications.didUpdatePacket, object: nil)
-        
+        SnagController.shared.packetReceivedPublisher
+            .sink { [weak self] _ in self?.refreshItems() }
+            .store(in: &cancellables)
+
+        SnagController.shared.packetUpdatedPublisher
+            .sink { [weak self] _ in self?.refreshItems() }
+            .store(in: &cancellables)
+
         NotificationCenter.default.addObserver(self, selector: #selector(self.refreshItems), name: SnagNotifications.didSelectProject, object: nil)
-        
+
         NotificationCenter.default.addObserver(self, selector: #selector(self.refreshItems), name: SnagNotifications.didSelectDevice, object: nil)
-        
+
         NotificationCenter.default.addObserver(self, selector: #selector(self.refreshItems), name: SnagNotifications.didSelectPacket, object: nil)
-        
+
         // Observers for Saved Requests
         NotificationCenter.default.addObserver(self, selector: #selector(self.refreshItems), name: SnagNotifications.didSelectSavedPacket, object: nil)
         NotificationCenter.default.addObserver(self, selector: #selector(self.refreshItems), name: SnagNotifications.didUpdateSavedPackets, object: nil)
-        
+
         self.refreshItems()
     }
     
@@ -159,45 +164,43 @@ class PacketsViewModel: BaseListViewModel<SnagPacket>  {
     }
     
     func filter(items: [SnagPacket]) -> [SnagPacket] {
-        let filteredItems = performAddressFiltration(items)
-        return performCategoryFiltration(filteredItems)
-    }
-    
-    func performCategoryFiltration(_ items: [SnagPacket]) -> [SnagPacket] {
-        switch categoryFilter {
-        case .all:
-            return items
-        case .fetchXHR:
-            return items.filter { packet in
-                return !isNonFetchAssetPacket(packet)
-            }
-        case .media:
-            return items.filter { packet in
-                return isMediaPacket(packet)
-            }
-        case .status1xx:
-            return items.filter { $0.requestInfo?.statusCode?.prefix(1) == "1" }
-        case .status2xx:
-            return items.filter { $0.requestInfo?.statusCode?.prefix(1) == "2" }
-        case .status3xx:
-            return items.filter { $0.requestInfo?.statusCode?.prefix(1) == "3" }
-        case .status4xx:
-            return items.filter { $0.requestInfo?.statusCode?.prefix(1) == "4" }
-        case .status5xx:
-            return items.filter { $0.requestInfo?.statusCode?.prefix(1) == "5" }
-        }
-    }
-    
-    func performAddressFiltration(_ items: [SnagPacket])  -> [SnagPacket] {
         let term = addressFilterTerm.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard !term.isEmpty else {
+        let lowerTerm = term.isEmpty ? nil : term.lowercased()
+        let category = categoryFilter
+
+        if lowerTerm == nil && category == .all {
             return items
         }
-        
-        let lowerTerm = term.lowercased()
-        return items.filter {
-            guard let url = $0.requestInfo?.url else { return true }
-            return url.lowercased().contains(lowerTerm)
+
+        // Single-pass filter combining address and category criteria.
+        return items.filter { packet in
+            if let lowerTerm = lowerTerm,
+               let url = packet.requestInfo?.url,
+               !url.lowercased().contains(lowerTerm) {
+                return false
+            }
+            return matchesCategory(packet, category: category)
+        }
+    }
+
+    private func matchesCategory(_ packet: SnagPacket, category: PacketFilterCategory) -> Bool {
+        switch category {
+        case .all:
+            return true
+        case .fetchXHR:
+            return !isNonFetchAssetPacket(packet)
+        case .media:
+            return isMediaPacket(packet)
+        case .status1xx:
+            return packet.requestInfo?.statusCode?.prefix(1) == "1"
+        case .status2xx:
+            return packet.requestInfo?.statusCode?.prefix(1) == "2"
+        case .status3xx:
+            return packet.requestInfo?.statusCode?.prefix(1) == "3"
+        case .status4xx:
+            return packet.requestInfo?.statusCode?.prefix(1) == "4"
+        case .status5xx:
+            return packet.requestInfo?.statusCode?.prefix(1) == "5"
         }
     }
     

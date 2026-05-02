@@ -51,20 +51,27 @@ class SavedPacketStore: ObservableObject {
     
     func loadAll() {
         do {
-            let files = try fileManager.contentsOfDirectory(at: baseDirectory, includingPropertiesForKeys: [.creationDateKey], options: .skipsHiddenFiles)
-            
-            let sortedFiles = files.sorted {
-                let d1 = (try? $0.resourceValues(forKeys: [.creationDateKey]))?.creationDate ?? Date.distantPast
-                let d2 = (try? $1.resourceValues(forKeys: [.creationDateKey]))?.creationDate ?? Date.distantPast
-                return d1 > d2
+            let files = try fileManager.contentsOfDirectory(
+                at: baseDirectory,
+                includingPropertiesForKeys: [.creationDateKey],
+                options: .skipsHiddenFiles
+            )
+
+            // Read creation dates once into tuples so sort doesn't re-query disk per comparison.
+            let dated: [(URL, Date)] = files.compactMap { file in
+                guard file.pathExtension == "json" else { return nil }
+                let date = (try? file.resourceValues(forKeys: [.creationDateKey]))?.creationDate ?? Date.distantPast
+                return (file, date)
             }
-            
+
+            let sortedFiles = dated.sorted { $0.1 > $1.1 }.map { $0.0 }
+
             var packets: [SnagPacket] = []
+            packets.reserveCapacity(sortedFiles.count)
             let decoder = JSONDecoder()
-            
+
             for file in sortedFiles {
-                if file.pathExtension == "json",
-                   let data = try? Data(contentsOf: file),
+                if let data = try? Data(contentsOf: file),
                    let packet = try? decoder.decode(SnagPacket.self, from: data) {
                     packets.append(packet)
                 }
@@ -74,37 +81,42 @@ class SavedPacketStore: ObservableObject {
             print("Failed to load saved requests: \(error)")
         }
     }
-    
+
     func save(packet: SnagPacket) {
         let encoder = JSONEncoder()
         encoder.outputFormatting = .prettyPrinted
-        
+
         do {
             let data = try encoder.encode(packet)
             let filename = (packet.packetId ?? UUID().uuidString) + ".json"
             let fileURL = baseDirectory.appendingPathComponent(filename)
             try data.write(to: fileURL)
-            
-            loadAll()
+
+            // Append-only update to in-memory mirror; avoid re-reading and re-decoding the entire store.
+            if let existingIndex = savedPackets.firstIndex(where: { $0.packetId == packet.packetId }) {
+                savedPackets[existingIndex] = packet
+            } else {
+                savedPackets.insert(packet, at: 0)
+            }
             NotificationCenter.default.post(name: SnagNotifications.didUpdateSavedPackets, object: nil)
         } catch {
             print("Failed to save packet: \(error)")
         }
     }
-    
+
     func delete(packet: SnagPacket) {
         let filename = (packet.packetId ?? UUID().uuidString) + ".json"
         let fileURL = baseDirectory.appendingPathComponent(filename)
-        
+
         try? fileManager.removeItem(at: fileURL)
-        loadAll()
+        savedPackets.removeAll { $0.packetId == packet.packetId }
         NotificationCenter.default.post(name: SnagNotifications.didUpdateSavedPackets, object: nil)
     }
-    
+
     func clearAll() {
         try? fileManager.removeItem(at: baseDirectory)
         try? fileManager.createDirectory(at: baseDirectory, withIntermediateDirectories: true, attributes: nil)
-        loadAll()
+        savedPackets.removeAll()
         NotificationCenter.default.post(name: SnagNotifications.didUpdateSavedPackets, object: nil)
     }
 }

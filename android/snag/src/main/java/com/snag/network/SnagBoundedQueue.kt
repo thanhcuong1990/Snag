@@ -6,6 +6,12 @@ internal data class SnagBoundedQueueSnapshot(
     val enqueuedCount: Long
 )
 
+internal data class SnagBoundedQueueEnqueueResult(
+    val dropped: Boolean,
+    val size: Int,
+    val droppedCount: Long
+)
+
 internal class SnagBoundedQueue<T>(private val maxSize: Int) {
     private val queue = ArrayDeque<T>()
     private var droppedCount: Long = 0
@@ -16,7 +22,7 @@ internal class SnagBoundedQueue<T>(private val maxSize: Int) {
     }
 
     @Synchronized
-    fun enqueue(item: T): Boolean {
+    fun enqueue(item: T): SnagBoundedQueueEnqueueResult {
         enqueuedCount += 1
         var dropped = false
         if (queue.size >= maxSize) {
@@ -25,7 +31,11 @@ internal class SnagBoundedQueue<T>(private val maxSize: Int) {
             dropped = true
         }
         queue.addLast(item)
-        return dropped
+        return SnagBoundedQueueEnqueueResult(
+            dropped = dropped,
+            size = queue.size,
+            droppedCount = droppedCount
+        )
     }
 
     @Synchronized

@@ -24,6 +24,10 @@ interface SnagBrowser {
             this.instance = instance
         }
 
+        internal fun shutdown() {
+            this.instance = null
+        }
+
         fun getInstance(): SnagBrowser = instance ?: noOpInstance
 
         fun isInitialized(): Boolean = instance != null

@@ -27,6 +27,8 @@ public class SnagConfiguration {
     public var enableLogs: Bool = true
     public var enableInternalLogging: Bool = false
     public var isSecurityEnabled: Bool = true
+
+    public var maxBodyCaptureBytes: Int = 1_048_576
     
     public static let defaultConfiguration: SnagConfiguration = {
         let config = SnagConfiguration()

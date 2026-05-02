@@ -4,9 +4,10 @@ class DataImageRepresentation: DataRepresentation {
     var image: NSImage?
 
     override init(data: Data) {
-        
+
         super.init(data: data)
         self.type = .image
+        self.image = NSImage(data: data)
     }
     
     override func copyToClipboard() {

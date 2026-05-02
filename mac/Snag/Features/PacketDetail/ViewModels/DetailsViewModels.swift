@@ -27,25 +27,26 @@ class OverviewViewModel: BaseViewModel {
     
     func register() {
          NotificationCenter.default.addObserver(self, selector: #selector(self.didSelectPacket), name: SnagNotifications.didSelectPacket, object: nil)
-         NotificationCenter.default.addObserver(self, selector: #selector(self.didUpdatePacket), name: SnagNotifications.didUpdatePacket, object: nil)
+         SnagController.shared.packetUpdatedPublisher
+             .sink { [weak self] packet in self?.didUpdatePacket(packet) }
+             .store(in: &cancellables)
          NotificationCenter.default.addObserver(self, selector: #selector(self.didSelectPacket), name: SnagNotifications.didSelectSavedPacket, object: nil)
     }
-    
+
     @objc func didSelectPacket() {
         self.update()
     }
-    
-    @objc func didUpdatePacket(notification: Notification) {
-        if let packet = notification.userInfo?["packet"] as? SnagPacket,
-           let selectedPacket = SnagController.shared.currentSelectedPacket,
+
+    func didUpdatePacket(_ packet: SnagPacket) {
+        if let selectedPacket = SnagController.shared.currentSelectedPacket,
            packet.packetId == selectedPacket.packetId {
             self.update()
         }
     }
-    
+
     func update() {
         parseTask?.cancel()
-        
+
         guard let packet = SnagController.shared.currentSelectedPacket,
               let requestInfo = packet.requestInfo else {
             self.overviewRepresentation = nil
@@ -86,25 +87,26 @@ class CurlViewModel: BaseViewModel {
     
     func register() {
          NotificationCenter.default.addObserver(self, selector: #selector(self.didSelectPacket), name: SnagNotifications.didSelectPacket, object: nil)
-         NotificationCenter.default.addObserver(self, selector: #selector(self.didUpdatePacket), name: SnagNotifications.didUpdatePacket, object: nil)
+         SnagController.shared.packetUpdatedPublisher
+             .sink { [weak self] packet in self?.didUpdatePacket(packet) }
+             .store(in: &cancellables)
          NotificationCenter.default.addObserver(self, selector: #selector(self.didSelectPacket), name: SnagNotifications.didSelectSavedPacket, object: nil)
     }
-    
+
     @objc func didSelectPacket() {
         self.update()
     }
-    
-    @objc func didUpdatePacket(notification: Notification) {
-        if let packet = notification.userInfo?["packet"] as? SnagPacket,
-           let selectedPacket = SnagController.shared.currentSelectedPacket,
+
+    func didUpdatePacket(_ packet: SnagPacket) {
+        if let selectedPacket = SnagController.shared.currentSelectedPacket,
            packet.packetId == selectedPacket.packetId {
             self.update()
         }
     }
-    
+
     func update() {
         parseTask?.cancel()
-        
+
         guard let packet = SnagController.shared.currentSelectedPacket,
               let requestInfo = packet.requestInfo else {
             self.curlRepresentation = nil
@@ -164,26 +166,27 @@ class KeyValueViewModel: BaseViewModel {
     
     func register() {
         NotificationCenter.default.addObserver(self, selector: #selector(self.didSelectPacket), name: SnagNotifications.didSelectPacket, object: nil)
-        NotificationCenter.default.addObserver(self, selector: #selector(self.didUpdatePacket), name: SnagNotifications.didUpdatePacket, object: nil)
+        SnagController.shared.packetUpdatedPublisher
+            .sink { [weak self] packet in self?.didUpdatePacket(packet) }
+            .store(in: &cancellables)
         NotificationCenter.default.addObserver(self, selector: #selector(self.didSelectPacket), name: SnagNotifications.didSelectSavedPacket, object: nil)
     }
-    
+
     @objc func didSelectPacket() {
         self.update()
         self.onChange?()
     }
-    
-    @objc func didUpdatePacket(notification: Notification) {
-        if let packet = notification.userInfo?["packet"] as? SnagPacket,
-           let selectedPacket = SnagController.shared.currentSelectedPacket,
+
+    func didUpdatePacket(_ packet: SnagPacket) {
+        if let selectedPacket = SnagController.shared.currentSelectedPacket,
            packet.packetId == selectedPacket.packetId {
             self.update()
             self.onChange?()
         }
     }
-    
+
     func update() { }
-    
+
     func copyToClipboard() { keyValueRepresentation?.copyToClipboard() }
 }
 
@@ -309,26 +312,27 @@ class DataViewModel: BaseViewModel {
     
     func register() {
         NotificationCenter.default.addObserver(self, selector: #selector(self.didSelectPacket), name: SnagNotifications.didSelectPacket, object: nil)
-        NotificationCenter.default.addObserver(self, selector: #selector(self.didUpdatePacket), name: SnagNotifications.didUpdatePacket, object: nil)
+        SnagController.shared.packetUpdatedPublisher
+            .sink { [weak self] packet in self?.didUpdatePacket(packet) }
+            .store(in: &cancellables)
         NotificationCenter.default.addObserver(self, selector: #selector(self.didSelectPacket), name: SnagNotifications.didSelectSavedPacket, object: nil)
     }
-    
+
     @objc func didSelectPacket() {
         self.update()
         self.onChange?()
     }
-    
-    @objc func didUpdatePacket(notification: Notification) {
-        if let packet = notification.userInfo?["packet"] as? SnagPacket,
-           let selectedPacket = SnagController.shared.currentSelectedPacket,
+
+    func didUpdatePacket(_ packet: SnagPacket) {
+        if let selectedPacket = SnagController.shared.currentSelectedPacket,
            packet.packetId == selectedPacket.packetId {
             self.update()
             self.onChange?()
         }
     }
-    
+
     func update() { }
-    
+
     func copyToClipboard() {
         dataRepresentation?.copyToClipboard()
     }

@@ -37,12 +37,11 @@ internal class ConnectionManager(
     private val lastReconnectAttempt = AtomicLong(0)
     private val enqueuedPendingBuffers = AtomicLong(0)
     private val droppedPendingBuffers = AtomicLong(0)
+    private val droppedFromChannel = AtomicLong(0)
 
-    // Packet ingestion channel
-    private val packetChannel = Channel<OutboundPacket>(
-        capacity = MAX_PACKET_BUFFER,
-        onBufferOverflow = BufferOverflow.DROP_OLDEST
-    )
+    // Packet ingestion channel. We use a bounded channel with default suspend overflow
+    // and check the trySend result so dropped packets are observable in metrics.
+    private val packetChannel = Channel<OutboundPacket>(capacity = MAX_PACKET_BUFFER)
     private val trustStore = SnagTrustStore.getInstance(context)
 
     private var config: com.snag.core.SnagConfiguration? = null
@@ -64,7 +63,13 @@ internal class ConnectionManager(
     }
 
     fun send(packet: SnagPacket, preferredServiceName: String? = null) {
-        packetChannel.trySend(OutboundPacket(packet = packet, preferredServiceName = preferredServiceName?.lowercase()))
+        val result = packetChannel.trySend(OutboundPacket(packet = packet, preferredServiceName = preferredServiceName?.lowercase()))
+        if (!result.isSuccess) {
+            val total = droppedFromChannel.incrementAndGet()
+            if (total == 1L || total % 100L == 0L) {
+                SnagInternalLogger.w("Snag packet channel full (%d). Dropped packets so far: %d", MAX_PACKET_BUFFER, total)
+            }
+        }
     }
 
     fun connectToHost(hostAddress: String, port: Int, serviceName: String, onConnected: () -> Unit = {}) {
@@ -237,9 +242,11 @@ internal class ConnectionManager(
         }
     }
 
+    @OptIn(kotlin.ExperimentalStdlibApi::class)
     private fun sha256Hex(input: ByteArray): String {
-        val digest = MessageDigest.getInstance("SHA-256").digest(input)
-        return digest.joinToString(separator = "") { byte -> "%02x".format(byte) }
+        val md = sha256ThreadLocal.get()!!
+        md.reset()
+        return md.digest(input).toHexString()
     }
 
     private fun flushPending() {
@@ -288,25 +295,37 @@ internal class ConnectionManager(
     }
 
     private fun startReceiving(socket: Socket, serviceName: String, hostAddress: String) {
+        // Bounded inbound channel decouples socket reads from the Main-thread dispatcher.
+        // If the consumer (Mac viewer logic) lags, we drop the oldest pending inbound packet
+        // rather than blocking the read loop.
+        val inboundChannel = Channel<SnagPacket>(
+            capacity = INBOUND_PACKET_BUFFER,
+            onBufferOverflow = BufferOverflow.DROP_OLDEST
+        )
+
+        val consumer = scope.launch(Dispatchers.Main) {
+            for (packet in inboundChannel) {
+                onPacketReceived(serviceName, packet)
+            }
+        }
+
         scope.launch(Dispatchers.IO) {
             val inputStream = socket.getInputStream()
             val headerBuffer = ByteArray(PacketFraming.HEADER_SIZE)
-            
+
             while (!socket.isClosed && socket.isConnected) {
                 try {
                     if (!readFully(inputStream, headerBuffer)) break
-                    
+
                     val length = PacketFraming.parseLength(headerBuffer)
                     val bodyBuffer = ByteArray(length)
-                    
+
                     if (!readFully(inputStream, bodyBuffer)) break
-                    
+
                     val packetString = String(bodyBuffer)
                     try {
                         val packet = json.decodeFromString<SnagPacket>(packetString)
-                        withContext(Dispatchers.Main) {
-                            onPacketReceived(serviceName, packet)
-                        }
+                        inboundChannel.trySend(packet)
                     } catch (e: Exception) {
                         SnagInternalLogger.e(e, "Snag: Failed to decode packet: $packetString")
                     }
@@ -316,6 +335,7 @@ internal class ConnectionManager(
                 }
             }
 
+            inboundChannel.close()
             closeSocketSilently(socket, serviceName, hostAddress)
         }
     }
@@ -362,7 +382,7 @@ internal class ConnectionManager(
     fun transportQueueMetricsSnapshot(): SnagQueueMetrics {
         return SnagQueueMetrics(
             queuedPackets = pendingBuffers.size,
-            droppedPackets = droppedPendingBuffers.get(),
+            droppedPackets = droppedPendingBuffers.get() + droppedFromChannel.get(),
             enqueuedPackets = enqueuedPendingBuffers.get()
         )
     }
@@ -372,18 +392,8 @@ internal class ConnectionManager(
     }
 
 
-    @android.annotation.SuppressLint("CustomX509TrustManager")
     private fun createSSLSocket(host: String, port: Int): Socket {
-        val trustAllCerts = arrayOf<TrustManager>(object : X509TrustManager {
-            override fun checkClientTrusted(chain: Array<out X509Certificate>?, authType: String?) {}
-            override fun checkServerTrusted(chain: Array<out X509Certificate>?, authType: String?) {}
-            override fun getAcceptedIssuers(): Array<X509Certificate> = arrayOf()
-        })
-
-        val sslContext = SSLContext.getInstance("TLS")
-        sslContext.init(null, trustAllCerts, java.security.SecureRandom())
-        val factory = sslContext.socketFactory
-        val socket = factory.createSocket() as SSLSocket
+        val socket = sharedSslSocketFactory.createSocket() as SSLSocket
         socket.connect(InetSocketAddress(host, port), 1500)
         socket.startHandshake()
         return socket
@@ -393,6 +403,27 @@ internal class ConnectionManager(
         private const val MAX_PACKET_BUFFER = 500
         private const val MAX_OFFLINE_BUFFER = 50
         private const val RECONNECT_THROTTLE_MS = 2000L
+        private const val INBOUND_PACKET_BUFFER = 256
+
+        private val sha256ThreadLocal: ThreadLocal<MessageDigest> = object : ThreadLocal<MessageDigest>() {
+            override fun initialValue(): MessageDigest = MessageDigest.getInstance("SHA-256")
+        }
+
+        private val sharedSslSocketFactory: javax.net.ssl.SSLSocketFactory by lazy {
+            buildSharedSslSocketFactory()
+        }
+
+        @android.annotation.SuppressLint("CustomX509TrustManager", "TrustAllX509TrustManager")
+        private fun buildSharedSslSocketFactory(): javax.net.ssl.SSLSocketFactory {
+            val trustAllCerts = arrayOf<TrustManager>(object : X509TrustManager {
+                override fun checkClientTrusted(chain: Array<out X509Certificate>?, authType: String?) {}
+                override fun checkServerTrusted(chain: Array<out X509Certificate>?, authType: String?) {}
+                override fun getAcceptedIssuers(): Array<X509Certificate> = arrayOf()
+            })
+            return SSLContext.getInstance("TLS").apply {
+                init(null, trustAllCerts, java.security.SecureRandom())
+            }.socketFactory
+        }
     }
 
     private data class OutboundPacket(

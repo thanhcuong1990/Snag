@@ -5,16 +5,19 @@ public struct SnagRequestInfo: Sendable {
     public var requestHeaders: [String: String]?
     public var requestBody: Data?
     public var requestMethod: String?
-    
+
     public var responseHeaders: [String: String]?
     public var responseData: Data?
     public var statusCode: String?
-    
+
     public var startDate: Date?
     public var endDate: Date?
-    
+
+    public var requestBodyTruncated: Bool?
+    public var responseBodyTruncated: Bool?
+
     public init() {}
-    
+
     enum CodingKeys: String, CodingKey {
         case url
         case requestHeaders
@@ -25,6 +28,8 @@ public struct SnagRequestInfo: Sendable {
         case statusCode
         case startDate
         case endDate
+        case requestBodyTruncated
+        case responseBodyTruncated
     }
 }
 
@@ -37,15 +42,17 @@ extension SnagRequestInfo: Codable {
         self.requestMethod = try container.decodeIfPresent(String.self, forKey: .requestMethod)
         self.responseHeaders = try container.decodeIfPresent([String: String].self, forKey: .responseHeaders)
         self.responseData = try container.decodeIfPresent(Data.self, forKey: .responseData)
-        
+
         if let statusCodeInt = try? container.decodeIfPresent(Int.self, forKey: .statusCode) {
             self.statusCode = String(statusCodeInt)
         } else {
             self.statusCode = try container.decodeIfPresent(String.self, forKey: .statusCode)
         }
-        
+
         self.startDate = try container.decodeIfPresent(Date.self, forKey: .startDate)
         self.endDate = try container.decodeIfPresent(Date.self, forKey: .endDate)
+        self.requestBodyTruncated = try container.decodeIfPresent(Bool.self, forKey: .requestBodyTruncated)
+        self.responseBodyTruncated = try container.decodeIfPresent(Bool.self, forKey: .responseBodyTruncated)
     }
 
     public nonisolated func encode(to encoder: Encoder) throws {
@@ -59,6 +66,8 @@ extension SnagRequestInfo: Codable {
         try container.encodeIfPresent(statusCode, forKey: .statusCode)
         try container.encodeIfPresent(startDate, forKey: .startDate)
         try container.encodeIfPresent(endDate, forKey: .endDate)
+        try container.encodeIfPresent(requestBodyTruncated, forKey: .requestBodyTruncated)
+        try container.encodeIfPresent(responseBodyTruncated, forKey: .responseBodyTruncated)
     }
 }
 

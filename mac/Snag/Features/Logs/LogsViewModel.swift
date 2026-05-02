@@ -1,4 +1,5 @@
 import Cocoa
+import Combine
 
 @MainActor
 class LogsViewModel: ObservableObject {
@@ -14,6 +15,18 @@ class LogsViewModel: ObservableObject {
     private let updateRateLimit: TimeInterval = 0.2 // 200ms throttle
     private let processingQueue = DispatchQueue(label: "com.snag.logs.processing", qos: .userInteractive)
     private let displayLimit = 1000
+    private var cancellables = Set<AnyCancellable>()
+
+    // Cached tag analysis. Tags depend only on the log set, not on the active filter,
+    // so we can reuse them across keystrokes. Keyed on log count + bundleId as a cheap
+    // change-detection heuristic.
+    private struct TagAnalysisCache {
+        let logCount: Int
+        let bundleId: String?
+        let sortedTags: [String]
+        let detectedAppTag: String?
+    }
+    private var tagAnalysisCache: TagAnalysisCache?
     
     var isPaused: Bool {
         get {
@@ -44,22 +57,24 @@ class LogsViewModel: ObservableObject {
     }
     
     func register() {
-        NotificationCenter.default.addObserver(self, selector: #selector(self.onPacketReceived), name: SnagNotifications.didGetPacket, object: nil)
+        SnagController.shared.packetReceivedPublisher
+            .sink { [weak self] packet in self?.onPacketReceived(packet) }
+            .store(in: &cancellables)
         NotificationCenter.default.addObserver(self, selector: #selector(self.onDeviceChanged), name: SnagNotifications.didSelectProject, object: nil)
         NotificationCenter.default.addObserver(self, selector: #selector(self.onDeviceChanged), name: SnagNotifications.didSelectDevice, object: nil)
-        
+
         self.reloadLogs()
     }
-    
+
     deinit {
         NotificationCenter.default.removeObserver(self)
     }
-    
-    @objc func onPacketReceived(_ notification: Notification) {
+
+    func onPacketReceived(_ packet: SnagPacket) {
         if isPaused { return }
-        
+
         // Streaming Optimization: Check if we can ignore this packet based on current filter
-        if let selected = selectedTag, let packet = notification.userInfo?["packet"] as? SnagPacket, let log = packet.log {
+        if let selected = selectedTag, let log = packet.log {
             let logTag = log.tag ?? ""
             if selected == "System" {
                 if !SnagLog.isSystemTag(logTag) { return }
@@ -72,7 +87,7 @@ class LogsViewModel: ObservableObject {
                 return
             }
         }
-        
+
         self.reloadLogs()
     }
     
@@ -143,49 +158,64 @@ class LogsViewModel: ObservableObject {
         let term = self.filterTerm.lowercased()
         let selectedLevel = self.selectedLogLevel
         let selectedTag = self.selectedTag
-        
+
         let deviceController = SnagController.shared.selectedProjectController?.selectedDeviceController
         let appInfo = deviceController?.appInfo
-        
+        let bundleId = appInfo?.bundleId
+        let cachedAnalysis = self.tagAnalysisCache
+
         processingQueue.async { [weak self] in
             guard let self = self else { return }
-            
-            // 1. Extract and Analyze Tags
-            var tagCounts: [String: Int] = [:]
-            var uniqueTags = Set<String>()
-            
-            for log in logs {
-                let category = log.getCategory(detectedAppTag: appInfo?.bundleId)
-                
-                switch category {
-                case .rn:
-                    uniqueTags.insert("React Native")
-                case .app:
-                    uniqueTags.insert("App")
-                    if let tag = log.tag { tagCounts[tag, default: 0] += 1 }
-                case .system:
-                    uniqueTags.insert("System")
-                case .other:
-                    if let tag = log.tag {
-                        uniqueTags.insert(tag)
-                        tagCounts[tag, default: 0] += 1
+
+            // 1. Extract and Analyze Tags (reuse cache when log set is stable)
+            let sortedTags: [String]
+            let detectedAppTag: String?
+
+            if let cache = cachedAnalysis,
+               cache.logCount == logs.count,
+               cache.bundleId == bundleId {
+                sortedTags = cache.sortedTags
+                detectedAppTag = cache.detectedAppTag
+            } else {
+                var tagCounts: [String: Int] = [:]
+                var uniqueTags = Set<String>()
+
+                for log in logs {
+                    let category = log.getCategory(detectedAppTag: bundleId)
+
+                    switch category {
+                    case .rn:
+                        uniqueTags.insert("React Native")
+                    case .app:
+                        uniqueTags.insert("App")
+                        if let tag = log.tag { tagCounts[tag, default: 0] += 1 }
+                    case .system:
+                        uniqueTags.insert("System")
+                    case .other:
+                        if let tag = log.tag {
+                            uniqueTags.insert(tag)
+                            tagCounts[tag, default: 0] += 1
+                        }
                     }
                 }
-            }
-            
-            // Identify "App" tag (explicit bundleId or most frequent non-system non-RN tag)
-            let detectedAppTag = appInfo?.bundleId ?? tagCounts.max(by: { $0.value < $1.value })?.key
-            if detectedAppTag != nil { uniqueTags.insert("App") }
-            
-            // Sort tags: React Native first, System second, App third, then others alphabetically
-            let sortedTags = uniqueTags.sorted { t1, t2 in
+
+                // Identify "App" tag (explicit bundleId or most frequent non-system non-RN tag)
+                let computedAppTag = bundleId ?? tagCounts.max(by: { $0.value < $1.value })?.key
+                if computedAppTag != nil { uniqueTags.insert("App") }
+
+                // Sort tags: React Native first, System second, App third, then others alphabetically
                 let priority: [String: Int] = ["React Native": 0, "System": 1, "App": 2]
-                let p1 = priority[t1] ?? 100
-                let p2 = priority[t2] ?? 100
-                if p1 != p2 { return p1 < p2 }
-                return t1 < t2
+                let computedSorted = uniqueTags.sorted { t1, t2 in
+                    let p1 = priority[t1] ?? 100
+                    let p2 = priority[t2] ?? 100
+                    if p1 != p2 { return p1 < p2 }
+                    return t1 < t2
+                }
+
+                sortedTags = computedSorted
+                detectedAppTag = computedAppTag
             }
-            
+
             // 2. Filter Logs
             let filtered = logs.filter { log in
                 // Filter by Level
@@ -203,11 +233,11 @@ class LogsViewModel: ObservableObject {
                     default: break
                     }
                 }
-                
+
                 // Filter by Tag
                 if let selected = selectedTag {
-                    let category = log.getCategory(detectedAppTag: appInfo?.bundleId)
-                    
+                    let category = log.getCategory(detectedAppTag: bundleId)
+
                     if selected == "System" {
                         if category != .system { return false }
                     } else if selected == "React Native" {
@@ -218,18 +248,26 @@ class LogsViewModel: ObservableObject {
                         return false
                     }
                 }
-                
+
                 // Filter by Search Term
                 if term.isEmpty { return true }
                 return log.message.lowercased().contains(term) ||
                 log.tag?.lowercased().contains(term) ?? false ||
                 log.level.lowercased().contains(term)
             }
-            
+
             // 3. Limit Results for Display
             let itemsToDisplay = Array(filtered.reversed().prefix(self.displayLimit))
-            
+
+            let newCache = TagAnalysisCache(
+                logCount: logs.count,
+                bundleId: bundleId,
+                sortedTags: sortedTags,
+                detectedAppTag: detectedAppTag
+            )
+
             DispatchQueue.main.async {
+                self.tagAnalysisCache = newCache
                 self.detectedAppTag = detectedAppTag
                 self.tags = sortedTags
                 self.items = itemsToDisplay
@@ -239,6 +277,7 @@ class LogsViewModel: ObservableObject {
     
     func clearLogs() {
         SnagController.shared.selectedProjectController?.selectedDeviceController?.clear()
+        self.tagAnalysisCache = nil
         self.items = []
     }
 }

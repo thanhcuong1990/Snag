@@ -22,5 +22,9 @@ data class SnagRequestInfo(
     @SerialName("startDate")
     val startDate: Double,
     @SerialName("endDate")
-    val endDate: Double? = null
+    val endDate: Double? = null,
+    @SerialName("requestBodyTruncated")
+    val requestBodyTruncated: Boolean? = null,
+    @SerialName("responseBodyTruncated")
+    val responseBodyTruncated: Boolean? = null
 )

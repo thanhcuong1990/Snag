@@ -55,11 +55,11 @@ struct PacketRowView: View {
     }
     
     private var responseSize: String {
-        formatSize(packet.requestInfo?.responseData)
+        formatByteCount(packet.requestInfo?.responseDataByteCount)
     }
-    
+
     private var requestSize: String {
-        formatSize(packet.requestInfo?.requestBody)
+        formatByteCount(packet.requestInfo?.requestBodyByteCount)
     }
     
     private var timeString: String {
@@ -93,10 +93,10 @@ struct PacketRowView: View {
         return String(format: "%.2f s", ms / 1000)
     }
     
-    private func formatSize(_ base64String: String?) -> String {
-        guard let dataStr = base64String, let data = Data(base64Encoded: dataStr) else { return "-" }
-        let count = Double(data.count)
-        if count < 1024 { return "\(Int(count)) bytes" }
+    private func formatByteCount(_ byteCount: Int?) -> String {
+        guard let byteCount = byteCount, byteCount > 0 else { return "-" }
+        let count = Double(byteCount)
+        if count < 1024 { return "\(byteCount) bytes" }
         if count < 1024 * 1024 { return String(format: "%.1f KB", count / 1024) }
         return String(format: "%.1f MB", count / (1024 * 1024))
     }
@@ -110,9 +110,9 @@ struct PacketRowView: View {
             Text(formatDuration(from: start, end: end, now: Date()))
         } else {
             // Live view for active packets
-             TimelineView(.periodic(from: .now, by: 0.1)) { context in
-                Text(formatDuration(from: packet.requestInfo?.startDate, 
-                                    end: nil, 
+             TimelineView(.periodic(from: .now, by: 1.0)) { context in
+                Text(formatDuration(from: packet.requestInfo?.startDate,
+                                    end: nil,
                                     now: context.date))
             }
         }

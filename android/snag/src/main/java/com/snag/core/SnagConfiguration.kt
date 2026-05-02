@@ -11,7 +11,8 @@ data class SnagConfiguration(
     val enableLogs: Boolean = true,
     val enableInternalLogging: Boolean = false,
     val isSecurityEnabled: Boolean = true,
-    val securityListener: SnagSecurityListener? = null
+    val securityListener: SnagSecurityListener? = null,
+    val maxBodyCaptureBytes: Int = 1_048_576
 ) {
     companion object {
         fun getDefault(context: Context): SnagConfiguration {

@@ -1,13 +1,16 @@
 import Cocoa
+import Combine
 
 @MainActor
 class ProjectsViewModel: BaseListViewModel<SnagProjectController> {
 
     func register() {
-        
-        NotificationCenter.default.addObserver(self, selector: #selector(self.refreshItems), name: SnagNotifications.didGetPacket, object: nil)
+
+        SnagController.shared.packetReceivedPublisher
+            .sink { [weak self] _ in self?.refreshItems() }
+            .store(in: &cancellables)
         NotificationCenter.default.addObserver(self, selector: #selector(self.refreshItems), name: SnagNotifications.didSelectProject, object: nil)
-        
+
         self.refreshItems()
     }
     

@@ -17,6 +17,9 @@ internal class SnagTrustStore private constructor(
     private val storage: Storage
 ) {
     private val mismatchCounter = AtomicLong(storage.getLong(MISMATCH_COUNT_KEY, 0L))
+    private val trustedServerCounter = AtomicLong(
+        storage.keys().count { it.startsWith(FINGERPRINT_KEY_PREFIX) }.toLong()
+    )
 
     @Synchronized
     fun verifyOrTrust(serverKey: String, fingerprint: String): SnagTrustDecision {
@@ -25,6 +28,7 @@ internal class SnagTrustStore private constructor(
 
         if (existing == null) {
             storage.putString(key, fingerprint)
+            trustedServerCounter.incrementAndGet()
             SnagInternalLogger.d("SnagTrustStore: trusted new server fingerprint for key=%s", serverKey)
             return SnagTrustDecision.Trusted
         }
@@ -45,13 +49,13 @@ internal class SnagTrustStore private constructor(
     @Synchronized
     fun resetAll() {
         mismatchCounter.set(0)
+        trustedServerCounter.set(0)
         storage.clear()
     }
 
-    @Synchronized
     fun metricsSnapshot(): SnagTrustMetrics {
         return SnagTrustMetrics(
-            trustedServerCount = storage.keys().count { it.startsWith(FINGERPRINT_KEY_PREFIX) },
+            trustedServerCount = trustedServerCounter.get().toInt(),
             mismatchCount = mismatchCounter.get()
         )
     }

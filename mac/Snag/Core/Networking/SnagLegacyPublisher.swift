@@ -7,12 +7,18 @@ protocol SnagLegacyPublisherDelegate: AnyObject {
 }
 
 class SnagLegacyPublisher: NSObject {
-    
+
     weak var delegate: SnagLegacyPublisherDelegate?
-    
+
     private var listener: NWListener?
     private let queue: DispatchQueue
-    
+
+    private let jsonDecoder: JSONDecoder = {
+        let decoder = JSONDecoder()
+        decoder.dateDecodingStrategy = .secondsSince1970
+        return decoder
+    }()
+
     init(queue: DispatchQueue) {
         self.queue = queue
     }
@@ -126,11 +132,8 @@ class SnagLegacyPublisher: NSObject {
     }
     
     private func processReceivedData(_ data: Data, from connection: NWConnection) {
-        let jsonDecoder = JSONDecoder()
-        jsonDecoder.dateDecodingStrategy = .secondsSince1970
-        
         do {
-            let snagPacket = try jsonDecoder.decode(SnagPacket.self, from: data)
+            let snagPacket = try self.jsonDecoder.decode(SnagPacket.self, from: data)
             let deviceId = (snagPacket.device?.deviceId ?? snagPacket.control?.deviceId)?.lowercased()
              
             if shouldAcceptLegacyPacket(snagPacket) {

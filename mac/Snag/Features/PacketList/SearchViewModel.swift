@@ -84,17 +84,32 @@ class SearchViewModel: ObservableObject {
         self.recentSearches = SettingsManager.shared.recentSearches
     }
     
+    // Cache: rebuilding the domain map per keystroke is wasteful — packets change
+    // far less often than the search text. Key on (device, packet count) so the cache
+    // invalidates automatically when packets are added/removed or the device switches.
+    private var domainCache: (deviceId: String?, packetCount: Int, domains: [String])?
+
     private func getActiveDomains() -> [String] {
+        let device = SnagController.shared.selectedProjectController?.selectedDeviceController
+        let packets = device?.packets ?? []
+        let deviceId = device?.deviceId
+
+        if let cache = domainCache,
+           cache.deviceId == deviceId,
+           cache.packetCount == packets.count {
+            return cache.domains
+        }
+
         var counts: [String: Int] = [:]
-        let packets = SnagController.shared.selectedProjectController?.selectedDeviceController?.packets ?? []
-        
         for packet in packets {
             guard let urlString = packet.requestInfo?.url,
                   let domain = urlString.extractDomain() else { continue }
             let main = domain.mainDomain()
             counts[main, default: 0] += 1
         }
-        
-        return counts.keys.sorted { (counts[$0] ?? 0) > (counts[$1] ?? 0) }
+
+        let domains = counts.keys.sorted { (counts[$0] ?? 0) > (counts[$1] ?? 0) }
+        domainCache = (deviceId, packets.count, domains)
+        return domains
     }
 }

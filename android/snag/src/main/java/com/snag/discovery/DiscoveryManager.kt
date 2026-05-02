@@ -7,6 +7,12 @@ import android.os.Build
 import androidx.annotation.RequiresApi
 import com.snag.core.SnagConfiguration
 import com.snag.core.log.SnagInternalLogger
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.cancel
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 import java.util.concurrent.Executor
 import java.util.concurrent.Executors
 
@@ -24,6 +30,7 @@ internal class DiscoveryManager(
 
 
     private val discoverExecutor = Executors.newSingleThreadExecutor()
+    private val retryScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
 
     interface DiscoveryListener {
         fun onServiceFound(serviceInfo: NsdServiceInfo)
@@ -62,21 +69,19 @@ internal class DiscoveryManager(
                 SnagInternalLogger.w("Resolve failed for ${failedInfo?.serviceName} with error: $errorCode. Attempt: $attempt")
                 
                 if (errorCode == NsdManager.FAILURE_ALREADY_ACTIVE) {
-                    // Just wait a bit and retry, likely collision
-                     discoverExecutor.execute {
-                        try { Thread.sleep(500) } catch (_: Exception) {}
+                    // Likely a collision; back off briefly and retry without blocking the executor.
+                    retryScope.launch {
+                        delay(500)
+                        resolveServiceWithRetry(serviceInfo, attempt + 1)
+                    }
+                } else if (attempt < 5) {
+                    val backoffMs = (1000L * (attempt + 1))
+                    retryScope.launch {
+                        delay(backoffMs)
                         resolveServiceWithRetry(serviceInfo, attempt + 1)
                     }
                 } else {
-                    // Other failures, retry with backoff up to a limit
-                    if (attempt < 5) {
-                        discoverExecutor.execute {
-                            try { Thread.sleep((1000 * (attempt + 1)).toLong()) } catch (_: Exception) {}
-                             resolveServiceWithRetry(serviceInfo, attempt + 1)
-                        }
-                    } else {
-                        SnagInternalLogger.w("Service resolution failed after $attempt attempts. Giving up on ${failedInfo?.serviceName}")
-                    }
+                    SnagInternalLogger.w("Service resolution failed after $attempt attempts. Giving up on ${failedInfo?.serviceName}")
                 }
             }
         })
@@ -128,5 +133,8 @@ internal class DiscoveryManager(
         } catch (e: Exception) {
             SnagInternalLogger.e(e, "Failed to stop discovery")
         }
+        try {
+            retryScope.cancel()
+        } catch (_: Exception) { }
     }
 }
