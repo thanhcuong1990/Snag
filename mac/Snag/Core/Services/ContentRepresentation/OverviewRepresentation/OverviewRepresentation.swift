@@ -2,7 +2,7 @@ import Cocoa
 
 class OverviewRepresentation: ContentRepresentation  {
 
-    private static let durationFormatter: NumberFormatter = {
+    nonisolated private static let durationFormatter: NumberFormatter = {
         let f = NumberFormatter()
         f.usesSignificantDigits = true
         f.maximumSignificantDigits = 3
