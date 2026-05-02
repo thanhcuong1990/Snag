@@ -9,7 +9,7 @@ plugins {
 }
 
 mavenPublishing {
-    coordinates("io.github.thanhcuong1990", "snag", "1.1.3")
+    coordinates("io.github.thanhcuong1990", "snag", "1.1.4")
     publishToMavenCentral(SonatypeHost.CENTRAL_PORTAL, automaticRelease = true)
     configure(AndroidSingleVariantLibrary())
 
