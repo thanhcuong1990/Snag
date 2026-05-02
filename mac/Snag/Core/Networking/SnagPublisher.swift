@@ -144,21 +144,9 @@ class SnagPublisher: NSObject {
     ) {
         switch state {
         case .ready:
-            DispatchQueue.main.async {
-                switch purpose {
-                case .primarySecure:
-                    let legacyPort = self.legacyPublisher?.port.map { String($0.rawValue) } ?? "off"
-                    SnagController.shared.publisherStatus = "Secure \(port.rawValue) | Legacy \(legacyPort)"
-                case .primaryCleartext:
-                    SnagController.shared.publisherStatus = "Listening on \(port.rawValue)"
-                }
-            }
+            break
         case .failed(let error):
             print("SnagPublisher: \(purpose) listener failed on \(port): \(error)")
-            DispatchQueue.main.async {
-                SnagController.shared.publisherStatus = "Failed: \(error.localizedDescription)"
-            }
-
             self.primaryListener = nil
 
             if retryOnFailure {
@@ -175,9 +163,6 @@ class SnagPublisher: NSObject {
             self.queue.async {
                 switch state {
                 case .ready:
-                    DispatchQueue.main.async {
-                        SnagController.shared.publisherStatus = "Connected: \(connection.endpoint)"
-                    }
                     self.receiveData(on: connection)
                 case .failed(let error):
                     print("SnagPublisher: Connection failed: \(error)")
@@ -249,7 +234,7 @@ class SnagPublisher: NSObject {
                 return
             }
         } catch {
-            DispatchQueue.main.async { SnagController.shared.publisherStatus = "Parse Error" }
+            print("SnagPublisher: parse error: \(error)")
         }
     }
 
@@ -265,10 +250,6 @@ class SnagPublisher: NSObject {
             self.deviceConnections[deviceId] = connection
         }
 
-        let statusName = packet.device?.deviceName ?? "Unknown"
-        DispatchQueue.main.async {
-            SnagController.shared.publisherStatus = "Packet from \(statusName)"
-        }
         self.enqueuePacketForMainLocked(packet)
     }
 
@@ -325,10 +306,6 @@ class SnagPublisher: NSObject {
         successPacket.project = packet.project
         self.send(packet: successPacket, toConnection: connection)
 
-        let statusName = packet.device?.deviceName ?? "Unknown"
-        DispatchQueue.main.async {
-            SnagController.shared.publisherStatus = "Authenticated: \(statusName)"
-        }
         self.enqueuePacketForMainLocked(packet)
         self.enqueuePacketForMainLocked(successPacket)
     }
@@ -482,8 +459,5 @@ extension SnagPublisher: SnagLegacyPublisherDelegate {
     
     func legacyPublisher(_ publisher: SnagLegacyPublisher, didFailWithError error: Error) {
         print("SnagPublisher: Legacy publisher error: \(error)")
-        DispatchQueue.main.async {
-             SnagController.shared.publisherStatus = "Legacy Error: \(error.localizedDescription)"
-        }
     }
 }

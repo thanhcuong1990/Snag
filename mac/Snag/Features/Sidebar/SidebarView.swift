@@ -101,26 +101,6 @@ struct SidebarView: View {
             }
 
             Spacer()
-
-            Divider()
-
-            VStack(alignment: .leading, spacing: 4) {
-                HStack(spacing: 6) {
-                    Circle()
-                        .fill(snagController.publisherStatus.contains("Listening") ? Color.green : Color.red)
-                        .frame(width: 8, height: 8)
-                    Text(snagController.publisherStatus)
-                        .font(.system(size: 10))
-                        .lineLimit(1)
-                }
-
-                if !snagController.isSecurityEnabled {
-                    Text("Security Disabled")
-                        .font(.system(size: 10))
-                        .foregroundColor(.secondary)
-                }
-            }
-            .padding(12)
         }
         .background(Color(nsColor: ThemeColor.deviceListBackgroundColor))
     }

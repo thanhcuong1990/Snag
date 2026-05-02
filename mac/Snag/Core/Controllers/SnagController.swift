@@ -45,7 +45,6 @@ class SnagController: NSObject, @MainActor SnagPublisherDelegate, ObservableObje
         }
     }
     
-    @Published var publisherStatus: String = "Stopped"
     @Published var isSecurityEnabled: Bool = SnagConfiguration.isSecurityEnabled
 
     let packetReceivedPublisher = PassthroughSubject<SnagPacket, Never>()
@@ -61,8 +60,7 @@ class SnagController: NSObject, @MainActor SnagPublisherDelegate, ObservableObje
         super.init()
         self.publisher.delegate = self
         self.publisher.startPublishing()
-        self.publisherStatus = "Starting..."
-        
+
         NotificationCenter.default.addObserver(self, selector: #selector(handleDeviceSelection), name: SnagNotifications.didSelectDevice, object: nil)
     }
     
