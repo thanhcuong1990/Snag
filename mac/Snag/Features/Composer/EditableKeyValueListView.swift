@@ -77,10 +77,9 @@ struct EditableKeyValueListView: View {
         }
 
         var arr = rows
-        if let idx = arr.firstIndex(where: { $0.id == rowId }) {
-            arr[idx] = new
-            write(arr)
-        }
+        guard let idx = arr.firstIndex(where: { $0.id == rowId }), arr[idx] != new else { return }
+        arr[idx] = new
+        write(arr)
     }
 
     private func write(_ arr: [DraftKeyValue]) {

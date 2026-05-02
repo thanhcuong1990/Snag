@@ -89,15 +89,15 @@ struct BodyEditorView: View {
         return s
     }
 
+    private static let smartQuoteMap: [Character: Character] = [
+        "\u{201C}": "\"", "\u{201D}": "\"",
+        "\u{2018}": "'",  "\u{2019}": "'",
+    ]
+
     /// AppKit's smart-quote substitution sometimes slips past `isAutomaticQuoteSubstitutionEnabled`,
     /// leaving curly quotes that JSON parsers reject. Normalize them so Format can recover.
     private static func sanitizeSmartQuotes(_ s: String) -> String {
-        var out = s
-        out = out.replacingOccurrences(of: "\u{201C}", with: "\"") // “
-        out = out.replacingOccurrences(of: "\u{201D}", with: "\"") // ”
-        out = out.replacingOccurrences(of: "\u{2018}", with: "'")  // ‘
-        out = out.replacingOccurrences(of: "\u{2019}", with: "'")  // ’
-        return out
+        String(s.map { smartQuoteMap[$0] ?? $0 })
     }
 
     private var base64ReadOnly: some View {
@@ -140,7 +140,6 @@ struct BodyEditorView: View {
         )
     }
 
-    /// Edit-as-text view of the body. Only meaningful for `.text` and `.json`.
     private var bodyTextBinding: Binding<String> {
         Binding(
             get: {

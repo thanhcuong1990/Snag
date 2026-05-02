@@ -27,7 +27,7 @@ struct DraftResponseView: View {
             }
 
             if let duration = draft.lastRun?.durationMS {
-                Text(formatDuration(duration))
+                Text(OverviewRepresentation.formatDuration(duration))
                     .font(.system(size: 10).monospaced())
                     .foregroundColor(.secondary)
             }
@@ -152,7 +152,7 @@ struct DraftResponseView: View {
                 Text("Binary Data".localized)
                     .font(.system(size: 13, weight: .semibold))
                 Text(String(format: "Size: %@".localized,
-                            formatBytes(representation.originalData?.count ?? 0)))
+                            OverviewRepresentation.formatBytes(representation.originalData?.count ?? 0)))
                     .font(.system(size: 11))
                     .foregroundColor(.secondary)
                 Spacer()
@@ -166,11 +166,11 @@ struct DraftResponseView: View {
         HStack(spacing: 8) {
             if let imageRep = representation as? DataImageRepresentation,
                let image = imageRep.image {
-                Text("\(Int(image.size.width))×\(Int(image.size.height)) • \(formatBytes(data.count))")
+                Text("\(Int(image.size.width))×\(Int(image.size.height)) • \(OverviewRepresentation.formatBytes(data.count))")
                     .font(.system(size: 10))
                     .foregroundColor(.secondary)
             } else {
-                Text(formatBytes(data.count))
+                Text(OverviewRepresentation.formatBytes(data.count))
                     .font(.system(size: 10))
                     .foregroundColor(.secondary)
             }
@@ -200,7 +200,6 @@ struct DraftResponseView: View {
         return data
     }
 
-    /// Find Content-Type case-insensitively across response headers.
     private func responseContentType() -> String? {
         let headers = draft.lastRun?.responseHeaders ?? [:]
         return headers.first(where: { $0.key.caseInsensitiveCompare("content-type") == .orderedSame })?.value
@@ -222,10 +221,6 @@ struct DraftResponseView: View {
         } else {
             pb.setData(data, forType: .fileContents)
         }
-    }
-
-    private func formatBytes(_ bytes: Int) -> String {
-        ByteCountFormatter.string(fromByteCount: Int64(bytes), countStyle: .file)
     }
 
     private var headersView: some View {
@@ -263,15 +258,10 @@ struct DraftResponseView: View {
 
     private func color(for code: Int) -> Color {
         switch code {
-        case 200..<300: return Color(red: 34/255, green: 197/255, blue: 94/255)
-        case 300..<400: return Color(red: 245/255, green: 158/255, blue: 11/255)
-        case 400..<600: return Color(red: 239/255, green: 68/255, blue: 68/255)
+        case 200..<300: return .statusGreen
+        case 300..<400: return .statusOrange
+        case 400..<600: return .statusRed
         default: return .secondary
         }
-    }
-
-    private func formatDuration(_ ms: Double) -> String {
-        if ms < 1000 { return String(format: "%.0f ms", ms) }
-        return String(format: "%.2f s", ms / 1000.0)
     }
 }

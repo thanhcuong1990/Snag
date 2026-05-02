@@ -1,9 +1,6 @@
 import SwiftUI
 import AppKit
-import UniformTypeIdentifiers
 
-/// Editor for `multipart/form-data` request bodies. Each row is a part with a
-/// type (Text/File), a field name, and a value. File parts open NSOpenPanel.
 struct MultipartEditorView: View {
     @ObservedObject var draft: RequestDraft
 
@@ -95,10 +92,9 @@ struct MultipartEditorView: View {
             return
         }
         var arr = rows
-        if let idx = arr.firstIndex(where: { $0.id == rowId }) {
-            arr[idx] = new
-            write(arr)
-        }
+        guard let idx = arr.firstIndex(where: { $0.id == rowId }), arr[idx] != new else { return }
+        arr[idx] = new
+        write(arr)
     }
 
     private func write(_ arr: [DraftMultipartPart]) {
@@ -180,7 +176,7 @@ private struct MultipartRow: View {
 
     private var fileButtonTitle: String {
         if let s = row.fileURL, let url = URL(string: s) {
-            return row.fileName?.nilIfEmpty ?? url.lastPathComponent
+            return row.fileName ?? url.lastPathComponent
         }
         return "Choose File…".localized
     }
@@ -195,18 +191,12 @@ private struct MultipartRow: View {
         var r = row
         r.fileURL = url.absoluteString
         r.fileName = url.lastPathComponent
-        if r.contentType?.isEmpty ?? true {
-            if let utt = UTType(filenameExtension: url.pathExtension), let mime = utt.preferredMIMEType {
-                r.contentType = mime
-            }
+        if r.contentType?.nilIfEmpty == nil {
+            r.contentType = url.mimeType
         }
         if r.name.isEmpty {
             r.name = url.deletingPathExtension().lastPathComponent
         }
         update(r)
     }
-}
-
-private extension String {
-    var nilIfEmpty: String? { isEmpty ? nil : self }
 }

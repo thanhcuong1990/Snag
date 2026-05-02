@@ -40,15 +40,13 @@ struct DraftCurlPreviewView: View {
 
         if isMultipart {
             for p in draft.data.multipartParts where p.enabled && !p.name.isEmpty {
-                let name = p.name.replacingOccurrences(of: "'", with: "'\\''")
+                let name = Self.shellEscape(p.name)
                 switch p.kind {
                 case .text:
-                    let v = p.textValue.replacingOccurrences(of: "'", with: "'\\''")
-                    parts.append("-F '\(name)=\(v)'")
+                    parts.append("-F '\(name)=\(Self.shellEscape(p.textValue))'")
                 case .file:
                     if let s = p.fileURL, let url = URL(string: s), url.isFileURL {
-                        let path = url.path.replacingOccurrences(of: "'", with: "'\\''")
-                        var spec = "@\(path)"
+                        var spec = "@\(Self.shellEscape(url.path))"
                         if let ct = p.contentType?.nilIfEmpty {
                             spec += ";type=\(ct)"
                         }
@@ -69,8 +67,7 @@ struct DraftCurlPreviewView: View {
             } else {
                 bodyText = "[binary]"
             }
-            let escaped = bodyText.replacingOccurrences(of: "'", with: "'\\''")
-            parts.append("--data-raw '\(escaped)'")
+            parts.append("--data-raw '\(Self.shellEscape(bodyText))'")
         }
 
         let url = draft.data.rebuildURL()
@@ -83,8 +80,9 @@ struct DraftCurlPreviewView: View {
         pb.clearContents()
         pb.setString(curlCommand, forType: .string)
     }
-}
 
-private extension String {
-    var nilIfEmpty: String? { isEmpty ? nil : self }
+    /// Bourne-shell single-quote escape: end the quoted run, emit `'\''`, restart it.
+    private static func shellEscape(_ s: String) -> String {
+        s.replacingOccurrences(of: "'", with: "'\\''")
+    }
 }

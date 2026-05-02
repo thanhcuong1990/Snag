@@ -1,10 +1,9 @@
 import Foundation
-import UniformTypeIdentifiers
 
 extension RequestDraftData {
 
-    /// Build a draft from a captured packet. Captured headers are `[String: String]` upstream,
-    /// so duplicate header keys are already collapsed at capture time and cannot be recovered.
+    /// Captured headers arrive as `[String: String]`, so duplicate keys are already
+    /// collapsed at capture time and cannot be recovered here.
     static func from(_ packet: SnagPacket) -> RequestDraftData {
         let info = packet.requestInfo
         let url = info?.url ?? ""
@@ -99,7 +98,7 @@ extension RequestDraftData {
 
         if isMultipart {
             let (data, contentType) = try Self.buildMultipartBody(parts: multipartParts)
-            guard data.count <= 50 * 1024 * 1024 else {
+            guard data.count <= DraftLimits.multipartMaxBytes else {
                 throw DraftValidationError.bodyTooLarge
             }
             req.setValue(contentType, forHTTPHeaderField: "Content-Type")
@@ -107,8 +106,7 @@ extension RequestDraftData {
         } else if let bodyBase64 = bodyBase64,
                   !bodyBase64.isEmpty,
                   let data = Data(base64Encoded: bodyBase64) {
-            // 10 MB editor cap — anything larger is unsupported in v1.
-            guard data.count <= 10 * 1024 * 1024 else {
+            guard data.count <= DraftLimits.bodyMaxBytes else {
                 throw DraftValidationError.bodyTooLarge
             }
             req.httpBody = data
@@ -141,16 +139,18 @@ extension RequestDraftData {
                 guard let urlString = part.fileURL,
                       let fileURL = URL(string: urlString),
                       fileURL.isFileURL else {
-                    throw DraftValidationError.invalidHeader("multipart part \"\(part.name)\" has no file")
+                    throw DraftValidationError.multipartMissingFile(name: part.name)
                 }
                 let data: Data
                 do {
                     data = try Data(contentsOf: fileURL)
                 } catch {
-                    throw DraftValidationError.invalidHeader("multipart part \"\(part.name)\": \(error.localizedDescription)")
+                    throw DraftValidationError.multipartFileReadFailed(
+                        name: part.name, underlying: error.localizedDescription
+                    )
                 }
                 let filename = part.fileName?.nilIfEmpty ?? fileURL.lastPathComponent
-                let ct = part.contentType?.nilIfEmpty ?? mimeType(for: fileURL)
+                let ct = part.contentType?.nilIfEmpty ?? fileURL.mimeType
                 body.append(Data("Content-Disposition: form-data; name=\"\(escapeFormDataValue(part.name))\"; filename=\"\(escapeFormDataValue(filename))\"\r\n".utf8))
                 body.append(Data("Content-Type: \(ct)\r\n".utf8))
                 body.append(crlf)
@@ -169,15 +169,4 @@ extension RequestDraftData {
          .replacingOccurrences(of: "\n", with: "")
          .replacingOccurrences(of: "\"", with: "\\\"")
     }
-
-    private static func mimeType(for url: URL) -> String {
-        if let utt = UTType(filenameExtension: url.pathExtension), let mime = utt.preferredMIMEType {
-            return mime
-        }
-        return "application/octet-stream"
-    }
-}
-
-private extension String {
-    var nilIfEmpty: String? { isEmpty ? nil : self }
 }

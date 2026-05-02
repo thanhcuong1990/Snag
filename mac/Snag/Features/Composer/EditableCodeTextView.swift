@@ -1,8 +1,6 @@
 import SwiftUI
 import AppKit
 
-/// Editable monospaced text view used by the body editor. Optional JSON syntax
-/// highlighting is applied when `highlightJSON == true`.
 struct EditableCodeTextView: NSViewRepresentable {
     @Binding var text: String
     var highlightJSON: Bool = false
@@ -45,7 +43,7 @@ struct EditableCodeTextView: NSViewRepresentable {
         scrollView.backgroundColor = DetailsTheme.jsonViewerBackgroundNSColor()
 
         textView.string = text
-        applyAttributes(textView)
+        applyAttributes(textView, coordinator: context.coordinator)
         return scrollView
     }
 
@@ -56,11 +54,11 @@ struct EditableCodeTextView: NSViewRepresentable {
         if textView.string != text {
             let selected = textView.selectedRange()
             textView.string = text
-            applyAttributes(textView)
+            applyAttributes(textView, coordinator: context.coordinator)
             let safeLocation = min(selected.location, (textView.string as NSString).length)
             textView.setSelectedRange(NSRange(location: safeLocation, length: 0))
         } else {
-            applyAttributes(textView)
+            applyAttributes(textView, coordinator: context.coordinator)
         }
 
         if let appearance = NSAppearance(named: colorScheme == .dark ? .darkAqua : .aqua) {
@@ -70,18 +68,23 @@ struct EditableCodeTextView: NSViewRepresentable {
         }
     }
 
-    private func applyAttributes(_ textView: NSTextView) {
+    private func applyAttributes(_ textView: NSTextView, coordinator: Coordinator) {
         guard let storage = textView.textStorage else { return }
+        let isDark = colorScheme == .dark
+        let key = Coordinator.AttrKey(text: textView.string, isDark: isDark, highlightJSON: highlightJSON)
+        if coordinator.lastAttrKey == key { return }
+        coordinator.lastAttrKey = key
+
         let full = NSRange(location: 0, length: (textView.string as NSString).length)
         storage.beginEditing()
         storage.setAttributes([
             .foregroundColor: ThemeColor.textColor,
             .font: Self.regularFont
         ], range: full)
-        if highlightJSON, textView.string.count <= 200 * 1024 {
+        if highlightJSON, textView.string.count <= DraftLimits.highlighterMaxBytes {
             JSONSyntaxHighlighter.highlight(storage: storage,
                                             text: textView.string,
-                                            isDark: colorScheme == .dark)
+                                            isDark: isDark)
         }
         storage.endEditing()
     }
@@ -89,7 +92,13 @@ struct EditableCodeTextView: NSViewRepresentable {
     private static let regularFont = NSFont.monospacedSystemFont(ofSize: 12, weight: .regular)
 
     final class Coordinator: NSObject, NSTextViewDelegate {
+        struct AttrKey: Equatable {
+            let text: String
+            let isDark: Bool
+            let highlightJSON: Bool
+        }
         var parent: EditableCodeTextView
+        var lastAttrKey: AttrKey?
         init(_ parent: EditableCodeTextView) { self.parent = parent }
 
         func textDidChange(_ notification: Notification) {
@@ -99,9 +108,8 @@ struct EditableCodeTextView: NSViewRepresentable {
     }
 }
 
-/// Cheap regex-based JSON colourizer. Lossy on edge cases (escaped quotes inside
-/// strings, etc.) but pleasant on typical request bodies and free of any external
-/// dependency.
+/// Lossy on edge cases (escaped quotes inside strings, etc.) — pleasant on
+/// typical request bodies, but don't rely on it for correctness.
 enum JSONSyntaxHighlighter {
     private static let stringRegex = try? NSRegularExpression(
         pattern: "\"(?:[^\"\\\\]|\\\\.)*\"", options: []

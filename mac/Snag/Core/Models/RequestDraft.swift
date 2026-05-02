@@ -13,9 +13,8 @@ enum DraftMultipartPartKind: String, Codable {
     case file
 }
 
-/// One field in a multipart/form-data body. Either a text value or a file reference
-/// (resolved at send time). The file is *not* copied into the draft; we keep the
-/// original URL so users can re-pick if it moves.
+/// File parts are resolved at send time — the file is *not* copied into the draft, so
+/// users can re-pick if it moves.
 struct DraftMultipartPart: Codable, Identifiable, Equatable, Hashable {
     var id: String
     var name: String
@@ -93,6 +92,8 @@ enum DraftValidationError: LocalizedError {
     case invalidScheme(String)
     case invalidHeader(String)
     case bodyTooLarge
+    case multipartMissingFile(name: String)
+    case multipartFileReadFailed(name: String, underlying: String)
 
     var errorDescription: String? {
         switch self {
@@ -104,6 +105,10 @@ enum DraftValidationError: LocalizedError {
             return "Header '\(key)' contains illegal characters (CR/LF).".localized
         case .bodyTooLarge:
             return "Request body exceeds the size limit.".localized
+        case .multipartMissingFile(let name):
+            return "Multipart part \"\(name)\" has no file selected.".localized
+        case .multipartFileReadFailed(let name, let underlying):
+            return "Multipart part \"\(name)\": \(underlying)".localized
         }
     }
 }
@@ -159,6 +164,7 @@ struct RequestDraftData: Codable, Identifiable, Equatable {
     }
 
     // Custom decode tolerates older persisted JSON missing `multipartParts`.
+    // Auto-synthesized Codable would fail on the missing key.
     private enum CodingKeys: String, CodingKey {
         case id, name, url, method, headers, queryParams,
              bodyBase64, bodyEncoding, bodyContentType, multipartParts,
@@ -185,13 +191,9 @@ struct RequestDraftData: Codable, Identifiable, Equatable {
         updatedAt = try c.decode(Date.self, forKey: .updatedAt)
     }
 
-    /// Display name fallback: "<METHOD> <path>" or "Untitled" when empty.
     var displayName: String {
         if !name.isEmpty { return name }
-        let path = URL(string: url)?.path
-        if let path = path, !path.isEmpty {
-            return "\(method) \(path)"
-        }
+        if let path = URL(string: url)?.path, !path.isEmpty { return "\(method) \(path)" }
         if !url.isEmpty { return "\(method) \(url)" }
         return "Untitled".localized
     }
