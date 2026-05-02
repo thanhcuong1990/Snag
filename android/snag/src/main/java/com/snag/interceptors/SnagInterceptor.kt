@@ -9,7 +9,6 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.launch
-import okhttp3.Headers
 import okhttp3.Interceptor
 import okhttp3.RequestBody
 import okhttp3.Response
@@ -50,7 +49,7 @@ class SnagInterceptor private constructor() : Interceptor {
 
             val cap = maxBodyCaptureBytes
             val (responseBytes, responseTruncated) = captureResponseBytes(response, cap)
-            val (requestBytes, requestTruncated) = captureRequestBytes(request.body, request.headers, cap)
+            val (requestBytes, requestTruncated) = captureRequestBytes(request.body, cap)
 
             val endDateSeconds = response.receivedResponseAtMillis / 1000.0
             val responseHeaders = response.headers.toMap()
@@ -97,8 +96,6 @@ class SnagInterceptor private constructor() : Interceptor {
     }
 
     private fun captureResponseBytes(response: Response, cap: Int): Pair<ByteArray?, Boolean> {
-        if (shouldSkipBody(response.headers)) return null to false
-
         val contentLength = response.body?.contentLength() ?: -1L
         if (contentLength > cap) return null to true
 
@@ -112,10 +109,9 @@ class SnagInterceptor private constructor() : Interceptor {
         }
     }
 
-    private fun captureRequestBytes(body: RequestBody?, requestHeaders: Headers, cap: Int): Pair<ByteArray?, Boolean> {
+    private fun captureRequestBytes(body: RequestBody?, cap: Int): Pair<ByteArray?, Boolean> {
         if (body == null) return null to false
         if (body.isOneShot() || body.isDuplex()) return null to false
-        if (shouldSkipBody(requestHeaders)) return null to false
 
         val contentLength = try { body.contentLength() } catch (_: Exception) { -1L }
         if (contentLength > cap) return null to true
@@ -137,12 +133,6 @@ class SnagInterceptor private constructor() : Interceptor {
         }
     }
 
-    private fun shouldSkipBody(headers: Headers): Boolean {
-        val contentType = headers["Content-Type"]?.lowercase() ?: return false
-        return SKIP_PREFIXES.any { contentType.startsWith(it) } ||
-                SKIP_EXACT.any { contentType.startsWith(it) }
-    }
-
     internal fun shutdown() {
         captureScope.cancel()
     }
@@ -153,9 +143,6 @@ class SnagInterceptor private constructor() : Interceptor {
 
         @Volatile
         private var maxBodyCaptureBytes: Int = 1_048_576
-
-        private val SKIP_PREFIXES = listOf("multipart/", "image/", "video/", "audio/")
-        private val SKIP_EXACT = listOf("application/octet-stream")
 
         @JvmStatic
         fun getInstance(): SnagInterceptor =

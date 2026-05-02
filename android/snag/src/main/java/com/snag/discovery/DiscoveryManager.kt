@@ -56,31 +56,34 @@ internal class DiscoveryManager(
     }
     
     private fun resolveServiceWithRetry(serviceInfo: NsdServiceInfo, attempt: Int = 0) {
+        // Captured so the listener overrides can use `serviceInfo` (matching the supertype
+        // parameter name) without shadowing the outer non-null target.
+        val targetInfo = serviceInfo
         @Suppress("DEPRECATION")
-        nsdManager?.resolveService(serviceInfo, object : NsdResolveListener {
-            override fun onServiceResolved(resolvedInfo: NsdServiceInfo?) {
-                resolvedInfo ?: return
-                SnagInternalLogger.d("Service resolved: ${resolvedInfo.serviceName} at ${resolvedInfo.host}:${resolvedInfo.port}")
-                listener.onServiceFound(resolvedInfo)
+        nsdManager?.resolveService(targetInfo, object : NsdResolveListener {
+            override fun onServiceResolved(serviceInfo: NsdServiceInfo?) {
+                serviceInfo ?: return
+                SnagInternalLogger.d("Service resolved: ${serviceInfo.serviceName} at ${serviceInfo.host}:${serviceInfo.port}")
+                listener.onServiceFound(serviceInfo)
             }
 
-            override fun onResolveFailed(failedInfo: NsdServiceInfo?, errorCode: Int) {
-                SnagInternalLogger.w("Resolve failed for ${failedInfo?.serviceName} with error: $errorCode. Attempt: $attempt")
-                
+            override fun onResolveFailed(serviceInfo: NsdServiceInfo?, errorCode: Int) {
+                SnagInternalLogger.w("Resolve failed for ${serviceInfo?.serviceName} with error: $errorCode. Attempt: $attempt")
+
                 if (errorCode == NsdManager.FAILURE_ALREADY_ACTIVE) {
                     // Likely a collision; back off briefly and retry without blocking the executor.
                     retryScope.launch {
                         delay(500)
-                        resolveServiceWithRetry(serviceInfo, attempt + 1)
+                        resolveServiceWithRetry(targetInfo, attempt + 1)
                     }
                 } else if (attempt < 5) {
                     val backoffMs = (1000L * (attempt + 1))
                     retryScope.launch {
                         delay(backoffMs)
-                        resolveServiceWithRetry(serviceInfo, attempt + 1)
+                        resolveServiceWithRetry(targetInfo, attempt + 1)
                     }
                 } else {
-                    SnagInternalLogger.w("Service resolution failed after $attempt attempts. Giving up on ${failedInfo?.serviceName}")
+                    SnagInternalLogger.w("Service resolution failed after $attempt attempts. Giving up on ${serviceInfo?.serviceName}")
                 }
             }
         })
