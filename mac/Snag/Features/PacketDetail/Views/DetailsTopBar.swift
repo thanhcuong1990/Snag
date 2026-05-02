@@ -36,8 +36,23 @@ struct DetailsTopBar: View {
                 .font(.system(size: 13, weight: .regular))
                 .lineLimit(1)
                 .foregroundColor(Color(nsColor: ThemeColor.labelColor))
-            
+
             Spacer()
+
+            if let packet = packet {
+                Button(action: {
+                    _ = ComposerController.shared.newDraft(from: packet)
+                    SnagController.shared.selectCompose()
+                }) {
+                    HStack(spacing: 4) {
+                        Image(systemName: "pencil.and.outline")
+                            .font(.system(size: 11))
+                        Text("Edit & Resend".localized)
+                            .font(.system(size: 11))
+                    }
+                }
+                .help("Open this request in the Composer".localized)
+            }
         }
         .padding(.horizontal, 10)
         .padding(.vertical, 8)

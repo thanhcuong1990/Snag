@@ -50,7 +50,12 @@ struct PacketsView: View {
                                     NSPasteboard.general.setString(curl, forType: .string)
                                 }
                             }
-                            
+
+                            Button("Edit & Resend".localized) {
+                                _ = ComposerController.shared.newDraft(from: item)
+                                SnagController.shared.selectCompose()
+                            }
+
                             if viewModelWrapper.isSavedMode {
                                 Button("Delete") {
                                     viewModelWrapper.deletePacket(item)

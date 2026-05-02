@@ -52,7 +52,7 @@ struct SidebarDeviceRow: View {
 
     private func selectDevice() {
         if let project = SnagController.shared.projectControllers.first(where: { $0.deviceControllers.contains(device) }) {
-            SnagController.shared.selectedProjectController = project
+            SnagController.shared.selectProject(project)
             project.selectedDeviceController = device
         }
     }

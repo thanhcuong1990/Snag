@@ -5,7 +5,11 @@ struct SidebarView: View {
     @ObservedObject var searchViewModel = SearchViewModel.shared
     @ObservedObject var languageManager = LanguageManager.shared
     @Environment(\.colorScheme) var colorScheme
-    
+
+    private var savedSelected: Bool {
+        snagController.route == .saved
+    }
+
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
             // Sidebar Title/Header
@@ -15,7 +19,7 @@ struct SidebarView: View {
                 .padding(.horizontal, 16)
                 .padding(.top, 20)
                 .padding(.bottom, 8)
-            
+
             ScrollView {
                 VStack(alignment: .leading, spacing: 20) {
                     if snagController.projectControllers.isEmpty {
@@ -27,7 +31,7 @@ struct SidebarView: View {
                     }
                 }
                 .padding(.vertical, 8)
-                
+
                 // Saved Requests Section
                 VStack(alignment: .leading, spacing: 0) {
                     Text("LOCAL".localized)
@@ -36,7 +40,7 @@ struct SidebarView: View {
                         .padding(.horizontal, 16)
                         .padding(.top, 12)
                         .padding(.bottom, 8)
-                    
+
                     VStack(alignment: .leading, spacing: 0) {
                         HStack {
                             Image(systemName: "folder")
@@ -48,18 +52,22 @@ struct SidebarView: View {
                         .padding(.vertical, 4)
                         .padding(.horizontal, 16)
                         .contentShape(Rectangle())
-                        .background(snagController.selectedProjectController == nil ? Color(nsColor: .selectedContentBackgroundColor) : Color.clear)
-                        .foregroundColor(snagController.selectedProjectController == nil ? .white : .secondary)
+                        .background(savedSelected ? Color(nsColor: .selectedContentBackgroundColor) : Color.clear)
+                        .foregroundColor(savedSelected ? .white : .secondary)
                         .onTapGesture {
-                            snagController.selectedProjectController = nil 
+                            snagController.selectSaved()
                         }
                     }
                 }
+
+                // Composer Section
+                DraftSidebarSection()
+                    .padding(.top, 8)
             }
-            
+
             if !searchViewModel.recentSearches.isEmpty {
                 Divider()
-                
+
                 VStack(alignment: .leading, spacing: 0) {
                     HStack {
                         Text("RECENT SEARCHES".localized)
@@ -75,7 +83,7 @@ struct SidebarView: View {
                     }
                     .padding(.horizontal, 16)
                     .padding(.vertical, 8)
-                    
+
                     ScrollView {
                         VStack(alignment: .leading, spacing: 1) {
                             ForEach(searchViewModel.recentSearches, id: \.self) { search in
@@ -91,11 +99,11 @@ struct SidebarView: View {
                 }
                 .padding(.bottom, 8)
             }
-            
+
             Spacer()
-            
+
             Divider()
-            
+
             VStack(alignment: .leading, spacing: 4) {
                 HStack(spacing: 6) {
                     Circle()
@@ -105,7 +113,7 @@ struct SidebarView: View {
                         .font(.system(size: 10))
                         .lineLimit(1)
                 }
-                
+
                 if !snagController.isSecurityEnabled {
                     Text("Security Disabled")
                         .font(.system(size: 10))

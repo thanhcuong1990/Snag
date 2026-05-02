@@ -10,19 +10,19 @@ struct SnagNotifications {
     static let didSelectSavedPacket = NSNotification.Name("DidSelectSavedPacket") // New notification for saved packets
     static let didUpdateSavedPackets = NSNotification.Name("DidUpdateSavedPackets") // New notification for list updates
     static let didUpdateAppInfo = NSNotification.Name("DidUpdateAppInfo") // For bundleId propagation
+    // Composer
+    static let didOpenDraft = NSNotification.Name("DidOpenDraft")
+    static let didCloseDraft = NSNotification.Name("DidCloseDraft")
+    static let didUpdateDrafts = NSNotification.Name("DidUpdateDrafts")
+    static let didFinishDraftRun = NSNotification.Name("DidFinishDraftRun")
 }
 
 @MainActor
 class SnagController: NSObject, @MainActor SnagPublisherDelegate, ObservableObject {
     
     static let shared = SnagController()
-    
-    enum MainTab {
-        case network
-        case logs
-    }
-    
-    @Published var selectedTab: MainTab = .network {
+
+    @Published var route: MainContentRoute = .network {
         didSet {
             DispatchQueue.main.async {
                 self.updateLogStreamingState()
@@ -74,8 +74,8 @@ class SnagController: NSObject, @MainActor SnagPublisherDelegate, ObservableObje
         for project in self.projectControllers {
             for device in project.deviceControllers {
                 let isSelected = (project == self.selectedProjectController) && (device == project.selectedDeviceController)
-                let shouldStream = isSelected && (self.selectedTab == .logs)
-                
+                let shouldStream = isSelected && (self.route == .logs)
+
                 // Update isLogsPaused state only if it differs from the desired state
                 // isLogsPaused needs to be false if streaming is desired
                 if device.isLogsPaused == shouldStream {
@@ -212,6 +212,24 @@ class SnagController: NSObject, @MainActor SnagPublisherDelegate, ObservableObje
         }
     }
     
+    // MARK: - Route helpers
+
+    func selectProject(_ project: SnagProjectController?) {
+        self.selectedProjectController = project
+        if self.route == .saved || self.route == .compose {
+            self.route = .network
+        }
+    }
+
+    func selectSaved() {
+        self.selectedProjectController = nil
+        self.route = .saved
+    }
+
+    func selectCompose() {
+        self.route = .compose
+    }
+
     // Unified Accessor for Current Packet (Live or Saved)
     var currentSelectedPacket: SnagPacket? {
         if let project = selectedProjectController,

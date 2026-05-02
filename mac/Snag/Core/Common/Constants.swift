@@ -13,4 +13,10 @@ enum SnagConstants {
     static let packetsSplitRatioKey = "packetsSplitRatio"
     static let requestTabPersistenceKey = "requestTabPersistence"
     static let responseTabPersistenceKey = "responseTabPersistence"
+
+    // Composer
+    static let composerEditorResponseSplitRatioKey = "composerEditorResponseSplitRatio"
+    static let composerEditorTabKey = "composerEditorTab"
+    static let composerOpenDraftIdsKey = "composerOpenDraftIds"
+    static let composerActiveDraftIdKey = "composerActiveDraftId"
 }

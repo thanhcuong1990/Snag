@@ -68,7 +68,102 @@ class SnagMenu {
         editMenu.addItem(NSMenuItem.separator())
         editMenu.addItem(withTitle: "Find...".localized, action: #selector(FindActionResponder.performFindPanelAction(_:)), keyEquivalent: "f")
 
+        // Request Menu
+        let requestMenuItem = NSMenuItem()
+        mainMenu.addItem(requestMenuItem)
+
+        let requestMenu = NSMenu(title: "Request".localized)
+        requestMenuItem.submenu = requestMenu
+
+        let newDraftItem = NSMenuItem(title: "New Draft".localized,
+                                      action: #selector(RequestMenuActions.newDraft(_:)),
+                                      keyEquivalent: "n")
+        newDraftItem.target = RequestMenuActions.shared
+        requestMenu.addItem(newDraftItem)
+
+        let sendItem = NSMenuItem(title: "Send".localized,
+                                  action: #selector(RequestMenuActions.sendActiveDraft(_:)),
+                                  keyEquivalent: "\r")
+        sendItem.target = RequestMenuActions.shared
+        requestMenu.addItem(sendItem)
+
+        let cancelItem = NSMenuItem(title: "Cancel Send".localized,
+                                    action: #selector(RequestMenuActions.cancelActiveDraft(_:)),
+                                    keyEquivalent: ".")
+        cancelItem.target = RequestMenuActions.shared
+        requestMenu.addItem(cancelItem)
+
+        requestMenu.addItem(NSMenuItem.separator())
+
+        let duplicateItem = NSMenuItem(title: "Duplicate Draft".localized,
+                                       action: #selector(RequestMenuActions.duplicateActiveDraft(_:)),
+                                       keyEquivalent: "d")
+        duplicateItem.withModifierMask([.command, .shift])
+        duplicateItem.target = RequestMenuActions.shared
+        requestMenu.addItem(duplicateItem)
+
+        let closeItem = NSMenuItem(title: "Close Draft".localized,
+                                   action: #selector(RequestMenuActions.closeActiveDraft(_:)),
+                                   keyEquivalent: "w")
+        closeItem.target = RequestMenuActions.shared
+        requestMenu.addItem(closeItem)
+
         NSApp.mainMenu = mainMenu
+    }
+}
+
+@MainActor
+final class RequestMenuActions: NSObject, NSMenuItemValidation {
+    static let shared = RequestMenuActions()
+
+    @objc func newDraft(_ sender: Any?) {
+        _ = ComposerController.shared.newBlankDraft()
+        SnagController.shared.selectCompose()
+    }
+
+    @objc func sendActiveDraft(_ sender: Any?) {
+        guard let draft = ComposerController.shared.activeDraft else { return }
+        RequestSender.shared.send(draft)
+    }
+
+    @objc func cancelActiveDraft(_ sender: Any?) {
+        guard let id = ComposerController.shared.activeDraftId else { return }
+        RequestSender.shared.cancel(id)
+    }
+
+    @objc func duplicateActiveDraft(_ sender: Any?) {
+        guard let draft = ComposerController.shared.activeDraft else { return }
+        let copy = RequestDraftStore.shared.duplicate(draft)
+        ComposerController.shared.open(copy)
+    }
+
+    @objc func closeActiveDraft(_ sender: Any?) {
+        guard let id = ComposerController.shared.activeDraftId else { return }
+        ComposerController.shared.close(id)
+    }
+
+    func validateMenuItem(_ menuItem: NSMenuItem) -> Bool {
+        let onComposer = SnagController.shared.route == .compose
+        let hasActive = ComposerController.shared.activeDraftId != nil
+        let isSending: Bool = {
+            guard let id = ComposerController.shared.activeDraftId else { return false }
+            return RequestSender.shared.isSending(draftId: id)
+        }()
+
+        switch menuItem.action {
+        case #selector(newDraft(_:)):
+            return true
+        case #selector(sendActiveDraft(_:)):
+            guard onComposer, let draft = ComposerController.shared.activeDraft else { return false }
+            return !draft.data.url.isEmpty && !isSending
+        case #selector(cancelActiveDraft(_:)):
+            return onComposer && isSending
+        case #selector(duplicateActiveDraft(_:)),
+             #selector(closeActiveDraft(_:)):
+            return onComposer && hasActive
+        default:
+            return true
+        }
     }
 }
 
