@@ -62,6 +62,8 @@ You can verify that traffic is encrypted using **Wireshark**:
 
 ## 🖥️ Desktop Viewer (Mac)
 
+Minimum supported macOS: **macOS 12.4+**.
+
 ### Download from GitHub Releases (Recommended)
 
 1. Download the latest `Snag_<version>.dmg` from the [Releases](https://github.com/thanhcuong1990/Snag/releases) page.
@@ -79,6 +81,17 @@ sudo xattr -rd com.apple.quarantine "/Applications/Snag.app/"
 1. Clone the repository.
 2. Open `mac/Snag.xcodeproj` in Xcode.
 3. Build and Run.
+
+### Features
+
+- **Live capture** — packets stream into the viewer in real time as your device makes requests; sidebar groups by device and project.
+- **Search & filter** — full-text search across URL/method/headers/body with recent-search history.
+- **Packet detail** — request/response headers, body preview (JSON / text / image / hex), timing, and copy-as-cURL.
+- **Composer (Snag's request runner)** — multi-tab editor for crafting and re-running HTTP requests, with key/value editors for params, headers, body (text / JSON / multipart), and an inline response pane.
+- **Saved Requests** — pin frequently used drafts to the sidebar; tabs persist across launches.
+- **Import** — paste or open a file containing **cURL** (single or batch), **HAR 1.2**, **Postman Collection v2.1**, or **raw HTTP/1.1** wire format. Snag auto-detects the format.
+- **Export** — bulk-export selected drafts as **HAR** or **Postman Collection**, or copy a single draft as a code snippet in **cURL**, **HTTPie**, **raw HTTP**, **Python requests**, **JS fetch**, **JS axios**, **Node http**, or **PowerShell**.
+- **Auto-update** — Sparkle-based silent updates from the project's AppCast feed.
 
 ### 🔐 Device Connection
 
@@ -214,9 +227,11 @@ Snag.start(configuration: config)
 
 ### Installation
 
+Minimum supported Android: **API 24 (Android 7.0)**.
+
 ```groovy
 // Use debugImplementation to automatically exclude Snag from release builds
-debugImplementation 'io.github.thanhcuong1990:snag:1.0.21'
+debugImplementation 'io.github.thanhcuong1990:snag:1.1.4'
 ```
 
 > [!TIP]

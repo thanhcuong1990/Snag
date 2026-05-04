@@ -32,6 +32,87 @@ final class ComposerController: ObservableObject {
         return draft
     }
 
+    /// Project parsed import data onto a draft. When `replaceActive` is true and an active
+    /// draft exists, the active draft's URL/method/headers/body etc. are replaced — its
+    /// `id`, `name`, and `createdAt` are kept so tabs and bookmarks survive.
+    @discardableResult
+    func importDraft(_ data: RequestDraftData, replaceActive: Bool = false) -> RequestDraft {
+        if replaceActive, let active = activeDraft {
+            var merged = data
+            merged.id = active.data.id
+            merged.name = active.data.name
+            merged.createdAt = active.data.createdAt
+            merged.updatedAt = Date()
+            active.data = merged
+            RequestDraftStore.shared.upsert(active)
+            return active
+        }
+        let draft = RequestDraft(data: data)
+        RequestDraftStore.shared.upsert(draft)
+        open(draft)
+        return draft
+    }
+
+    /// Bulk-apply a parsed `ImportableBatch` onto the draft store, opening the
+    /// requested subset as tabs. Returns a summary the caller can show as a
+    /// toast / sheet line.
+    @discardableResult
+    func importBatch(_ batch: ImportableBatch,
+                     selected: Set<UUID>,
+                     options: BatchImportOptions) -> ImportResult {
+        let chosen = batch.requests.filter { selected.contains($0.id) }
+        if chosen.isEmpty {
+            return ImportResult(imported: 0, skipped: 0, opened: 0, failed: 0)
+        }
+
+        // Pre-existing canonical hashes — used to detect duplicates without
+        // re-hashing every existing draft per row.
+        let existingHashes: Set<String> = options.skipDuplicates
+            ? Set(RequestDraftStore.shared.drafts.map { ImportableRequest.canonicalHash(of: $0.data) })
+            : []
+
+        var draftsToUpsert: [RequestDraft] = []
+        var skipped = 0
+
+        for req in chosen {
+            if options.skipDuplicates, existingHashes.contains(req.sourceHash) {
+                skipped += 1
+                continue
+            }
+
+            var data = req.draftData
+            data.id = UUID().uuidString
+            if options.prefixWithFolderPath, !req.folderPath.isEmpty {
+                let prefix = req.folderPath.joined(separator: " › ")
+                data.name = "\(prefix) › \(req.name)"
+            } else {
+                data.name = req.name
+            }
+            data.createdAt = Date()
+            data.updatedAt = Date()
+            draftsToUpsert.append(RequestDraft(data: data))
+        }
+
+        RequestDraftStore.shared.upsertMany(draftsToUpsert)
+
+        var openedCount = 0
+        switch options.openMode {
+        case .openAllAsTabs:
+            for d in draftsToUpsert { open(d); openedCount += 1 }
+        case .saveAndOpenFirst(let n):
+            for d in draftsToUpsert.prefix(n) { open(d); openedCount += 1 }
+        case .saveOnly:
+            break
+        }
+
+        return ImportResult(
+            imported: draftsToUpsert.count,
+            skipped: skipped,
+            opened: openedCount,
+            failed: 0
+        )
+    }
+
     func open(_ draft: RequestDraft) {
         if !openDraftIds.contains(draft.id) {
             openDraftIds.append(draft.id)

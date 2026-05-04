@@ -3,6 +3,7 @@ import SwiftUI
 struct ComposerView: View {
     @ObservedObject var composer: ComposerController = ComposerController.shared
     @ObservedObject var store: RequestDraftStore = RequestDraftStore.shared
+    @State private var showImport: Bool = false
 
     var body: some View {
         VStack(spacing: 0) {
@@ -15,6 +16,9 @@ struct ComposerView: View {
             } else {
                 emptyState
             }
+        }
+        .sheet(isPresented: $showImport) {
+            ImportRequestSheet(isPresented: $showImport)
         }
     }
 
@@ -30,8 +34,13 @@ struct ComposerView: View {
                 .foregroundColor(.secondary)
                 .multilineTextAlignment(.center)
                 .padding(.horizontal, 32)
-            Button("New Draft".localized) {
-                _ = composer.newBlankDraft()
+            HStack(spacing: 8) {
+                Button("New Draft".localized) {
+                    _ = composer.newBlankDraft()
+                }
+                Button("Paste cURL…".localized) {
+                    showImport = true
+                }
             }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)

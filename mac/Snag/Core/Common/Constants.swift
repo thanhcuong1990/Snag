@@ -19,4 +19,5 @@ enum SnagConstants {
     static let composerEditorTabKey = "composerEditorTab"
     static let composerOpenDraftIdsKey = "composerOpenDraftIds"
     static let composerActiveDraftIdKey = "composerActiveDraftId"
+    static let composerCodePreferredFormatKey = "composer.code.preferredFormat"
 }

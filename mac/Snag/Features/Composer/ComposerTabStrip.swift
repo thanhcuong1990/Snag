@@ -3,34 +3,73 @@ import SwiftUI
 struct ComposerTabStrip: View {
     @ObservedObject var composer: ComposerController = ComposerController.shared
     @ObservedObject var store: RequestDraftStore = RequestDraftStore.shared
+    @State private var showImport: Bool = false
+    @State private var showExport: Bool = false
 
     var body: some View {
-        ScrollView(.horizontal, showsIndicators: false) {
-            HStack(spacing: 0) {
-                ForEach(composer.openDraftIds, id: \.self) { id in
-                    if let draft = store.draft(withId: id) {
-                        ComposerTab(draft: draft, isActive: composer.activeDraftId == id)
-                            .onTapGesture { composer.activate(id) }
+        HStack(spacing: 0) {
+            ScrollView(.horizontal, showsIndicators: false) {
+                HStack(spacing: 0) {
+                    ForEach(composer.openDraftIds, id: \.self) { id in
+                        if let draft = store.draft(withId: id) {
+                            ComposerTab(draft: draft, isActive: composer.activeDraftId == id)
+                                .onTapGesture { composer.activate(id) }
+                        }
                     }
-                }
 
-                Button(action: { _ = composer.newBlankDraft() }) {
-                    Image(systemName: "plus")
+                    Button(action: { _ = composer.newBlankDraft() }) {
+                        Image(systemName: "plus")
+                            .font(.system(size: 11, weight: .medium))
+                            .foregroundColor(.secondary)
+                            .padding(.horizontal, 10)
+                            .padding(.vertical, 6)
+                    }
+                    .buttonStyle(PlainButtonStyle())
+                    .help("New Draft".localized)
+                }
+                .padding(.horizontal, 4)
+                .padding(.top, 4)
+            }
+            .layoutPriority(1)
+
+            Divider()
+                .frame(height: 18)
+                .padding(.horizontal, 4)
+
+            HStack(spacing: 0) {
+                Button(action: { showImport = true }) {
+                    Image(systemName: "square.and.arrow.down")
                         .font(.system(size: 11, weight: .medium))
                         .foregroundColor(.secondary)
-                        .padding(.horizontal, 10)
+                        .padding(.horizontal, 6)
                         .padding(.vertical, 6)
                 }
                 .buttonStyle(PlainButtonStyle())
-                .help("New Draft".localized)
+                .help("Import…".localized)
 
-                Spacer()
+                Button(action: { showExport = true }) {
+                    Image(systemName: "square.and.arrow.up")
+                        .font(.system(size: 11, weight: .medium))
+                        .foregroundColor(.secondary)
+                        .padding(.horizontal, 6)
+                        .padding(.vertical, 6)
+                }
+                .buttonStyle(PlainButtonStyle())
+                .help("Export…".localized)
+                .disabled(store.drafts.isEmpty)
             }
-            .padding(.horizontal, 4)
+            .padding(.trailing, 6)
             .padding(.top, 4)
+            .fixedSize()
         }
         .frame(height: 32)
         .background(Color(nsColor: ThemeColor.contentBarColor))
+        .sheet(isPresented: $showImport) {
+            ImportRequestSheet(isPresented: $showImport)
+        }
+        .sheet(isPresented: $showExport) {
+            ExportRequestSheet(isPresented: $showExport)
+        }
     }
 }
 

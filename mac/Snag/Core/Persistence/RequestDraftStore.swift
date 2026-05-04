@@ -69,6 +69,21 @@ final class RequestDraftStore: ObservableObject {
         NotificationCenter.default.post(name: SnagNotifications.didUpdateDrafts, object: nil)
     }
 
+    /// Batch upsert — writes each draft to disk, applies all to the in-memory
+    /// list, and posts a single `didUpdateDrafts` notification at the end.
+    /// Used by batch imports so a 47-request Postman import is one UI refresh,
+    /// not 47.
+    func upsertMany(_ drafts: [RequestDraft]) {
+        guard !drafts.isEmpty else { return }
+        for d in drafts {
+            d.data.updatedAt = Date()
+            writeToDisk(d.data)
+            applyToList(d)
+            d.isDirty = false
+        }
+        NotificationCenter.default.post(name: SnagNotifications.didUpdateDrafts, object: nil)
+    }
+
     /// Debounced write — call from editors to avoid disk thrash on each keystroke.
     func scheduleSave(_ draft: RequestDraft) {
         draft.isDirty = true

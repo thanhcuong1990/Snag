@@ -6,7 +6,7 @@ struct DraftEditorView: View {
     @State private var splitRatio: CGFloat = 0.55
     @State private var isDragging: Bool = false
 
-    enum EditorTab: Hashable { case params, headers, body, curl }
+    enum EditorTab: Hashable { case params, headers, body, code }
 
     var body: some View {
         VStack(spacing: 0) {
@@ -51,8 +51,8 @@ struct DraftEditorView: View {
                           isSelected: editorTab == .headers) { editorTab = .headers }
                 TabButton(title: "Body".localized,
                           isSelected: editorTab == .body) { editorTab = .body }
-                TabButton(title: "cURL".localized,
-                          isSelected: editorTab == .curl) { editorTab = .curl }
+                TabButton(title: "Code".localized,
+                          isSelected: editorTab == .code) { editorTab = .code }
                 Spacer()
             }
             .padding(.horizontal, 10)
@@ -76,8 +76,8 @@ struct DraftEditorView: View {
                 )
             case .body:
                 BodyEditorView(draft: draft)
-            case .curl:
-                DraftCurlPreviewView(draft: draft)
+            case .code:
+                DraftCodeView(draft: draft)
             }
         }
     }
