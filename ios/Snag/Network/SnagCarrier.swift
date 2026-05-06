@@ -23,16 +23,48 @@ class SnagCarrier {
 
     var lastTouched: Date = Date()
 
+    var capturedURL: URL?
+    var capturedRequestMethod: String?
+    var capturedRequestHeaders: [String: String]?
+    var capturedRequestBody: Data?
+    var capturedRequestBodyTruncated: Bool = false
+
     init(task: URLSessionTask) {
         self.id = SnagUtility.uuid()
         self.urlSessionTask = task
         self.setup()
+        self.refreshRequestSnapshot()
     }
 
     init(urlConnection: NSURLConnection) {
         self.id = SnagUtility.uuid()
         self.urlConnection = urlConnection
         self.setup()
+        self.captureRequest(from: urlConnection.originalRequest)
+    }
+
+    var didCaptureRequest: Bool {
+        return self.capturedURL != nil || self.capturedRequestMethod != nil
+    }
+
+    func refreshRequestSnapshot() {
+        if let task = self.urlSessionTask {
+            self.captureRequest(from: task.currentRequest ?? task.originalRequest)
+        }
+    }
+
+    private func captureRequest(from request: URLRequest?) {
+        guard let request = request else { return }
+        if let url = request.url { self.capturedURL = url }
+        if let method = request.httpMethod { self.capturedRequestMethod = method }
+        if self.capturedRequestHeaders == nil, let headers = request.allHTTPHeaderFields {
+            self.capturedRequestHeaders = headers
+        }
+        if self.capturedRequestBody == nil, let body = request.httpBody {
+            let (cappedBody, wasTruncated) = cappedRequestBody(body)
+            self.capturedRequestBody = cappedBody
+            self.capturedRequestBodyTruncated = wasTruncated
+        }
     }
 
     private func setup() {
@@ -110,21 +142,11 @@ class SnagCarrier {
 
         var requestInfo = SnagRequestInfo()
 
-        if let task = self.urlSessionTask {
-            requestInfo.url = task.originalRequest?.url
-            requestInfo.requestHeaders = task.originalRequest?.allHTTPHeaderFields
-            let (body, truncated) = cappedRequestBody(task.originalRequest?.httpBody)
-            requestInfo.requestBody = body
-            if truncated { requestInfo.requestBodyTruncated = true }
-            requestInfo.requestMethod = task.originalRequest?.httpMethod
-        } else if let connection = self.urlConnection {
-            requestInfo.url = connection.originalRequest.url
-            requestInfo.requestHeaders = connection.originalRequest.allHTTPHeaderFields
-            let (body, truncated) = cappedRequestBody(connection.originalRequest.httpBody)
-            requestInfo.requestBody = body
-            if truncated { requestInfo.requestBodyTruncated = true }
-            requestInfo.requestMethod = connection.originalRequest.httpMethod
-        }
+        requestInfo.url = self.capturedURL
+        requestInfo.requestHeaders = self.capturedRequestHeaders
+        requestInfo.requestBody = self.capturedRequestBody
+        requestInfo.requestMethod = self.capturedRequestMethod
+        if self.capturedRequestBodyTruncated { requestInfo.requestBodyTruncated = true }
 
         var httpResponse: HTTPURLResponse?
 

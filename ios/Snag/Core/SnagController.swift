@@ -92,8 +92,15 @@ class SnagController: SnagSessionInjectorDelegate, SnagConnectionInjectorDelegat
     private func carrier(with task: URLSessionTask) -> SnagCarrier? {
         let key = ObjectIdentifier(task)
         if let existing = self.carriersByTask[key] {
-            existing.touch()
-            return existing
+            // Address-reuse guard: weak ref must still point to *this* task.
+            // A nil weak ref or a different live instance means the entry is stale
+            // (old task deallocated, address reused for a new task).
+            if let held = existing.urlSessionTask, held === task {
+                existing.touch()
+                existing.refreshRequestSnapshot()
+                return existing
+            }
+            self.carriersByTask.removeValue(forKey: key)
         }
         let carrier = makeCarrier(task: task)
         self.carriersByTask[key] = carrier
@@ -104,8 +111,11 @@ class SnagController: SnagSessionInjectorDelegate, SnagConnectionInjectorDelegat
     private func carrier(with connection: NSURLConnection) -> SnagCarrier? {
         let key = ObjectIdentifier(connection)
         if let existing = self.carriersByConnection[key] {
-            existing.touch()
-            return existing
+            if let held = existing.urlConnection, held === connection {
+                existing.touch()
+                return existing
+            }
+            self.carriersByConnection.removeValue(forKey: key)
         }
         let carrier = makeCarrier(connection: connection)
         self.carriersByConnection[key] = carrier
@@ -115,14 +125,14 @@ class SnagController: SnagSessionInjectorDelegate, SnagConnectionInjectorDelegat
 
     private func gcStaleCarriersIfNeeded() {
         let now = Date()
-        guard now.timeIntervalSince(lastCarrierGC) > 60 else { return }
+        guard now.timeIntervalSince(lastCarrierGC) > 5 else { return }
         lastCarrierGC = now
         let cutoff = now.addingTimeInterval(-carrierIdleTimeout)
         carriersByTask = carriersByTask.filter { _, carrier in
-            carrier.lastTouched >= cutoff && carrier.urlSessionTask != nil
+            carrier.urlSessionTask != nil && carrier.lastTouched >= cutoff
         }
         carriersByConnection = carriersByConnection.filter { _, carrier in
-            carrier.lastTouched >= cutoff && carrier.urlConnection != nil
+            carrier.urlConnection != nil && carrier.lastTouched >= cutoff
         }
     }
 
@@ -224,6 +234,11 @@ class SnagController: SnagSessionInjectorDelegate, SnagConnectionInjectorDelegat
     // MARK: - Sending
 
     func send(carrier: SnagCarrier) {
+        // Skip carriers that never captured a request (e.g. URLSessionStreamTask,
+        // or a stale entry hit via address reuse). Such rows render as empty rows
+        // on the Mac side.
+        guard carrier.didCaptureRequest else { return }
+
         var packet = carrier.packet()
         packet.project = self.configuration.project
         packet.device = self.configuration.device
