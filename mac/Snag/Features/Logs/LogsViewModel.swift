@@ -94,6 +94,7 @@ class LogsViewModel: ObservableObject {
     @objc func onDeviceChanged() {
         self.isPaused = false // Auto-resume on device change
         self.objectWillChange.send()
+        self.tagAnalysisCache = nil // Invalidate stale tag analysis for the previous device
         self.reloadLogs(force: true)
     }
     private var lastUpdate: Date = .distantPast

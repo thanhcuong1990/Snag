@@ -23,19 +23,13 @@ class SnagController: NSObject, @MainActor SnagPublisherDelegate, ObservableObje
     static let shared = SnagController()
 
     @Published var route: MainContentRoute = .network {
-        didSet {
-            DispatchQueue.main.async {
-                self.updateLogStreamingState()
-            }
-        }
+        didSet { updateLogStreamingState() }
     }
     @Published var projectControllers: [SnagProjectController] = []
     @Published var selectedProjectController: SnagProjectController? {
         didSet {
             NotificationCenter.default.post(name: SnagNotifications.didSelectProject, object: nil)
-            DispatchQueue.main.async {
-                self.updateLogStreamingState()
-            }
+            updateLogStreamingState()
         }
     }
     // New property for saved request selection
@@ -62,6 +56,10 @@ class SnagController: NSObject, @MainActor SnagPublisherDelegate, ObservableObje
         self.publisher.startPublishing()
 
         NotificationCenter.default.addObserver(self, selector: #selector(handleDeviceSelection), name: SnagNotifications.didSelectDevice, object: nil)
+    }
+
+    deinit {
+        NotificationCenter.default.removeObserver(self)
     }
     
     @objc private func handleDeviceSelection() {
@@ -102,9 +100,7 @@ class SnagController: NSObject, @MainActor SnagPublisherDelegate, ObservableObje
         
         // Ensure log streaming state is correct for new devices
         if packet.device != nil {
-             DispatchQueue.main.async {
-                 self.updateLogStreamingState()
-             }
+            updateLogStreamingState()
         }
     }
     
@@ -188,9 +184,7 @@ class SnagController: NSObject, @MainActor SnagPublisherDelegate, ObservableObje
         if isNewProject {
             self.projectControllers.append(projectController)
             if self.projectControllers.count == 1 {
-                DispatchQueue.main.async {
-                    self.selectedProjectController = self.projectControllers.first
-                }
+                self.selectedProjectController = self.projectControllers.first
             }
         }
 

@@ -11,6 +11,7 @@ final class SnagBoundedQueue<Element> {
     private var items: [Element] = []
     private var droppedCount: Int = 0
     private var enqueuedCount: Int = 0
+    private let lock = NSLock()
 
     init(maxSize: Int) {
         self.maxSize = max(1, maxSize)
@@ -18,6 +19,7 @@ final class SnagBoundedQueue<Element> {
 
     @discardableResult
     func enqueue(_ item: Element) -> Bool {
+        lock.lock(); defer { lock.unlock() }
         enqueuedCount += 1
         var dropped = false
         if items.count >= maxSize {
@@ -30,16 +32,19 @@ final class SnagBoundedQueue<Element> {
     }
 
     func drain() -> [Element] {
+        lock.lock(); defer { lock.unlock() }
         let drained = items
         items.removeAll()
         return drained
     }
 
     func clear() {
+        lock.lock(); defer { lock.unlock() }
         items.removeAll()
     }
 
     func snapshot() -> SnagQueueMetricsSnapshot {
+        lock.lock(); defer { lock.unlock() }
         return SnagQueueMetricsSnapshot(
             queuedPackets: items.count,
             droppedPackets: droppedCount,

@@ -118,7 +118,11 @@ class PacketsViewModel: BaseListViewModel<SnagPacket>  {
 
         self.refreshItems()
     }
-    
+
+    deinit {
+        NotificationCenter.default.removeObserver(self)
+    }
+
     var selectedItem: SnagPacket? {
         if let project = SnagController.shared.selectedProjectController,
            let device = project.selectedDeviceController {

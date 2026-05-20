@@ -1,13 +1,13 @@
 import Cocoa
 import Network
 
-protocol SnagPublisherDelegate {
+protocol SnagPublisherDelegate: AnyObject {
     func didGetPacket(publisher: SnagPublisher, packet: SnagPacket)
 }
 
 class SnagPublisher: NSObject {
 
-    var delegate: SnagPublisherDelegate?
+    weak var delegate: SnagPublisherDelegate?
     
     private enum ListenerPurpose {
         case primarySecure

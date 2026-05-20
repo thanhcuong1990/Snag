@@ -10,8 +10,10 @@ import com.snag.models.*
 import com.snag.network.SnagBrowser
 import com.snag.network.SnagBrowserImpl
 import com.snag.network.SnagTrustStore
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.MainScope
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.cancel
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
@@ -19,6 +21,7 @@ object Snag {
     internal var appContext: Context? = null
     private lateinit var device: SnagDevice
     private lateinit var project: SnagProject
+    private var startScope: CoroutineScope? = null
 
     @JvmStatic
     @JvmOverloads
@@ -47,7 +50,10 @@ object Snag {
             }
             
             // Fetch heavy metadata asynchronously
-            MainScope().launch(Dispatchers.IO) {
+            startScope?.cancel()
+            val scope = CoroutineScope(SupervisorJob() + Dispatchers.Main)
+            startScope = scope
+            scope.launch(Dispatchers.IO) {
                 val fetchedDevice = SnagAppMetadataProvider.getDevice(appCtx)
                 val fetchedProject = SnagAppMetadataProvider.getProject(appCtx, config.projectName)
 
@@ -83,6 +89,11 @@ object Snag {
      */
     @JvmStatic
     fun shutdown() {
+        try {
+            startScope?.cancel()
+            startScope = null
+        } catch (_: Exception) { }
+
         try {
             SnagLogcatManager.stopAutoLogCapture()
         } catch (_: Exception) { }

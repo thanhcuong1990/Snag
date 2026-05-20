@@ -81,7 +81,7 @@ internal class SnagBrowserImpl(
         try {
             val wifiManager = context.applicationContext.getSystemService(Context.WIFI_SERVICE) as? WifiManager
             multicastLock = wifiManager?.createMulticastLock("SnagMulticastLock")?.apply {
-                setReferenceCounted(true)
+                setReferenceCounted(false)
                 acquire()
             }
         } catch (e: Exception) {

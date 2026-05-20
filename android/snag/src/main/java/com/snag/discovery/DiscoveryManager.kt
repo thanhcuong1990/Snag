@@ -15,6 +15,7 @@ import kotlinx.coroutines.cancel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
+import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.Executors
 import java.util.concurrent.atomic.AtomicBoolean
 
@@ -43,6 +44,9 @@ internal class DiscoveryManager(
     // Whether the caller wants discovery active. The listener callbacks consult this to
     // decide whether to schedule a restart after an unexpected stop or failure.
     private val isWanted = AtomicBoolean(false)
+
+    // API 34+: track registered service info callbacks (typed as Any to avoid API-level field issue).
+    private val serviceInfoCallbacks = ConcurrentHashMap<String, Any>()
     private val isRunning = AtomicBoolean(false)
     private var startRetryJob: Job? = null
     private var refreshJob: Job? = null
@@ -99,6 +103,9 @@ internal class DiscoveryManager(
         override fun onServiceLost(serviceInfo: NsdServiceInfo?) {
             serviceInfo ?: return
             SnagInternalLogger.d("Service lost: ${serviceInfo.serviceName}")
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
+                unregisterServiceInfoCallback(serviceInfo.serviceName)
+            }
             listener.onServiceLost(serviceInfo)
         }
     }
@@ -139,6 +146,9 @@ internal class DiscoveryManager(
 
     @RequiresApi(Build.VERSION_CODES.UPSIDE_DOWN_CAKE)
     private fun registerServiceInfoCallback(serviceInfo: NsdServiceInfo) {
+        val name = serviceInfo.serviceName ?: return
+        if (serviceInfoCallbacks.containsKey(name)) return // already registered for this service
+
         val callback = object : NsdServiceInfoCallback {
             override fun onServiceUpdated(serviceInfo: NsdServiceInfo) {
                 SnagInternalLogger.d("Service updated: ${serviceInfo.serviceName}")
@@ -149,7 +159,17 @@ internal class DiscoveryManager(
                 // Handled by discovery listener primarily
             }
         }
+        serviceInfoCallbacks[name] = callback
         nsdManager?.registerServiceInfoCallback(serviceInfo, discoverExecutor, callback)
+    }
+
+    @RequiresApi(Build.VERSION_CODES.UPSIDE_DOWN_CAKE)
+    private fun unregisterServiceInfoCallback(serviceName: String) {
+        @Suppress("UNCHECKED_CAST")
+        val callback = serviceInfoCallbacks.remove(serviceName) as? NsdServiceInfoCallback ?: return
+        try {
+            nsdManager?.unregisterServiceInfoCallback(callback)
+        } catch (_: Exception) { }
     }
 
 
@@ -171,6 +191,10 @@ internal class DiscoveryManager(
             nsdManager?.stopServiceDiscovery(nsdDiscoveryListener)
         } catch (e: Exception) {
             SnagInternalLogger.e(e, "Failed to stop discovery")
+        }
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
+            val names = serviceInfoCallbacks.keys.toList()
+            for (name in names) { unregisterServiceInfoCallback(name) }
         }
         try {
             retryScope.cancel()

@@ -11,11 +11,10 @@ actor SnagLogInterceptor {
     private var originalStdout: Int32 = -1
     private var originalStderr: Int32 = -1
 
-    private let stdoutBatchQueue = DispatchQueue(label: "com.snag.log.stdoutBatch")
     private var stdoutBuffer: String = ""
     private var stdoutBatchScheduled: Bool = false
-    private let stdoutBatchInterval: DispatchTimeInterval = .milliseconds(100)
     private let stdoutBatchMaxBytes: Int = 32_768
+    private var osLogTask: Task<Void, Never>?
 
     func startCapturing() {
         guard !isCapturing else { return }
@@ -34,7 +33,6 @@ actor SnagLogInterceptor {
         dup2(pipeFileDescriptor, STDOUT_FILENO)
         dup2(pipeFileDescriptor, STDERR_FILENO)
 
-        let batchQueue = self.stdoutBatchQueue
         pipeReadHandle.readabilityHandler = { [weak self] handle in
             let data = handle.availableData
             if data.isEmpty { return }
@@ -47,16 +45,13 @@ actor SnagLogInterceptor {
             }
 
             guard let chunk = String(data: data, encoding: .utf8) else { return }
-            // Coalesce reads on a serial queue and let the actor pull a batch on a timer.
-            batchQueue.async {
-                Task { [weak self] in
-                    await self?.appendStdoutChunk(chunk)
-                }
+            Task { [weak self] in
+                await self?.appendStdoutChunk(chunk)
             }
         }
 
         // Start OSLogStore polling/streaming
-        startOSLogStream()
+        osLogTask = startOSLogStream()
     }
 
     private func appendStdoutChunk(_ chunk: String) {
@@ -101,11 +96,14 @@ actor SnagLogInterceptor {
             originalStderr = -1
         }
 
+        osLogTask?.cancel()
+        osLogTask = nil
         pipe.fileHandleForReading.readabilityHandler = nil
         flushStdoutBuffer()
     }
-    
-    private func startOSLogStream() {
+
+    @discardableResult
+    private func startOSLogStream() -> Task<Void, Never> {
         // Use a detached task to avoid blocking the actor's executor with OSLogStore setup
         Task.detached(priority: .background) {
             do {

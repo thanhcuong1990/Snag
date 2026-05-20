@@ -13,9 +13,7 @@ class DetailViewModelWrapper: ObservableObject {
         self.packet = viewModel?.packet
         
         viewModel?.onChange = { [weak self] in
-            DispatchQueue.main.async {
-                self?.packet = self?.viewModel?.packet
-            }
+            self?.packet = self?.viewModel?.packet
         }
     }
 }
@@ -24,7 +22,9 @@ class OverviewViewModel: BaseViewModel {
     @Published var overviewRepresentation: ContentRepresentation?
     @Published var isLoading: Bool = false
     private var parseTask: Task<Void, Never>?
-    
+
+    deinit { parseTask?.cancel() }
+
     func register() {
          NotificationCenter.default.addObserver(self, selector: #selector(self.didSelectPacket), name: SnagNotifications.didSelectPacket, object: nil)
          SnagController.shared.packetUpdatedPublisher
@@ -84,7 +84,9 @@ class CurlViewModel: BaseViewModel {
     @Published var isTruncated: Bool = false
     @Published var forceFullBody: Bool = false
     private var parseTask: Task<Void, Never>?
-    
+
+    deinit { parseTask?.cancel() }
+
     func register() {
          NotificationCenter.default.addObserver(self, selector: #selector(self.didSelectPacket), name: SnagNotifications.didSelectPacket, object: nil)
          SnagController.shared.packetUpdatedPublisher
@@ -235,7 +237,9 @@ class DataViewModel: BaseViewModel {
     @Published var dataRepresentation: DataRepresentation?
     @Published var isLoading: Bool = false
     private var parseTask: Task<Void, Never>?
-    
+
+    deinit { parseTask?.cancel() }
+
     func performUpdate(with data: Data?, contentType: String? = nil) {
         // Cancel any existing task
         parseTask?.cancel()
@@ -260,8 +264,6 @@ class DataViewModel: BaseViewModel {
                 await MainActor.run {
                     self.dataRepresentation = result
                     self.isLoading = false
-                    // Force UI refresh if needed
-                    self.objectWillChange.send()
                     self.onChange?()
                 }
             }
@@ -302,14 +304,12 @@ class DataViewModel: BaseViewModel {
                 await MainActor.run {
                     self.dataRepresentation = result
                     self.isLoading = false
-                    // Force UI refresh if needed
-                    self.objectWillChange.send()
                     self.onChange?()
                 }
             }
         }
     }
-    
+
     func register() {
         NotificationCenter.default.addObserver(self, selector: #selector(self.didSelectPacket), name: SnagNotifications.didSelectPacket, object: nil)
         SnagController.shared.packetUpdatedPublisher
