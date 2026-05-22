@@ -63,9 +63,7 @@ class SnagProjectController: NSObject, ObservableObject {
         self.deviceControllers.append(deviceController)
         
         if self.deviceControllers.count == 1 {
-            DispatchQueue.main.async {
-                self.selectedDeviceController = self.deviceControllers.first
-            }
+            self.selectedDeviceController = self.deviceControllers.first
         }
         
         // Propagate bundleId from device appInfo if available

@@ -13,10 +13,18 @@ class SnagDeviceController: NSObject, ObservableObject {
     @Published var systemLogs: [SnagLog] = []
     @Published var otherLogs: [SnagLog] = []
     
+    // Combined view of all log categories, sorted by timestamp.
+    // Rebuilt lazily so the O(n log n) sort only runs when logs actually changed,
+    // not on every access (LogsViewModel polls this every 200 ms during streaming).
+    private var _cachedLogs: [SnagLog] = []
+    private var _logsDirty = false
     var logs: [SnagLog] {
-        // Combined logs for UI or general access, sorted by timestamp
-        // This is a computed property, but we might want to cache it or use individual arrays in the view model
-        return (rnLogs + appLogs + systemLogs + otherLogs).sorted { $0.timestamp < $1.timestamp }
+        if _logsDirty {
+            _cachedLogs = (rnLogs + appLogs + systemLogs + otherLogs)
+                .sorted { $0.timestamp < $1.timestamp }
+            _logsDirty = false
+        }
+        return _cachedLogs
     }
     
     @Published var appInfo: SnagAppInfo?
@@ -99,25 +107,18 @@ class SnagDeviceController: NSObject, ObservableObject {
                 switch category {
                 case .rn:
                     self.rnLogs.append(log)
-                    if self.rnLogs.count > maxRNItems {
-                        self.rnLogs.removeFirst()
-                    }
+                    if self.rnLogs.count > maxRNItems { self.rnLogs.removeFirst() }
                 case .app:
                     self.appLogs.append(log)
-                    if self.appLogs.count > maxAppItems {
-                        self.appLogs.removeFirst()
-                    }
+                    if self.appLogs.count > maxAppItems { self.appLogs.removeFirst() }
                 case .system:
                     self.systemLogs.append(log)
-                    if self.systemLogs.count > maxSystemItems {
-                        self.systemLogs.removeFirst()
-                    }
+                    if self.systemLogs.count > maxSystemItems { self.systemLogs.removeFirst() }
                 case .other:
                     self.otherLogs.append(log)
-                    if self.otherLogs.count > maxOtherItems {
-                        self.otherLogs.removeFirst()
-                    }
+                    if self.otherLogs.count > maxOtherItems { self.otherLogs.removeFirst() }
                 }
+                _logsDirty = true
             }
             return true
         }
@@ -157,13 +158,14 @@ class SnagDeviceController: NSObject, ObservableObject {
     }
     
     func clear() {
-        
         self.packets.removeAll()
         self.packetIds.removeAll()
         self.rnLogs.removeAll()
         self.appLogs.removeAll()
         self.systemLogs.removeAll()
         self.otherLogs.removeAll()
+        self._cachedLogs.removeAll()
+        self._logsDirty = false
         self.select(packet: nil)
     }
     

@@ -12,6 +12,9 @@ class SnagLegacyPublisher: NSObject {
 
     private var listener: NWListener?
     private let queue: DispatchQueue
+    // Connections accepted but not yet promoted. Cancelled en-masse on stop()
+    // so they don't linger after the publisher is torn down.
+    private var pendingConnections: [NWConnection] = []
 
     private let jsonDecoder: JSONDecoder = {
         let decoder = JSONDecoder()
@@ -69,6 +72,8 @@ class SnagLegacyPublisher: NSObject {
     func stop() {
         listener?.cancel()
         listener = nil
+        pendingConnections.forEach { $0.cancel() }
+        pendingConnections.removeAll()
     }
     
     var port: NWEndpoint.Port? {
@@ -89,8 +94,21 @@ class SnagLegacyPublisher: NSObject {
     }
     
     private func handleNewConnection(_ connection: NWConnection) {
+        pendingConnections.append(connection)
+        connection.stateUpdateHandler = { [weak self] state in
+            switch state {
+            case .cancelled, .failed:
+                self?.queue.async { self?.removePendingConnection(connection) }
+            default:
+                break
+            }
+        }
         connection.start(queue: self.queue)
         self.receiveData(on: connection)
+    }
+
+    private func removePendingConnection(_ connection: NWConnection) {
+        pendingConnections.removeAll { $0 === connection }
     }
 
     private func receiveData(on connection: NWConnection) {
@@ -137,7 +155,8 @@ class SnagLegacyPublisher: NSObject {
             let deviceId = (snagPacket.device?.deviceId ?? snagPacket.control?.deviceId)?.lowercased()
              
             if shouldAcceptLegacyPacket(snagPacket) {
-                 print("SnagLegacyPublisher: Promoting legacy connection from \(connection.endpoint)")
+                print("SnagLegacyPublisher: Promoting legacy connection from \(connection.endpoint)")
+                removePendingConnection(connection)
                 delegate?.legacyPublisher(self, didPromoteConnection: connection, deviceId: deviceId, packet: snagPacket)
             } else {
                 print("SnagLegacyPublisher: Ignored non-legacy packet from \(connection.endpoint)")

@@ -77,8 +77,10 @@ class SavedPacketStore: ObservableObject {
                         packets.append(packet)
                     }
                 }
+                let loadedPackets = packets
+                guard let self else { return }
                 await MainActor.run {
-                    self?.savedPackets = packets
+                    self.savedPackets = loadedPackets
                     NotificationCenter.default.post(name: SnagNotifications.didUpdateSavedPackets, object: nil)
                 }
             } catch {
