@@ -153,22 +153,3 @@ jobs:
           ORG_GRADLE_PROJECT_signingInMemoryKeyPassword: ${{ secrets.SIGNING_PASSWORD }}
           # Key ID is often optional if the key itself is provided, but good to have if needed by your gradle setup
           # ORG_GRADLE_PROJECT_signingKeyId: ${{ secrets.SIGNING_KEY_ID }}
-
-  publish-ios:
-    runs-on: macos-latest
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Update version from tag
-        run: |
-          VERSION=${GITHUB_REF#refs/tags/v}
-          echo "Updating iOS podspec version to $VERSION"
-          sed -i '' "s/s.version *= *'[^']*'/s.version          = '$VERSION'/" Snag.podspec
-          cat Snag.podspec | grep "s.version"
-
-      - name: Deploy to CocoaPods
-        run: |
-          set -eo pipefail
-          pod trunk push Snag.podspec --allow-warnings
-        env:
-          COCOAPODS_TRUNK_TOKEN: ${{ secrets.COCOAPODS_TRUNK_TOKEN }}

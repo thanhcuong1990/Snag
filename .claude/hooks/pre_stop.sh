@@ -21,7 +21,7 @@ NEED_MAC=false; NEED_IOS=false; NEED_ANDROID=false
 while IFS= read -r f; do
     case "$f" in
         mac/*)                           NEED_MAC=true ;;
-        ios/*|Package.swift|Snag.podspec) NEED_IOS=true ;;
+        ios/*|Package.swift) NEED_IOS=true ;;
         android/*)                        NEED_ANDROID=true ;;
     esac
 done <<< "$CHANGED"

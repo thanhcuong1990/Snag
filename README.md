@@ -5,9 +5,6 @@
 </p>
 
 <p align="center">
-    <a href="https://github.com/CocoaPods/CocoaPods" alt="CocoaPods">
-        <img src="https://img.shields.io/badge/CocoaPods-compatible-4BC51D.svg?style=flat" />
-    </a>
     <a href="https://swift.org/package-manager/" alt="Swift Package Manager">
         <img src="https://img.shields.io/badge/SPM-compatible-4BC51D.svg?style=flat" />
     </a>
@@ -127,12 +124,6 @@ Add the package URL to your project:
 `https://github.com/thanhcuong1990/Snag.git`
 
 Minimum supported iOS version: **iOS 15.0+**
-
-#### CocoaPods
-
-```ruby
-pod 'Snag', '~> 1.1.6'
-```
 
 ### Usage
 

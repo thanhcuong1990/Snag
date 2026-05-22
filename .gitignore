@@ -69,10 +69,6 @@ DerivedData/
 *.xcuserstate
 *xcuserdata/
 #
-# CocoaPods
-#
-Pods/
-#
 # Carthage
 #
 Carthage/Build/

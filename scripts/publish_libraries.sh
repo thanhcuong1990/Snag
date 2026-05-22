@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-# Script to publish Snag libraries for Android (Maven Central) and iOS (SPM/CocoaPods)
+# Script to publish Snag libraries for Android (Maven Central) and iOS (SPM)
 # Usage: ./scripts/publish_libraries.sh <version>
 
 if [ "$#" -ne 1 ]; then
@@ -19,34 +19,22 @@ echo "🚀 Starting publishing process for version: $NEW_VERSION"
 echo "📝 Updating version in android/snag/build.gradle.kts..."
 sed -i '' "s/coordinates(\"io.github.thanhcuong1990\", \"snag\", \".*\")/coordinates(\"io.github.thanhcuong1990\", \"snag\", \"$NEW_VERSION\")/g" "$ROOT_DIR/android/snag/build.gradle.kts"
 
-# 2. Update iOS version in Snag.podspec
-echo "📝 Updating version in Snag.podspec..."
-sed -i '' "s/s.version          = '.*'/s.version          = '$NEW_VERSION'/g" "$ROOT_DIR/Snag.podspec"
-
-# 3. Update version in README.md
+# 2. Update version in README.md
 echo "📝 Updating version in README.md..."
 # Android dependency
 sed -i '' "s/implementation 'io.github.thanhcuong1990:snag:.*'/implementation 'io.github.thanhcuong1990:snag:$NEW_VERSION'/g" "$ROOT_DIR/README.md"
-# CocoaPods dependency
-sed -i '' "s/pod 'Snag', '~> .*'/pod 'Snag', '~> $NEW_VERSION'/g" "$ROOT_DIR/README.md"
 
-# 4. Update version in android/publishing.md
+# 3. Update version in android/publishing.md
 echo "📝 Updating version in android/publishing.md..."
 sed -i '' "s/io.github.thanhcuong1990:snag:.*\"/io.github.thanhcuong1990:snag:$NEW_VERSION\"/g" "$ROOT_DIR/android/publishing.md"
 sed -i '' "s/snag\/.*\/\"/snag\/$NEW_VERSION\/\"/g" "$ROOT_DIR/android/publishing.md"
 # Handle the path without quotes if any
 sed -i '' "s/snag\/[0-9]*\.[0-9]*\.[0-9]*\//snag\/$NEW_VERSION\//g" "$ROOT_DIR/android/publishing.md"
 
-# 5. Verify Builds
+# 4. Verify Builds
 echo "🔍 Verifying Android build..."
 if ! (cd "$ROOT_DIR/android" && ./gradlew :snag:publishToMavenLocal); then
     echo "❌ Android build failed. Aborting release."
-    exit 1
-fi
-
-echo "🔍 Verifying iOS build (CocoaPods)..."
-if ! (cd "$ROOT_DIR" && pod lib lint Snag.podspec --allow-warnings); then
-    echo "❌ iOS (CocoaPods) build failed. Aborting release."
     exit 1
 fi
 
@@ -56,17 +44,16 @@ if ! (cd "$ROOT_DIR" && swift build -c release); then
     exit 1
 fi
 
-# 6. Git Commit and Tag
+# 5. Git Commit and Tag
 echo "💾 Committing version changes..."
 git add "$ROOT_DIR/android/snag/build.gradle.kts" \
-        "$ROOT_DIR/Snag.podspec" \
         "$ROOT_DIR/README.md" \
         "$ROOT_DIR/android/publishing.md"
 
 git commit -m "chore: bump version to $NEW_VERSION"
 git tag -a "v$NEW_VERSION" -m "Release v$NEW_VERSION"
 
-# 7. Push to Remote
+# 6. Push to Remote
 echo "🔄 Pushing changes and tags to origin..."
 git push origin main
 git push origin "v$NEW_VERSION"

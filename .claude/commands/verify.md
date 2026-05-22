@@ -11,7 +11,7 @@ Run build verification for the platforms affected by recent code changes, or for
 
 1. If no argument was given, run `git diff HEAD --name-only` to identify which platforms have changed files:
    - `mac/**` → mac
-   - `ios/**`, `Package.swift`, `Snag.podspec` → ios
+   - `ios/**`, `Package.swift` → ios
    - `android/**` → android
 
 2. For each affected platform (or the one explicitly requested), run:
