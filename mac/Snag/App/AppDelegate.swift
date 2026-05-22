@@ -84,6 +84,10 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         }
     }
 
+    @objc func minimizeWindow(_ sender: Any?) {
+        NSApp.hide(sender)
+    }
+
     func applicationShouldHandleReopen(_ sender: NSApplication, hasVisibleWindows flag: Bool) -> Bool {
         if !flag {
             window.makeKeyAndOrderFront(nil)

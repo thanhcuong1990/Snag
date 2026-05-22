@@ -105,9 +105,18 @@ class SnagMenu {
 
         let closeItem = NSMenuItem(title: "Close Draft".localized,
                                    action: #selector(RequestMenuActions.closeActiveDraft(_:)),
-                                   keyEquivalent: "w")
+                                   keyEquivalent: "")
         closeItem.target = RequestMenuActions.shared
         requestMenu.addItem(closeItem)
+
+        // Window Menu
+        let windowMenuItem = NSMenuItem()
+        mainMenu.addItem(windowMenuItem)
+
+        let windowMenu = NSMenu(title: "Window".localized)
+        windowMenuItem.submenu = windowMenu
+
+        windowMenu.addItem(withTitle: "Hide Window".localized, action: #selector(AppDelegate.minimizeWindow(_:)), keyEquivalent: "w")
 
         NSApp.mainMenu = mainMenu
     }
