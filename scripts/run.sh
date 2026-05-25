@@ -134,21 +134,23 @@ case $MODE in
     ;;
 
   mac)
-    print_step "Opening Mac App..."
+    print_step "Building Mac App..."
     cd "$REPO_ROOT/mac"
-    
-    # Since running a Mac app from CLI (launching the binary) is less common than
-    # running via Xcode for debugging, we open the project.
-    # But we can at least verify the build.
-    
-    print_step "Verifying Build (Snag scheme)..."
+
     xcodebuild -project Snag.xcodeproj \
                -scheme Snag \
                -destination "platform=macOS" \
                build
-               
-    print_success "Build Succeeded. Opening Xcode..."
-    open Snag.xcodeproj
+
+    print_step "Launching Snag..."
+    BUILT_PRODUCTS_DIR=$(xcodebuild -project Snag.xcodeproj \
+                                    -scheme Snag \
+                                    -destination "platform=macOS" \
+                                    -showBuildSettings 2>/dev/null \
+                         | awk '/BUILT_PRODUCTS_DIR/ { print $3; exit }')
+
+    open "$BUILT_PRODUCTS_DIR/Snag.app"
+    print_success "Snag launched."
     ;;
     
   help|--help|-h)
