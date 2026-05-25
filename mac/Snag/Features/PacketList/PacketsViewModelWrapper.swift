@@ -69,6 +69,16 @@ class PacketsViewModelWrapper: ObservableObject {
         update()
     }
     
+    func adjacentPacket(offset: Int) -> SnagPacket? {
+        guard !items.isEmpty else { return nil }
+        if let current = selectedPacket, let idx = items.firstIndex(where: { $0 === current }) {
+            let next = idx + offset
+            guard next >= 0 && next < items.count else { return nil }
+            return items[next]
+        }
+        return offset > 0 ? items.first : items.last
+    }
+
     private func sortItems(_ items: [SnagPacket]) -> [SnagPacket] {
         return items.sorted { a, b in
             let dateA = a.requestInfo?.startDate ?? Date.distantPast

@@ -4,9 +4,9 @@ struct PacketsView: View {
     @ObservedObject var viewModelWrapper: PacketsViewModelWrapper
     @Environment(\.colorScheme) var colorScheme
     var onPacketSelect: (SnagPacket) -> Void
-    
+
     @FocusState private var isAddressFilterFocused: Bool
-    
+
     var body: some View {
         VStack(spacing: 0) {
             PacketsToolBar(viewModelWrapper: viewModelWrapper, isAddressFilterFocused: $isAddressFilterFocused)
@@ -16,61 +16,77 @@ struct PacketsView: View {
             isAddressFilterFocused = true
         }
     }
-    
+
     // MARK: - Subviews
-    
+
     private var packetList: some View {
-        ScrollView {
-            LazyVStack(spacing: 0, pinnedViews: [.sectionHeaders]) {
-                Section(
-                    header:
-                        VStack(spacing: 0) {
-                            PacketsColumnHeaders(viewModelWrapper: viewModelWrapper)
-                            Divider()
-                        }
-                        .background(Color(nsColor: ThemeColor.packetListAndDetailBackgroundColor))
-                ) {
-                    ForEach(viewModelWrapper.items, id: \.id) { item in
-                        PacketRowView(
-                            packet: item,
-                            isSelected: viewModelWrapper.selectedPacket === item,
-                            isAlternate: item.id.hashValue & 1 != 0
-                        )
-                        .contentShape(Rectangle())
-                        .onTapGesture {
-                            onPacketSelect(item)
-                        }
-                        .onRightClick {
-                            onPacketSelect(item)
-                        }
-                        .contextMenu {
-                            Button(NSLocalizedString("Copy cURL", comment: "Copy cURL context menu item")) {
-                                if let curl = item.toCurlCommand() {
-                                    NSPasteboard.general.clearContents()
-                                    NSPasteboard.general.setString(curl, forType: .string)
-                                }
+        ScrollViewReader { proxy in
+            ScrollView {
+                LazyVStack(spacing: 0, pinnedViews: [.sectionHeaders]) {
+                    Section(
+                        header:
+                            VStack(spacing: 0) {
+                                PacketsColumnHeaders(viewModelWrapper: viewModelWrapper)
+                                Divider()
                             }
-
-                            Button("Edit & Resend".localized) {
-                                _ = ComposerController.shared.newDraft(from: item)
-                                SnagController.shared.selectCompose()
+                            .background(Color(nsColor: ThemeColor.packetListAndDetailBackgroundColor))
+                    ) {
+                        ForEach(viewModelWrapper.items, id: \.id) { item in
+                            PacketRowView(
+                                packet: item,
+                                isSelected: viewModelWrapper.selectedPacket === item,
+                                isAlternate: item.id.hashValue & 1 != 0
+                            )
+                            .id(item.id)
+                            .contentShape(Rectangle())
+                            .onTapGesture {
+                                isAddressFilterFocused = false
+                                onPacketSelect(item)
                             }
-
-                            if viewModelWrapper.isSavedMode {
-                                Button("Delete") {
-                                    viewModelWrapper.deletePacket(item)
+                            .onRightClick {
+                                onPacketSelect(item)
+                            }
+                            .contextMenu {
+                                Button(NSLocalizedString("Copy cURL", comment: "Copy cURL context menu item")) {
+                                    if let curl = item.toCurlCommand() {
+                                        NSPasteboard.general.clearContents()
+                                        NSPasteboard.general.setString(curl, forType: .string)
+                                    }
                                 }
-                            } else {
-                                Button("Save Request") {
-                                    SavedPacketStore.shared.save(packet: item)
+
+                                Button("Edit & Resend".localized) {
+                                    _ = ComposerController.shared.newDraft(from: item)
+                                    SnagController.shared.selectCompose()
+                                }
+
+                                if viewModelWrapper.isSavedMode {
+                                    Button("Delete") {
+                                        viewModelWrapper.deletePacket(item)
+                                    }
+                                } else {
+                                    Button("Save Request") {
+                                        SavedPacketStore.shared.save(packet: item)
+                                    }
                                 }
                             }
                         }
                     }
                 }
             }
+            .background(Color(nsColor: ThemeColor.packetListAndDetailBackgroundColor))
+            .onReceive(NotificationCenter.default.publisher(for: .navigatePacketUp)) { _ in
+                navigate(offset: -1, proxy: proxy)
+            }
+            .onReceive(NotificationCenter.default.publisher(for: .navigatePacketDown)) { _ in
+                navigate(offset: +1, proxy: proxy)
+            }
         }
-        .background(Color(nsColor: ThemeColor.packetListAndDetailBackgroundColor))
+    }
+
+    private func navigate(offset: Int, proxy: ScrollViewProxy) {
+        guard let next = viewModelWrapper.adjacentPacket(offset: offset) else { return }
+        onPacketSelect(next)
+        proxy.scrollTo(next.id)
     }
 }
 
