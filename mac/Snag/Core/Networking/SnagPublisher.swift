@@ -192,7 +192,7 @@ class SnagPublisher: NSObject {
             }
             
             guard let data = data, data.count == 8, let length = self.lengthOf(data: data) else {
-                connection.cancel()
+                if isComplete || data != nil { connection.cancel() }
                 return
             }
             
