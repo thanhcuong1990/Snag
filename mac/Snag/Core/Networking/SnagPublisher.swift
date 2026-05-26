@@ -147,6 +147,7 @@ class SnagPublisher: NSObject {
             break
         case .failed(let error):
             print("SnagPublisher: \(purpose) listener failed on \(port): \(error)")
+            self.primaryListener?.cancel()
             self.primaryListener = nil
 
             if retryOnFailure {
@@ -191,7 +192,7 @@ class SnagPublisher: NSObject {
             }
             
             guard let data = data, data.count == 8, let length = self.lengthOf(data: data) else {
-                if isComplete { connection.cancel() }
+                connection.cancel()
                 return
             }
             

@@ -56,6 +56,8 @@ class SnagController: NSObject, @MainActor SnagPublisherDelegate, ObservableObje
         self.publisher.startPublishing()
 
         NotificationCenter.default.addObserver(self, selector: #selector(handleDeviceSelection), name: SnagNotifications.didSelectDevice, object: nil)
+
+        NSWorkspace.shared.notificationCenter.addObserver(self, selector: #selector(handleSystemWake), name: NSWorkspace.didWakeNotification, object: nil)
     }
 
     deinit {
@@ -64,6 +66,11 @@ class SnagController: NSObject, @MainActor SnagPublisherDelegate, ObservableObje
     
     @objc private func handleDeviceSelection() {
         self.updateLogStreamingState()
+    }
+
+    @objc private func handleSystemWake() {
+        // All NWConnections are dead after sleep; restart cleanly to free stale FDs.
+        publisher.startPublishing()
     }
     
     private func updateLogStreamingState() {
