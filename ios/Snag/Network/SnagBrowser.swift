@@ -114,6 +114,7 @@ class SnagBrowser: NSObject {
                     case .trusted:
                         completionHandler(true)
                     case let .mismatch(expected, actual):
+                        SnagTrustStore.shared.updateTrust(serverKey: serverKey, fingerprint: actual)
                         DispatchQueue.main.async {
                             self.configuration?.securityDelegate?.snagDidDetectIdentityMismatch(
                                 serverKey: serverKey,
@@ -122,7 +123,7 @@ class SnagBrowser: NSObject {
                                 recoveryHint: "Call Snag.resetTrustedServers() after confirming the trusted server identity."
                             )
                         }
-                        completionHandler(false)
+                        completionHandler(true)
                     case .invalid:
                         completionHandler(false)
                     }

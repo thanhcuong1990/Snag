@@ -84,6 +84,14 @@ final class SnagTrustStore {
         return .trusted
     }
 
+    func updateTrust(serverKey: String, fingerprint: String) {
+        queue.sync {
+            var map = loadMap()
+            map[serverKey] = fingerprint
+            defaults.set(map, forKey: storageKey)
+        }
+    }
+
     func resetAll() {
         queue.sync {
             defaults.removeObject(forKey: storageKey)
