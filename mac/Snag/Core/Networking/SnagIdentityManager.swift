@@ -8,16 +8,7 @@ class SnagIdentityManager {
     private let identityFilename = "snag_identity.p12"
     private let password = "snag"
 
-    // Kept alive for the app's lifetime — SecIdentity is backed by this keychain
-    private var tempKeychain: SecKeychain?
-    private var tempKeychainPath: String?
-
     private init() {}
-
-    deinit {
-        if let kc = tempKeychain { SecKeychainDelete(kc) }
-        if let path = tempKeychainPath { try? FileManager.default.removeItem(atPath: path) }
-    }
 
     func getIdentity() -> sec_identity_t? {
         if let identity = importFromP12() {
@@ -37,16 +28,12 @@ class SnagIdentityManager {
         guard FileManager.default.fileExists(atPath: p12URL.path),
               let p12Data = try? Data(contentsOf: p12URL) else { return nil }
 
-        guard let keychain = privateTempKeychain() else { return nil }
-
-        var access: SecAccess?
-        SecAccessCreate("Snag TLS Identity" as CFString, nil, &access)
-
-        var options: [String: Any] = [
-            kSecImportExportPassphrase as String: password,
-            kSecImportExportKeychain as String: keychain
+        // No kSecImportExportKeychain: items are transient (in-memory only).
+        // This avoids the keychain-unlock / ACL prompts that appear when
+        // Network.framework later signs the TLS handshake.
+        let options: [String: Any] = [
+            kSecImportExportPassphrase as String: password
         ]
-        if let access { options[kSecImportExportAccess as String] = access }
 
         var items: CFArray?
         guard SecPKCS12Import(p12Data as CFData, options as CFDictionary, &items) == errSecSuccess,
@@ -55,20 +42,6 @@ class SnagIdentityManager {
               let identity = first[kSecImportItemIdentity as String] as! SecIdentity? else { return nil }
 
         return identity
-    }
-
-    private func privateTempKeychain() -> SecKeychain? {
-        if let existing = tempKeychain { return existing }
-
-        let path = (NSTemporaryDirectory() as NSString)
-            .appendingPathComponent("snag_\(UUID().uuidString).keychain")
-        var keychain: SecKeychain?
-        guard SecKeychainCreate(path, UInt32(password.count), password, false, nil, &keychain) == errSecSuccess,
-              let kc = keychain else { return nil }
-
-        tempKeychain = kc
-        tempKeychainPath = path
-        return kc
     }
 
     private func getApplicationSupportDirectory() -> URL? {

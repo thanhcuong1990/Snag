@@ -29,22 +29,24 @@ OVERALL_PASS=true
 # -----------------------------------------------------------------------------
 
 # xcodebuild outputs build log; we capture it, then scan for warnings/errors.
+# Only count diagnostics attributed to a source file (file.swift:line:col: error|warning:),
+# not Apple tool runtime messages like "appintentsmetadataprocessor[…] warning: …".
 check_xcode_log() {
     local log="$1"
     local label="$2"
 
     local errors warnings
-    errors=$(grep -cE "^.*error:.*$" "$log" 2>/dev/null || true)
-    warnings=$(grep -cE "^.*warning:.*$" "$log" 2>/dev/null || true)
+    errors=$(grep -cE "^/.*:[0-9]+:[0-9]+: error:" "$log" 2>/dev/null || true)
+    warnings=$(grep -cE "^/.*:[0-9]+:[0-9]+: warning:" "$log" 2>/dev/null || true)
 
     if [ "$errors" -gt 0 ]; then
         echo ""
-        grep -E "^.*error:.*$" "$log" | head -20
+        grep -E "^/.*:[0-9]+:[0-9]+: error:" "$log" | head -20
         fail "$label: $errors error(s) found"
     fi
     if [ "$warnings" -gt 0 ]; then
         echo ""
-        grep -E "^.*warning:.*$" "$log" | head -30
+        grep -E "^/.*:[0-9]+:[0-9]+: warning:" "$log" | head -30
         fail "$label: $warnings warning(s) found — fix all warnings before release"
     fi
 }
@@ -78,6 +80,7 @@ build_mac() {
     local log
     log=$(mktemp /tmp/snag_mac_build.XXXXXX)
 
+    set +e
     xcodebuild \
         -project "$REPO_ROOT/mac/Snag.xcodeproj" \
         -scheme Snag \
@@ -85,11 +88,15 @@ build_mac() {
         -destination "platform=macOS" \
         -parallelizeTargets \
         OTHER_SWIFT_FLAGS="-warnings-as-errors" \
-        build 2>&1 | tee "$log" | \
-        xcpretty --color 2>/dev/null || cat "$log"
+        build 2>&1 | tee "$log" | xcbeautify --renderer terminal
+    local xc_status=${PIPESTATUS[0]}
+    set -e
 
-    # xcpretty exit code mirrors xcodebuild; set -e catches real failures above.
-    # Now check for lingering warnings in the raw log.
+    if [ "$xc_status" -ne 0 ]; then
+        echo ""
+        grep -E "error:" "$log" | head -20 || true
+        fail "macOS: xcodebuild exited with status $xc_status"
+    fi
     check_xcode_log "$log" "macOS"
     rm -f "$log"
     success "macOS build clean"
@@ -113,14 +120,21 @@ build_ios() {
         destination="platform=iOS Simulator,name=iPhone 16"
     fi
 
+    set +e
     xcodebuild \
         -scheme Snag \
         -destination "$destination" \
         -configuration Debug \
         OTHER_SWIFT_FLAGS="-warnings-as-errors" \
-        build 2>&1 | tee "$log" | \
-        xcpretty --color 2>/dev/null || cat "$log"
+        build 2>&1 | tee "$log" | xcbeautify --renderer terminal
+    local xc_status=${PIPESTATUS[0]}
+    set -e
 
+    if [ "$xc_status" -ne 0 ]; then
+        echo ""
+        grep -E "error:" "$log" | head -20 || true
+        fail "iOS: xcodebuild exited with status $xc_status"
+    fi
     check_xcode_log "$log" "iOS"
     rm -f "$log"
     success "iOS library build clean"
