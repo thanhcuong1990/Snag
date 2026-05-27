@@ -69,8 +69,9 @@ class SnagController: NSObject, @MainActor SnagPublisherDelegate, ObservableObje
     }
 
     @objc private func handleSystemWake() {
-        // All NWConnections are dead after sleep; restart cleanly to free stale FDs.
-        publisher.startPublishing()
+        // Delegate to the publisher, which coordinates with NWPathMonitor so
+        // we relist on the *current* network rather than racing the OS bring-up.
+        publisher.handleSystemWake()
     }
     
     private func updateLogStreamingState() {

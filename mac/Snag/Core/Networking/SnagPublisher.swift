@@ -37,40 +37,113 @@ class SnagPublisher: NSObject {
     private var pendingMainPackets: [SnagPacket] = []
     private var mainFlushScheduled = false
     private static let mainCoalesceInterval: DispatchTimeInterval = .milliseconds(16)
-    
+
+    // Tracks whether the caller has asked us to publish. After sleep/wake or a
+    // Wi-Fi flap, NWListener and its Bonjour registration become useless even
+    // though the NWListener itself may still report .ready — clients can't
+    // rediscover the service. We watch NWPathMonitor and rebuild the listener
+    // on every transition into .satisfied so discovery actually re-advertises.
+    private let pathMonitor = NWPathMonitor()
+    private var pathMonitorStarted = false
+    private var lastPathSatisfied = false
+    private var publishRequested = false
+
     func startPublishing() {
         queue.async { [weak self] in
             guard let self = self else { return }
+            self.publishRequested = true
+            self.ensurePathMonitorStartedLocked()
+            self.relistenIfNetworkAvailableLocked()
+        }
+    }
+
+    /// Called from the main thread when the system wakes from sleep.
+    /// NWConnections and the Bonjour registration are dead at this point even
+    /// when NWListener.state still reads .ready, so we tear down explicitly
+    /// and force the next .satisfied path event to be treated as a transition.
+    /// NWPathMonitor often lags 1–2s behind real network availability right
+    /// after wake, so we also kick a defensive relist after a short delay.
+    func handleSystemWake() {
+        queue.async { [weak self] in
+            guard let self = self else { return }
             self.stopPublishingLocked()
+            self.lastPathSatisfied = false
 
-            guard let primaryPort = NWEndpoint.Port(rawValue: UInt16(SnagConfiguration.netServicePort)) else {
-                print("SnagPublisher: Invalid primary port \(SnagConfiguration.netServicePort)")
-                self.schedulePublishRetryLocked()
-                return
+            self.queue.asyncAfter(deadline: .now() + 2.0) { [weak self] in
+                guard let self = self else { return }
+                guard self.publishRequested else { return }
+                if self.pathMonitor.currentPath.status == .satisfied {
+                    self.lastPathSatisfied = true
+                    self.relistenIfNetworkAvailableLocked()
+                }
+                // If still unsatisfied, handlePathUpdateLocked will rebuild
+                // as soon as NWPathMonitor reports .satisfied.
             }
+        }
+    }
 
-            if SnagConfiguration.isSecurityEnabled {
-                self.primaryListener = self.startListenerLocked(
-                    purpose: .primarySecure,
-                    port: primaryPort,
-                    serviceName: SnagConfiguration.netServiceName,
-                    useTLS: true,
-                    retryOnFailure: true
-                )
-
-                self.legacyPublisher = SnagLegacyPublisher(queue: self.queue)
-                self.legacyPublisher?.delegate = self
-                self.legacyPublisher?.start()
-                
-            } else {
-                self.primaryListener = self.startListenerLocked(
-                    purpose: .primaryCleartext,
-                    port: primaryPort,
-                    serviceName: SnagConfiguration.netServiceName,
-                    useTLS: false,
-                    retryOnFailure: true
-                )
+    private func ensurePathMonitorStartedLocked() {
+        guard !pathMonitorStarted else { return }
+        pathMonitorStarted = true
+        lastPathSatisfied = pathMonitor.currentPath.status == .satisfied
+        pathMonitor.pathUpdateHandler = { [weak self] path in
+            self?.queue.async {
+                self?.handlePathUpdateLocked(path)
             }
+        }
+        pathMonitor.start(queue: queue)
+    }
+
+    private func handlePathUpdateLocked(_ path: NWPath) {
+        let satisfied = path.status == .satisfied
+        let wasSatisfied = lastPathSatisfied
+        lastPathSatisfied = satisfied
+
+        guard publishRequested else { return }
+
+        if satisfied && !wasSatisfied {
+            // Wake/reconnect: tear down any stale listener and rebuild so
+            // Bonjour re-announces on the now-current interface.
+            relistenIfNetworkAvailableLocked()
+        } else if !satisfied {
+            // Network is gone; existing listener is useless. Stop so the next
+            // .satisfied transition will rebuild cleanly.
+            stopPublishingLocked()
+        }
+    }
+
+    private func relistenIfNetworkAvailableLocked() {
+        guard publishRequested else { return }
+        guard lastPathSatisfied else { return }
+
+        stopPublishingLocked()
+
+        guard let primaryPort = NWEndpoint.Port(rawValue: UInt16(SnagConfiguration.netServicePort)) else {
+            print("SnagPublisher: Invalid primary port \(SnagConfiguration.netServicePort)")
+            schedulePublishRetryLocked()
+            return
+        }
+
+        if SnagConfiguration.isSecurityEnabled {
+            self.primaryListener = self.startListenerLocked(
+                purpose: .primarySecure,
+                port: primaryPort,
+                serviceName: SnagConfiguration.netServiceName,
+                useTLS: true,
+                retryOnFailure: true
+            )
+
+            self.legacyPublisher = SnagLegacyPublisher(queue: self.queue)
+            self.legacyPublisher?.delegate = self
+            self.legacyPublisher?.start()
+        } else {
+            self.primaryListener = self.startListenerLocked(
+                purpose: .primaryCleartext,
+                port: primaryPort,
+                serviceName: SnagConfiguration.netServiceName,
+                useTLS: false,
+                retryOnFailure: true
+            )
         }
     }
 
@@ -312,7 +385,10 @@ class SnagPublisher: NSObject {
     }
 
     func stopPublishing() {
-        queue.async { self.stopPublishingLocked() }
+        queue.async {
+            self.publishRequested = false
+            self.stopPublishingLocked()
+        }
     }
 
     private func stopPublishingLocked() {
