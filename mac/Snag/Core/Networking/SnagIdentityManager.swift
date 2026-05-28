@@ -39,14 +39,10 @@ class SnagIdentityManager {
 
         guard let keychain = privateTempKeychain() else { return nil }
 
-        var access: SecAccess?
-        SecAccessCreate("Snag TLS Identity" as CFString, nil, &access)
-
-        var options: [String: Any] = [
+        let options: [String: Any] = [
             kSecImportExportPassphrase as String: password,
             kSecImportExportKeychain as String: keychain
         ]
-        if let access { options[kSecImportExportAccess as String] = access }
 
         var items: CFArray?
         guard SecPKCS12Import(p12Data as CFData, options as CFDictionary, &items) == errSecSuccess,
