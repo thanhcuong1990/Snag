@@ -59,5 +59,5 @@ Log in to the [Sonatype Central Portal](https://central.sonatype.com/) to releas
 Once published and synced (can take up to 30 mins), users can add it to their `build.gradle`:
 
 ```kotlin
-implementation("io.github.thanhcuong1990:snag:1.1.11")
+implementation("io.github.thanhcuong1990:snag:1.1.12")
 ```
