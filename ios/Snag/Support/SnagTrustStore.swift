@@ -85,10 +85,12 @@ final class SnagTrustStore {
     }
 
     func updateTrust(serverKey: String, fingerprint: String) {
-        queue.sync {
-            var map = loadMap()
+        // async: this is called from inside verifyOrTrust's completion, which
+        // runs on `queue`. queue.sync from the same serial queue would crash.
+        queue.async {
+            var map = self.loadMap()
             map[serverKey] = fingerprint
-            defaults.set(map, forKey: storageKey)
+            self.defaults.set(map, forKey: self.storageKey)
         }
     }
 

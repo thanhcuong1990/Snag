@@ -62,6 +62,17 @@ class SnagIdentityManager {
         guard SecKeychainCreate(path, UInt32(password.count), password, false, nil, &keychain) == errSecSuccess,
               let kc = keychain else { return nil }
 
+        // Prevent auto-lock so Network.framework's out-of-process TLS signer
+        // never triggers an "Enter the keychain password" prompt.
+        var settings = SecKeychainSettings(
+            version: UInt32(SEC_KEYCHAIN_SETTINGS_VERS1),
+            lockOnSleep: false,
+            useLockInterval: false,
+            lockInterval: UInt32.max
+        )
+        SecKeychainSetSettings(kc, &settings)
+        SecKeychainUnlock(kc, UInt32(password.count), password, true)
+
         tempKeychain = kc
         tempKeychainPath = path
         return kc
