@@ -7,6 +7,15 @@
         <language>en</language>
         <!-- The workflow will automatically append new releases here -->
         <item>
+            <title>1.2.0</title>
+            <pubDate>Fri, 29 May 2026 04:04:38 +0000</pubDate>
+            <link>https://github.com/thanhcuong1990/Snag/releases/tag/v1.2.0</link>
+            <sparkle:version>1.2.0</sparkle:version>
+            <sparkle:shortVersionString>1.2.0</sparkle:shortVersionString>
+            <sparkle:minimumSystemVersion>12.4</sparkle:minimumSystemVersion>
+            <enclosure url="https://github.com/thanhcuong1990/Snag/releases/download/v1.2.0/Snag.zip" length="5533885" type="application/octet-stream" sparkle:edSignature="laYKrqG6iAJ13IAOxQmxD6bEKeVDJrPxf0FEgy3MI8s9JUaBZAhw5Y1sI7NsHNCAXHfXxSnwQu3DDxM441qeBw=="/>
+        </item>
+        <item>
             <title>1.1.12</title>
             <pubDate>Thu, 28 May 2026 09:53:01 +0000</pubDate>
             <link>https://github.com/thanhcuong1990/Snag/releases/tag/v1.1.12</link>
@@ -23,15 +32,6 @@
             <sparkle:shortVersionString>1.1.11</sparkle:shortVersionString>
             <sparkle:minimumSystemVersion>12.4</sparkle:minimumSystemVersion>
             <enclosure url="https://github.com/thanhcuong1990/Snag/releases/download/v1.1.11/Snag.zip" length="5526705" type="application/octet-stream" sparkle:edSignature="aIW5rVj/fXnli83PujcKJ8/dPpu9862FDwL2oUY9UtPZYFpxTmfBVOOXkqq2FZrfY/Hz5x2L9fI9hs+6GoRQAQ=="/>
-        </item>
-        <item>
-            <title>1.1.10</title>
-            <pubDate>Thu, 28 May 2026 06:59:21 +0000</pubDate>
-            <link>https://github.com/thanhcuong1990/Snag/releases/tag/v1.1.10</link>
-            <sparkle:version>1.1.10</sparkle:version>
-            <sparkle:shortVersionString>1.1.10</sparkle:shortVersionString>
-            <sparkle:minimumSystemVersion>12.4</sparkle:minimumSystemVersion>
-            <enclosure url="https://github.com/thanhcuong1990/Snag/releases/download/v1.1.10/Snag.zip" length="5522979" type="application/octet-stream" sparkle:edSignature="KB3/Xe1FFDJiO7zgvtKjSwI3jW7cSNdgtwNByGqlKnLvD7aRUopoD9wejsTg5SrLAzNofkfPBa+LV5lHsmBCBg=="/>
         </item>
     </channel>
 </rss>
