@@ -46,21 +46,24 @@ class SnagIdentityManager {
         // persistent keychain from a previous launch. Look it up below.
         guard importStatus == errSecSuccess || importStatus == errSecDuplicateItem else { return nil }
 
-        // Set partition list so out-of-process Apple system processes
-        // (securityd / trustd / networkd's TLS signer) can use the key
-        // without prompting. This is the modern macOS gate; legacy ACLs
-        // are insufficient on their own.
-        setPartitionList(keychainPath: kcPath)
+        if importStatus == errSecSuccess {
+            // Fresh import — set partition list so out-of-process Apple
+            // system processes (securityd / trustd / networkd's TLS signer)
+            // can use the key without prompting. Modern macOS gate; legacy
+            // ACLs are insufficient on their own. Only needed once; on
+            // subsequent launches the import returns errSecDuplicateItem
+            // and the partition list is already in place.
+            setPartitionList(keychainPath: kcPath)
 
-        if importStatus == errSecSuccess,
-           let arr = items as? [[String: Any]],
-           let first = arr.first,
-           let identity = first[kSecImportItemIdentity as String] as! SecIdentity? {
-            return identity
+            if let arr = items as? [[String: Any]],
+               let first = arr.first,
+               let identityRef = first[kSecImportItemIdentity as String] {
+                return (identityRef as! SecIdentity)
+            }
         }
 
-        // Duplicate or empty result — look up the identity already in
-        // the keychain by querying for it.
+        // Duplicate, or import returned an empty result — look up the
+        // identity already in the keychain.
         return lookupIdentityInKeychain(keychain)
     }
 
@@ -72,8 +75,9 @@ class SnagIdentityManager {
             kSecMatchLimit as String: kSecMatchLimitOne
         ]
         var result: CFTypeRef?
-        guard SecItemCopyMatching(query as CFDictionary, &result) == errSecSuccess else { return nil }
-        return (result as! SecIdentity?)
+        guard SecItemCopyMatching(query as CFDictionary, &result) == errSecSuccess,
+              let item = result else { return nil }
+        return (item as! SecIdentity)
     }
 
     private func setPartitionList(keychainPath: String) {
@@ -104,7 +108,7 @@ class SnagIdentityManager {
 
         if FileManager.default.fileExists(atPath: path) {
             if SecKeychainOpen(path, &keychain) == errSecSuccess, let kc = keychain {
-                let unlockStatus = SecKeychainUnlock(kc, UInt32(password.count), password, true)
+                let unlockStatus = SecKeychainUnlock(kc, UInt32(password.utf8.count), password, true)
                 if unlockStatus == errSecSuccess {
                     removeFromSearchList(path: path)
                     snagKeychain = kc
@@ -118,7 +122,7 @@ class SnagIdentityManager {
             keychain = nil
         }
 
-        guard SecKeychainCreate(path, UInt32(password.count), password, false, nil, &keychain) == errSecSuccess,
+        guard SecKeychainCreate(path, UInt32(password.utf8.count), password, false, nil, &keychain) == errSecSuccess,
               let kc = keychain else { return nil }
 
         var settings = SecKeychainSettings(
@@ -128,7 +132,7 @@ class SnagIdentityManager {
             lockInterval: UInt32.max
         )
         SecKeychainSetSettings(kc, &settings)
-        SecKeychainUnlock(kc, UInt32(password.count), password, true)
+        SecKeychainUnlock(kc, UInt32(password.utf8.count), password, true)
 
         // Pull the keychain back out of the user's default search list so
         // securityd / trustd don't scan it during TLS handshake (which would
