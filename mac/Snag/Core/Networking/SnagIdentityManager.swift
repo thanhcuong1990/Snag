@@ -34,10 +34,20 @@ class SnagIdentityManager {
 
         guard let keychain = persistentKeychain(in: dir), let kcPath = snagKeychainPath else { return nil }
 
-        let options: [String: Any] = [
+        var options: [String: Any] = [
             kSecImportExportPassphrase as String: password,
             kSecImportExportKeychain as String: keychain
         ]
+        // Trust every application to use the imported key without prompting.
+        // The released app is ad-hoc signed (no Developer ID), so it has no
+        // stable Team ID to authorize via the partition list and its cdhash
+        // changes every build — an allow-all ACL is the only identity-independent
+        // way to suppress the keychain prompt. Safe here: this is a locally
+        // generated, self-signed cert for the local network debugger, not a
+        // real credential.
+        if let access = makeAllowAllAccess() {
+            options[kSecImportExportAccess as String] = access
+        }
 
         var items: CFArray?
         let importStatus = SecPKCS12Import(p12Data as CFData, options as CFDictionary, &items)
@@ -80,6 +90,27 @@ class SnagIdentityManager {
         return (item as! SecIdentity)
     }
 
+    private func makeAllowAllAccess() -> SecAccess? {
+        var access: SecAccess?
+        guard SecAccessCreate("Snag Local Network Debugger" as CFString, [] as CFArray, &access) == errSecSuccess,
+              let acc = access else { return nil }
+
+        var aclList: CFArray?
+        guard SecAccessCopyACLList(acc, &aclList) == errSecSuccess,
+              let acls = aclList as? [SecACL] else { return acc }
+
+        for acl in acls {
+            var apps: CFArray?
+            var desc: CFString?
+            var prompt = SecKeychainPromptSelector(rawValue: 0)
+            SecACLCopyContents(acl, &apps, &desc, &prompt)
+            // A nil application list means any application may use the key
+            // without prompting — the in-code equivalent of `security import -A`.
+            SecACLSetContents(acl, nil, (desc ?? "" as CFString), prompt)
+        }
+        return acc
+    }
+
     private func setPartitionList(keychainPath: String) {
         let process = Process()
         process.executableURL = URL(fileURLWithPath: "/usr/bin/security")
@@ -110,6 +141,7 @@ class SnagIdentityManager {
             if SecKeychainOpen(path, &keychain) == errSecSuccess, let kc = keychain {
                 let unlockStatus = SecKeychainUnlock(kc, UInt32(password.utf8.count), password, true)
                 if unlockStatus == errSecSuccess {
+                    disableAutoLock(keychainPath: path)
                     removeFromSearchList(path: path)
                     snagKeychain = kc
                     snagKeychainPath = path
@@ -125,14 +157,8 @@ class SnagIdentityManager {
         guard SecKeychainCreate(path, UInt32(password.utf8.count), password, false, nil, &keychain) == errSecSuccess,
               let kc = keychain else { return nil }
 
-        var settings = SecKeychainSettings(
-            version: UInt32(SEC_KEYCHAIN_SETTINGS_VERS1),
-            lockOnSleep: false,
-            useLockInterval: false,
-            lockInterval: UInt32.max
-        )
-        SecKeychainSetSettings(kc, &settings)
         SecKeychainUnlock(kc, UInt32(password.utf8.count), password, true)
+        disableAutoLock(keychainPath: path)
 
         // Pull the keychain back out of the user's default search list so
         // securityd / trustd don't scan it during TLS handshake (which would
@@ -142,6 +168,28 @@ class SnagIdentityManager {
         snagKeychain = kc
         snagKeychainPath = path
         return kc
+    }
+
+    // Make the keychain never auto-lock. A freshly created keychain defaults to
+    // lock-on-sleep with a 300s idle timeout, and the in-process
+    // SecKeychainSetSettings call does not reliably override that default — so
+    // the keychain relocks behind the app's back and the next TLS handshake
+    // surfaces an "Enter the keychain password" prompt. `security
+    // set-keychain-settings` with no flags clears both the timeout and
+    // lock-on-sleep; run it on every launch so keychains created before this
+    // fix get repaired too.
+    private func disableAutoLock(keychainPath: String) {
+        let process = Process()
+        process.executableURL = URL(fileURLWithPath: "/usr/bin/security")
+        process.arguments = ["set-keychain-settings", keychainPath]
+        process.standardOutput = Pipe()
+        process.standardError = Pipe()
+        do {
+            try process.run()
+            process.waitUntilExit()
+        } catch {
+            print("SnagIdentityManager: set-keychain-settings failed: \(error)")
+        }
     }
 
     private func removeFromSearchList(path: String) {
