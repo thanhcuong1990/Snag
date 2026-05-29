@@ -39,10 +39,24 @@ class SnagIdentityManager {
 
         guard let keychain = privateTempKeychain() else { return nil }
 
-        let options: [String: Any] = [
+        // Build an ACL that trusts the current app (Snag) so signing via the
+        // imported key — including Network.framework's out-of-process TLS
+        // signer that runs in our app's security context — never prompts.
+        // SecPKCS12Import without an explicit access uses a default ACL that
+        // requires user confirmation for every key operation.
+        var trustedApp: SecTrustedApplication?
+        SecTrustedApplicationCreateFromPath(nil, &trustedApp)
+
+        var access: SecAccess?
+        if let app = trustedApp {
+            SecAccessCreate("Snag TLS Identity" as CFString, [app] as CFArray, &access)
+        }
+
+        var options: [String: Any] = [
             kSecImportExportPassphrase as String: password,
             kSecImportExportKeychain as String: keychain
         ]
+        if let access { options[kSecImportExportAccess as String] = access }
 
         var items: CFArray?
         guard SecPKCS12Import(p12Data as CFData, options as CFDictionary, &items) == errSecSuccess,
@@ -56,14 +70,24 @@ class SnagIdentityManager {
     private func privateTempKeychain() -> SecKeychain? {
         if let existing = tempKeychain { return existing }
 
+        // Build a keychain-level SecAccess that trusts the current app.
+        // Without this, the keychain's default ACL prompts the user with
+        // "Snag wants to use the 'snag_XXX' keychain" on first item access.
+        var trustedApp: SecTrustedApplication?
+        SecTrustedApplicationCreateFromPath(nil, &trustedApp)
+
+        var initialAccess: SecAccess?
+        if let app = trustedApp {
+            SecAccessCreate("Snag Temp Keychain" as CFString, [app] as CFArray, &initialAccess)
+        }
+
         let path = (NSTemporaryDirectory() as NSString)
             .appendingPathComponent("snag_\(UUID().uuidString).keychain")
         var keychain: SecKeychain?
-        guard SecKeychainCreate(path, UInt32(password.count), password, false, nil, &keychain) == errSecSuccess,
+        guard SecKeychainCreate(path, UInt32(password.count), password, false, initialAccess, &keychain) == errSecSuccess,
               let kc = keychain else { return nil }
 
-        // Prevent auto-lock so Network.framework's out-of-process TLS signer
-        // never triggers an "Enter the keychain password" prompt.
+        // Prevent auto-lock so the keychain doesn't lock mid-session.
         var settings = SecKeychainSettings(
             version: UInt32(SEC_KEYCHAIN_SETTINGS_VERS1),
             lockOnSleep: false,
@@ -72,6 +96,25 @@ class SnagIdentityManager {
         )
         SecKeychainSetSettings(kc, &settings)
         SecKeychainUnlock(kc, UInt32(password.count), password, true)
+
+        // SecKeychainCreate auto-adds the new keychain to the user's default
+        // search list. That causes out-of-process scans (by securityd / trustd
+        // during TLS signing) to see our temp keychain and prompt the user for
+        // its password. Remove it from the search list — we still hold a
+        // direct reference so SecPKCS12Import and the resulting SecIdentity
+        // continue to work.
+        var searchList: CFArray?
+        if SecKeychainCopySearchList(&searchList) == errSecSuccess,
+           let list = searchList as? [SecKeychain] {
+            let filtered = list.filter { existing in
+                var existingPath = [CChar](repeating: 0, count: 1024)
+                var len: UInt32 = UInt32(existingPath.count)
+                guard SecKeychainGetPath(existing, &len, &existingPath) == errSecSuccess else { return true }
+                let existingPathString = String(cString: existingPath)
+                return existingPathString != path
+            }
+            SecKeychainSetSearchList(filtered as CFArray)
+        }
 
         tempKeychain = kc
         tempKeychainPath = path
