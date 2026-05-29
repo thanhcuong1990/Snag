@@ -21,8 +21,8 @@ sed -i '' "s/coordinates(\"io.github.thanhcuong1990\", \"snag\", \".*\")/coordin
 
 # 2. Update version in README.md
 echo "📝 Updating version in README.md..."
-# Android dependency
-sed -i '' "s/implementation 'io.github.thanhcuong1990:snag:.*'/implementation 'io.github.thanhcuong1990:snag:$NEW_VERSION'/g" "$ROOT_DIR/README.md"
+# Android dependency — matches implementation / debugImplementation / api / etc.
+sed -i '' -E "s/io\.github\.thanhcuong1990:snag:[0-9][0-9.]*/io.github.thanhcuong1990:snag:$NEW_VERSION/g" "$ROOT_DIR/README.md"
 
 # 3. Update version in android/publishing.md
 echo "📝 Updating version in android/publishing.md..."
