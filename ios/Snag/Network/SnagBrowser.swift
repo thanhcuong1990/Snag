@@ -79,18 +79,28 @@ class SnagBrowser: NSObject {
     private func handleResultsChanged(results: Set<NWBrowser.Result>) {
         queue.async {
             Snag.internalDebugLog("SnagBrowser: Browser results changed. Found \(results.count) results.")
-            self.discoveredEndpoints = Set(results.map { $0.endpoint })
+            self.discoveredEndpoints = Set(results.map { $0.endpoint }.filter { !self.isLegacyEndpoint($0) })
             for endpoint in self.discoveredEndpoints {
                 let existingConnections = self.connections.filter { $0.endpoint == endpoint }
                 let hasReadyConnection = existingConnections.contains { $0.state == .ready }
 
-                if !hasReadyConnection {
-                    // Proactively remove any stagnant connections for this endpoint
-                    self.connections.removeAll { $0.endpoint == endpoint && $0.state != .ready }
+                if !hasReadyConnection && !self.connectingEndpoints.contains(endpoint) {
+                    let stale = existingConnections.filter { $0.state != .ready }
+                    stale.forEach { $0.cancel() }
+                    self.connections.removeAll { candidate in stale.contains { $0 === candidate } }
                     self.connect(with: endpoint)
                 }
             }
         }
+    }
+
+    // The desktop app publishes a companion cleartext service for old SDKs;
+    // this SDK must never dial it: TLS against it hangs and leaks sockets.
+    private func isLegacyEndpoint(_ endpoint: NWEndpoint) -> Bool {
+        if case let .service(name, _, _, _) = endpoint {
+            return name == "SnagLegacy" || name.hasSuffix("-legacy")
+        }
+        return false
     }
 
     private func connect(with endpoint: NWEndpoint) {
@@ -160,6 +170,14 @@ class SnagBrowser: NSObject {
 
         connections.append(connection)
         connection.start(queue: queue)
+
+        queue.asyncAfter(deadline: .now() + 15.0) { [weak self, weak connection] in
+            guard let self = self, let connection = connection else { return }
+            if connection.state != .ready, self.connections.contains(where: { $0 === connection }) {
+                Snag.internalDebugLog("SnagBrowser: Connect timeout for \(endpoint). Cancelling.")
+                connection.cancel()
+            }
+        }
     }
 
     private func handleConnected(_ connection: NWConnection) {

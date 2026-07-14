@@ -19,6 +19,12 @@ class SnagPublisher: NSObject {
     private var connections: [NWConnection] = []
     private var authenticatedConnections: Set<ObjectIdentifier> = []
     private var deviceConnections: [String: NWConnection] = [:]
+
+    // Connections that never produce a decodable frame must be reaped or fds
+    // accumulate until EMFILE aborts the app.
+    private var validatedConnections: Set<ObjectIdentifier> = []
+    private static let maxConnections = 128
+    private static let firstFrameTimeout: TimeInterval = 30
     
     private let queue = DispatchQueue(label: "com.snag.publisher.queue")
     
@@ -250,8 +256,24 @@ class SnagPublisher: NSObject {
         }
         
         queue.async {
+            guard self.connections.count < Self.maxConnections else {
+                print("SnagPublisher: Connection cap reached, refusing \(connection.endpoint)")
+                connection.cancel()
+                return
+            }
             self.connections.append(connection)
             connection.start(queue: self.queue)
+            self.scheduleFirstFrameTimeoutLocked(for: connection)
+        }
+    }
+
+    private func scheduleFirstFrameTimeoutLocked(for connection: NWConnection) {
+        queue.asyncAfter(deadline: .now() + Self.firstFrameTimeout) { [weak self, weak connection] in
+            guard let self = self, let connection = connection else { return }
+            let isTracked = self.connections.contains { $0 === connection }
+            if isTracked && !self.validatedConnections.contains(ObjectIdentifier(connection)) {
+                self.evictConnection(connection, reason: "first_frame_timeout")
+            }
         }
     }
 
@@ -265,7 +287,7 @@ class SnagPublisher: NSObject {
             }
             
             guard let data = data, data.count == 8, let length = self.lengthOf(data: data) else {
-                if isComplete || data != nil { connection.cancel() }
+                connection.cancel()
                 return
             }
             
@@ -295,6 +317,7 @@ class SnagPublisher: NSObject {
     private func processReceivedDataLocked(_ data: Data, from connection: NWConnection) {
         do {
             let snagPacket = try jsonDecoder.decode(SnagPacket.self, from: data)
+            validatedConnections.insert(ObjectIdentifier(connection))
             let type = snagPacket.control?.type
             let deviceId = (snagPacket.device?.deviceId ?? snagPacket.control?.deviceId)?.lowercased()
             
@@ -401,6 +424,7 @@ class SnagPublisher: NSObject {
         connections.removeAll()
         deviceConnections.removeAll()
         authenticatedConnections.removeAll()
+        validatedConnections.removeAll()
         flushMainPacketsLocked()
     }
     
@@ -408,6 +432,7 @@ class SnagPublisher: NSObject {
         self.connections.removeAll { $0 === connection }
         self.deviceConnections = self.deviceConnections.filter { $0.value !== connection }
         self.authenticatedConnections.remove(ObjectIdentifier(connection))
+        self.validatedConnections.remove(ObjectIdentifier(connection))
     }
     
     // MARK: - Helpers
@@ -492,6 +517,7 @@ extension SnagPublisher: SnagLegacyPublisherDelegate {
             // Add to our lists
             self.connections.append(connection)
             self.authenticatedConnections.insert(ObjectIdentifier(connection))
+            self.validatedConnections.insert(ObjectIdentifier(connection))
             
             if let deviceId = deviceId {
                 self.deviceConnections[deviceId] = connection

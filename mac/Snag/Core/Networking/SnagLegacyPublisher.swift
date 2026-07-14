@@ -16,6 +16,11 @@ class SnagLegacyPublisher: NSObject {
     // so they don't linger after the publisher is torn down.
     private var pendingConnections: [NWConnection] = []
 
+    // TLS clients also discover and dial this cleartext port; unpromoted
+    // connections must be cancelled or fds accumulate until EMFILE aborts the app.
+    private static let maxPendingConnections = 32
+    private static let promotionTimeout: TimeInterval = 15
+
     private let jsonDecoder: JSONDecoder = {
         let decoder = JSONDecoder()
         decoder.dateDecodingStrategy = .secondsSince1970
@@ -94,17 +99,37 @@ class SnagLegacyPublisher: NSObject {
     }
     
     private func handleNewConnection(_ connection: NWConnection) {
+        guard pendingConnections.count < Self.maxPendingConnections else {
+            print("SnagLegacyPublisher: Pending connection cap reached, refusing \(connection.endpoint)")
+            connection.cancel()
+            return
+        }
+
         pendingConnections.append(connection)
         connection.stateUpdateHandler = { [weak self] state in
             switch state {
-            case .cancelled, .failed:
+            case .cancelled:
                 self?.queue.async { self?.removePendingConnection(connection) }
+            case .failed:
+                self?.queue.async {
+                    self?.removePendingConnection(connection)
+                    connection.cancel()
+                }
             default:
                 break
             }
         }
         connection.start(queue: self.queue)
         self.receiveData(on: connection)
+
+        queue.asyncAfter(deadline: .now() + Self.promotionTimeout) { [weak self, weak connection] in
+            guard let self = self, let connection = connection else { return }
+            if self.pendingConnections.contains(where: { $0 === connection }) {
+                print("SnagLegacyPublisher: Promotion timeout, closing \(connection.endpoint)")
+                self.removePendingConnection(connection)
+                connection.cancel()
+            }
+        }
     }
 
     private func removePendingConnection(_ connection: NWConnection) {
@@ -119,9 +144,9 @@ class SnagLegacyPublisher: NSObject {
                 connection.cancel()
                 return
             }
-            
+
             guard let data = data, data.count == 8, let length = self.lengthOf(data: data) else {
-                if isComplete { connection.cancel() }
+                connection.cancel()
                 return
             }
             
