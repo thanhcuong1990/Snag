@@ -222,7 +222,7 @@ Minimum supported Android: **API 24 (Android 7.0)**.
 
 ```groovy
 // Use debugImplementation to automatically exclude Snag from release builds
-debugImplementation 'io.github.thanhcuong1990:snag:1.2.1'
+debugImplementation 'io.github.thanhcuong1990:snag:1.2.2'
 ```
 
 > [!TIP]
