@@ -50,8 +50,17 @@ git add "$ROOT_DIR/android/snag/build.gradle.kts" \
         "$ROOT_DIR/README.md" \
         "$ROOT_DIR/android/publishing.md"
 
-git commit -m "chore: bump version to $NEW_VERSION"
-git tag -a "v$NEW_VERSION" -m "Release v$NEW_VERSION"
+if git diff --cached --quiet; then
+    echo "ℹ️  Version files already committed, skipping commit."
+else
+    git commit -m "chore: bump version to $NEW_VERSION"
+fi
+
+if git rev-parse -q --verify "refs/tags/v$NEW_VERSION" >/dev/null; then
+    echo "ℹ️  Tag v$NEW_VERSION already exists, skipping tag creation."
+else
+    git tag -a "v$NEW_VERSION" -m "Release v$NEW_VERSION"
+fi
 
 # 6. Push to Remote
 echo "🔄 Pushing changes and tags to origin..."
