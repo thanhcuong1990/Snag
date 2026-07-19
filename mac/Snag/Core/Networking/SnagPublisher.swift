@@ -249,12 +249,13 @@ class SnagPublisher: NSObject {
                     self.evictConnection(connection, reason: "state_failed")
                 case .cancelled:
                     self.removeConnection(connection)
+                    connection.stateUpdateHandler = nil
                 default:
                     break
                 }
             }
         }
-        
+
         queue.async {
             guard self.connections.count < Self.maxConnections else {
                 print("SnagPublisher: Connection cap reached, refusing \(connection.endpoint)")
@@ -280,34 +281,32 @@ class SnagPublisher: NSObject {
     private func receiveData(on connection: NWConnection) {
         connection.receive(minimumIncompleteLength: 8, maximumLength: 8) { [weak self] data, _, isComplete, error in
             guard let self = self else { return }
-            
+
             if error != nil {
-                connection.cancel()
+                self.queue.async { self.evictConnection(connection, reason: "receive_error") }
                 return
             }
-            
+
             guard let data = data, data.count == 8, let length = self.lengthOf(data: data) else {
-                connection.cancel()
+                self.queue.async { self.evictConnection(connection, reason: "invalid_header") }
                 return
             }
-            
+
             connection.receive(minimumIncompleteLength: length, maximumLength: length) { [weak self] bodyData, _, bodyIsComplete, bodyError in
                 guard let self = self else { return }
                 self.queue.async {
                     if bodyError != nil {
-                        self.removeConnection(connection)
-                        connection.cancel()
+                        self.evictConnection(connection, reason: "body_receive_error")
                         return
                     }
-                    
+
                     if let bodyData = bodyData {
                         self.processReceivedDataLocked(bodyData, from: connection)
                     }
-                    
+
                     if !bodyIsComplete { self.receiveData(on: connection) }
                     else {
-                        self.removeConnection(connection)
-                        connection.cancel()
+                        self.evictConnection(connection, reason: "stream_complete")
                     }
                 }
             }
@@ -420,7 +419,10 @@ class SnagPublisher: NSObject {
         legacyPublisher?.stop()
         legacyPublisher = nil
 
-        connections.forEach { $0.cancel() }
+        connections.forEach {
+            $0.stateUpdateHandler = nil
+            $0.cancel()
+        }
         connections.removeAll()
         deviceConnections.removeAll()
         authenticatedConnections.removeAll()
@@ -499,9 +501,12 @@ class SnagPublisher: NSObject {
         }
     }
 
+    // stateUpdateHandler must be nilled: it strongly captures the connection, and
+    // .failed connections never deliver .cancelled — the cycle leaks the fd (EMFILE).
     private func evictConnection(_ connection: NWConnection, reason: String) {
         print("SnagPublisher: Evicting connection (\(connection.endpoint)) reason=\(reason)")
         self.removeConnection(connection)
+        connection.stateUpdateHandler = nil
         connection.cancel()
     }
 }
@@ -547,6 +552,7 @@ extension SnagPublisher: SnagLegacyPublisherDelegate {
                          self.evictConnection(connection, reason: "legacy_state_failed")
                      case .cancelled:
                          self.removeConnection(connection)
+                         connection.stateUpdateHandler = nil
                      default:
                          break
                      }

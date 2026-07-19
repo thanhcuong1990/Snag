@@ -77,7 +77,10 @@ class SnagLegacyPublisher: NSObject {
     func stop() {
         listener?.cancel()
         listener = nil
-        pendingConnections.forEach { $0.cancel() }
+        pendingConnections.forEach {
+            $0.stateUpdateHandler = nil
+            $0.cancel()
+        }
         pendingConnections.removeAll()
     }
     
@@ -109,12 +112,12 @@ class SnagLegacyPublisher: NSObject {
         connection.stateUpdateHandler = { [weak self] state in
             switch state {
             case .cancelled:
-                self?.queue.async { self?.removePendingConnection(connection) }
-            case .failed:
                 self?.queue.async {
                     self?.removePendingConnection(connection)
-                    connection.cancel()
+                    connection.stateUpdateHandler = nil
                 }
+            case .failed:
+                self?.queue.async { self?.closePendingConnection(connection) }
             default:
                 break
             }
@@ -126,8 +129,7 @@ class SnagLegacyPublisher: NSObject {
             guard let self = self, let connection = connection else { return }
             if self.pendingConnections.contains(where: { $0 === connection }) {
                 print("SnagLegacyPublisher: Promotion timeout, closing \(connection.endpoint)")
-                self.removePendingConnection(connection)
-                connection.cancel()
+                self.closePendingConnection(connection)
             }
         }
     }
@@ -136,39 +138,47 @@ class SnagLegacyPublisher: NSObject {
         pendingConnections.removeAll { $0 === connection }
     }
 
+    // stateUpdateHandler must be nilled: it strongly captures the connection, and
+    // .failed connections never deliver .cancelled — the cycle leaks the fd (EMFILE).
+    private func closePendingConnection(_ connection: NWConnection) {
+        removePendingConnection(connection)
+        connection.stateUpdateHandler = nil
+        connection.cancel()
+    }
+
     private func receiveData(on connection: NWConnection) {
          connection.receive(minimumIncompleteLength: 8, maximumLength: 8) { [weak self] data, _, isComplete, error in
             guard let self = self else { return }
             
             if error != nil {
-                connection.cancel()
+                self.closePendingConnection(connection)
                 return
             }
 
             guard let data = data, data.count == 8, let length = self.lengthOf(data: data) else {
-                connection.cancel()
+                self.closePendingConnection(connection)
                 return
             }
-            
+
             connection.receive(minimumIncompleteLength: length, maximumLength: length) { [weak self] bodyData, _, bodyIsComplete, bodyError in
                 guard let self = self else { return }
 
                 if bodyError != nil {
-                    connection.cancel()
+                    self.closePendingConnection(connection)
                     return
                 }
-                
+
                 if let bodyData = bodyData {
                     self.processReceivedData(bodyData, from: connection)
                 }
-                
+
                 // We don't continue receiving loop here because we either promote or drop for legacy
                 if !bodyIsComplete {
                      // For legacy promotion, we might hand off the connection, so we stop reading here?
                      // Actually, the original code promotes and then forwards packet.
                      // But if it's promoted, `SnagPublisher` takes over.
-                } else {
-                    connection.cancel()
+                } else if self.pendingConnections.contains(where: { $0 === connection }) {
+                    self.closePendingConnection(connection)
                 }
             }
         }
@@ -185,11 +195,11 @@ class SnagLegacyPublisher: NSObject {
                 delegate?.legacyPublisher(self, didPromoteConnection: connection, deviceId: deviceId, packet: snagPacket)
             } else {
                 print("SnagLegacyPublisher: Ignored non-legacy packet from \(connection.endpoint)")
-                connection.cancel()
+                closePendingConnection(connection)
             }
         } catch {
              print("SnagLegacyPublisher: Parse error: \(error)")
-             connection.cancel()
+             closePendingConnection(connection)
         }
     }
     

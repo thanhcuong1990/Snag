@@ -86,7 +86,10 @@ class SnagBrowser: NSObject {
 
                 if !hasReadyConnection && !self.connectingEndpoints.contains(endpoint) {
                     let stale = existingConnections.filter { $0.state != .ready }
-                    stale.forEach { $0.cancel() }
+                    stale.forEach {
+                        $0.stateUpdateHandler = nil
+                        $0.cancel()
+                    }
                     self.connections.removeAll { candidate in stale.contains { $0 === candidate } }
                     self.connect(with: endpoint)
                 }
@@ -154,6 +157,10 @@ class SnagBrowser: NSObject {
                 }
                 self?.handleConnected(connection)
             case .failed, .cancelled:
+                // stateUpdateHandler must be nilled: it strongly captures the connection, and
+                // .failed connections never deliver .cancelled — the cycle leaks the socket.
+                connection.stateUpdateHandler = nil
+                connection.cancel()
                 self?.queue.async {
                     self?.connectingEndpoints.remove(endpoint)
                 }
@@ -243,6 +250,7 @@ class SnagBrowser: NSObject {
         browser = nil
 
         for connection in connections {
+            connection.stateUpdateHandler = nil
             connection.cancel()
         }
         connections.removeAll()
