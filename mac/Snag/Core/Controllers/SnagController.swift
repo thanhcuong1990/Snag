@@ -105,6 +105,8 @@ class SnagController: NSObject, @MainActor SnagPublisherDelegate, ObservableObje
         } else {
             self.packetUpdatedPublisher.send(packet)
         }
+
+        FixtureCaptureService.shared.record(packet)
         
         // Ensure log streaming state is correct for new devices
         if packet.device != nil {

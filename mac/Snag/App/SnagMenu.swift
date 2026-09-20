@@ -109,6 +109,46 @@ class SnagMenu {
         closeItem.target = RequestMenuActions.shared
         requestMenu.addItem(closeItem)
 
+        // Capture Menu
+        let captureMenuItem = NSMenuItem()
+        mainMenu.addItem(captureMenuItem)
+
+        let captureMenu = NSMenu(title: "Capture".localized)
+        captureMenuItem.submenu = captureMenu
+
+        let actions = FixtureCaptureMenuActions.shared
+
+        let toggleItem = NSMenuItem(title: "Start Recording".localized,
+                                    action: #selector(FixtureCaptureMenuActions.toggleRecording(_:)),
+                                    keyEquivalent: "r")
+        toggleItem.withModifierMask([.command, .shift])
+        toggleItem.tag = FixtureCaptureMenuActions.Tag.toggleRecording.rawValue
+        toggleItem.target = actions
+        captureMenu.addItem(toggleItem)
+
+        captureMenu.addItem(NSMenuItem.separator())
+
+        let folderItem = NSMenuItem(title: "Choose Capture Folder…".localized,
+                                    action: #selector(FixtureCaptureMenuActions.chooseFolder(_:)),
+                                    keyEquivalent: "")
+        folderItem.tag = FixtureCaptureMenuActions.Tag.chooseFolder.rawValue
+        folderItem.target = actions
+        captureMenu.addItem(folderItem)
+
+        let filterItem = NSMenuItem(title: "Host Filter…".localized,
+                                    action: #selector(FixtureCaptureMenuActions.editHostFilter(_:)),
+                                    keyEquivalent: "")
+        filterItem.tag = FixtureCaptureMenuActions.Tag.hostFilter.rawValue
+        filterItem.target = actions
+        captureMenu.addItem(filterItem)
+
+        let revealItem = NSMenuItem(title: "Reveal Capture Folder".localized,
+                                    action: #selector(FixtureCaptureMenuActions.revealFolder(_:)),
+                                    keyEquivalent: "")
+        revealItem.tag = FixtureCaptureMenuActions.Tag.revealFolder.rawValue
+        revealItem.target = actions
+        captureMenu.addItem(revealItem)
+
         // Window Menu
         let windowMenuItem = NSMenuItem()
         mainMenu.addItem(windowMenuItem)
