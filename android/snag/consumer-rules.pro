@@ -9,3 +9,7 @@
 
 -keep class com.snag.core.config.Config { *; }
 -keep class com.snag.models.** { *; }
+
+# React Native is a compileOnly dependency and is resolved reflectively at
+# runtime, so consumers without it on the classpath must not fail R8 on it.
+-dontwarn com.facebook.react.**
