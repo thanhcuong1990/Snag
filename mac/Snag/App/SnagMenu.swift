@@ -109,6 +109,20 @@ class SnagMenu {
         closeItem.target = RequestMenuActions.shared
         requestMenu.addItem(closeItem)
 
+        // View Menu
+        let viewMenuItem = NSMenuItem()
+        mainMenu.addItem(viewMenuItem)
+
+        let viewMenu = NSMenu(title: "View".localized)
+        viewMenuItem.submenu = viewMenu
+
+        let onlyLocalItem = NSMenuItem(title: "Only Devices on This Mac".localized,
+                                       action: #selector(ViewMenuActions.toggleOnlyLocalDevices(_:)),
+                                       keyEquivalent: "")
+        onlyLocalItem.tag = ViewMenuActions.Tag.onlyLocalDevices.rawValue
+        onlyLocalItem.target = ViewMenuActions.shared
+        viewMenu.addItem(onlyLocalItem)
+
         // Capture Menu
         let captureMenuItem = NSMenuItem()
         mainMenu.addItem(captureMenuItem)
@@ -134,6 +148,13 @@ class SnagMenu {
         folderItem.tag = FixtureCaptureMenuActions.Tag.chooseFolder.rawValue
         folderItem.target = actions
         captureMenu.addItem(folderItem)
+
+        let deviceScopeItem = NSMenuItem(title: "Record Selected Device Only".localized,
+                                         action: #selector(FixtureCaptureMenuActions.toggleSelectedDeviceOnly(_:)),
+                                         keyEquivalent: "")
+        deviceScopeItem.tag = FixtureCaptureMenuActions.Tag.selectedDeviceOnly.rawValue
+        deviceScopeItem.target = actions
+        captureMenu.addItem(deviceScopeItem)
 
         let filterItem = NSMenuItem(title: "Host Filter…".localized,
                                     action: #selector(FixtureCaptureMenuActions.editHostFilter(_:)),

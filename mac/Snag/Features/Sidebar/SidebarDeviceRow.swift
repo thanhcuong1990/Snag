@@ -15,6 +15,13 @@ struct SidebarDeviceRow: View {
                 Text(device.deviceName ?? "Unknown Device".localized)
                     .font(.system(size: 11, weight: isSelected ? .semibold : .regular))
                     .foregroundColor(isSelected ? .white : .labelColor)
+
+                if let hostLabel = LocalMachine.label(for: device.hostMachine) {
+                    Text(hostLabel)
+                        .font(.system(size: 9))
+                        .foregroundColor(isSelected ? .white.opacity(0.8) : .secondaryLabelColor.opacity(0.7))
+                        .padding(.top, 1)
+                }
             }
 
             Spacer()

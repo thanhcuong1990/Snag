@@ -7,4 +7,5 @@ class SnagDeviceModel: Codable {
     var deviceDescription: String?
     var hostName: String?
     var ipAddress: String?
+    var hostMachine: String?
 }

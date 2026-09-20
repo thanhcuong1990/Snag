@@ -30,6 +30,7 @@ class SnagDeviceController: NSObject, ObservableObject {
     @Published var appInfo: SnagAppInfo?
     @Published var hostName: String?
     @Published var ipAddress: String?
+    @Published var hostMachine: String?
     private var lastAppInfoRequest: Date = .distantPast
     
     // Optimization: O(1) Lookup
@@ -75,6 +76,9 @@ class SnagDeviceController: NSObject, ObservableObject {
         }
         if self.ipAddress == nil {
             self.ipAddress = newPacket.device?.ipAddress
+        }
+        if self.hostMachine == nil {
+            self.hostMachine = newPacket.device?.hostMachine
         }
 
         if newPacket.control?.type == "auth_success" {

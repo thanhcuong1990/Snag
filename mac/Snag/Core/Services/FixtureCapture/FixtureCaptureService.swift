@@ -21,9 +21,13 @@ final class FixtureCaptureService: ObservableObject {
     @Published var hostFilter: String = "" {
         didSet { UserDefaults.standard.set(hostFilter, forKey: Self.hostFilterKey) }
     }
+    @Published var selectedDeviceOnly: Bool = false {
+        didSet { UserDefaults.standard.set(selectedDeviceOnly, forKey: Self.selectedDeviceOnlyKey) }
+    }
 
     private static let destinationKey = "fixtureCapture.destination"
     private static let hostFilterKey = "fixtureCapture.hostFilter"
+    private static let selectedDeviceOnlyKey = "fixtureCapture.selectedDeviceOnly"
     private var seenPacketIds = Set<String>()
     private var sequence = 0
 
@@ -32,6 +36,13 @@ final class FixtureCaptureService: ObservableObject {
             destination = URL(fileURLWithPath: path)
         }
         hostFilter = UserDefaults.standard.string(forKey: Self.hostFilterKey) ?? ""
+        selectedDeviceOnly = UserDefaults.standard.bool(forKey: Self.selectedDeviceOnlyKey)
+    }
+
+    /// Device the next capture is scoped to, or nil when every device is recorded.
+    var targetDevice: SnagDeviceController? {
+        guard selectedDeviceOnly else { return nil }
+        return SnagController.shared.selectedProjectController?.selectedDeviceController
     }
 
     func start() {
@@ -54,6 +65,7 @@ final class FixtureCaptureService: ObservableObject {
     /// a completed response so a fixture always reflects a finished call.
     func record(_ packet: SnagPacket) {
         guard isRecording, let destination else { return }
+        guard matchesSelectedDevice(packet) else { return }
         guard let info = packet.requestInfo,
               let url = info.url,
               let encoded = info.responseData,
@@ -75,6 +87,13 @@ final class FixtureCaptureService: ObservableObject {
         } catch {
             lastError = error.localizedDescription
         }
+    }
+
+    private func matchesSelectedDevice(_ packet: SnagPacket) -> Bool {
+        guard selectedDeviceOnly else { return true }
+        guard let target = targetDevice?.deviceId?.lowercased() else { return false }
+        let deviceId = (packet.device?.deviceId ?? packet.control?.deviceId)?.lowercased()
+        return deviceId == target
     }
 
     private func matchesHostFilter(_ url: String) -> Bool {

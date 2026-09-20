@@ -11,6 +11,11 @@ final class FixtureCaptureMenuActions: NSObject, NSMenuItemValidation {
         case chooseFolder = 8101
         case hostFilter = 8102
         case revealFolder = 8103
+        case selectedDeviceOnly = 8104
+    }
+
+    @objc func toggleSelectedDeviceOnly(_ sender: Any?) {
+        FixtureCaptureService.shared.selectedDeviceOnly.toggle()
     }
 
     @objc func toggleRecording(_ sender: Any?) {
@@ -74,6 +79,12 @@ final class FixtureCaptureMenuActions: NSObject, NSMenuItemValidation {
                 "Reveal".localized + " “\($0.lastPathComponent)”"
             } ?? "Reveal Capture Folder".localized
             return service.destination != nil
+        case .selectedDeviceOnly:
+            menuItem.state = service.selectedDeviceOnly ? .on : .off
+            menuItem.title = service.selectedDeviceOnly
+                ? "Record Selected Device Only".localized + targetDeviceSuffix(service.targetDevice)
+                : "Record Selected Device Only".localized
+            return true
         case .chooseFolder, .hostFilter:
             return !service.isRecording
         case .none:
@@ -83,5 +94,12 @@ final class FixtureCaptureMenuActions: NSObject, NSMenuItemValidation {
 
     private func captureCountSuffix(_ count: Int) -> String {
         count == 0 ? "" : " (\(count))"
+    }
+
+    private func targetDeviceSuffix(_ device: SnagDeviceController?) -> String {
+        guard let name = device?.deviceName, !name.isEmpty else {
+            return " — " + "No Device Selected".localized
+        }
+        return " — \(name)"
     }
 }

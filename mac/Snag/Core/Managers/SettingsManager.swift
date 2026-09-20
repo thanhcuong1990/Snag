@@ -23,11 +23,18 @@ class SettingsManager: ObservableObject {
             defaults.set(recentSearches, forKey: SnagConstants.recentSearchesKey)
         }
     }
+
+    @Published var showOnlyLocalDevices: Bool {
+        didSet {
+            defaults.set(showOnlyLocalDevices, forKey: SnagConstants.showOnlyLocalDevicesKey)
+        }
+    }
     
     private init() {
         self.appearanceMode = defaults.string(forKey: SnagConstants.appearanceModeKey) ?? SnagConstants.appearanceAuto
         self.addressFilter = defaults.string(forKey: SnagConstants.addressFilterPersistenceKey) ?? ""
         self.recentSearches = defaults.stringArray(forKey: SnagConstants.recentSearchesKey) ?? []
+        self.showOnlyLocalDevices = defaults.bool(forKey: SnagConstants.showOnlyLocalDevicesKey)
     }
     
     // Helper to add search and keep it within limits
