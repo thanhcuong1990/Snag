@@ -36,6 +36,18 @@ class SnagUtility {
         return ProcessInfo.processInfo.hostName
         #endif
     }
+
+    /// Name of the machine running this process; nil outside a simulator.
+    static func hostMachine() -> String? {
+        #if targetEnvironment(simulator)
+        var buffer = [CChar](repeating: 0, count: Int(NI_MAXHOST))
+        guard gethostname(&buffer, buffer.count) == 0 else { return nil }
+        let name = String(cString: buffer).trimmingCharacters(in: .whitespacesAndNewlines)
+        return name.isEmpty ? nil : name
+        #else
+        return nil
+        #endif
+    }
     
     static func ipAddress() -> String? {
         var ipv4Address: String?
@@ -83,6 +95,10 @@ class SnagUtility {
         let modelName = self.deviceModelName() ?? model
         
         #if targetEnvironment(simulator)
+        if let configured = ProcessInfo.processInfo.environment["SIMULATOR_DEVICE_NAME"]?
+            .trimmingCharacters(in: .whitespacesAndNewlines), !configured.isEmpty {
+            return configured
+        }
         // For simulators, if the name is just "iPhone" or "iPad", return the descriptive model name
         if explicitName.caseInsensitiveCompare(model) == .orderedSame {
             return modelName

@@ -6,6 +6,8 @@ public struct SnagDevice: Sendable {
     public var description: String?
     public var hostName: String?
     public var ipAddress: String?
+    /// Machine hosting this process; set only on a simulator.
+    public var hostMachine: String?
     
     enum CodingKeys: String, CodingKey {
         case id = "deviceId"
@@ -13,6 +15,7 @@ public struct SnagDevice: Sendable {
         case description = "deviceDescription"
         case hostName = "hostName"
         case ipAddress = "ipAddress"
+        case hostMachine = "hostMachine"
     }
 }
 
@@ -24,6 +27,7 @@ extension SnagDevice: Codable {
         self.description = try container.decodeIfPresent(String.self, forKey: .description)
         self.hostName = try container.decodeIfPresent(String.self, forKey: .hostName)
         self.ipAddress = try container.decodeIfPresent(String.self, forKey: .ipAddress)
+        self.hostMachine = try container.decodeIfPresent(String.self, forKey: .hostMachine)
     }
 
     public nonisolated func encode(to encoder: Encoder) throws {
@@ -33,6 +37,7 @@ extension SnagDevice: Codable {
         try container.encodeIfPresent(description, forKey: .description)
         try container.encodeIfPresent(hostName, forKey: .hostName)
         try container.encodeIfPresent(ipAddress, forKey: .ipAddress)
+        try container.encodeIfPresent(hostMachine, forKey: .hostMachine)
     }
 }
 

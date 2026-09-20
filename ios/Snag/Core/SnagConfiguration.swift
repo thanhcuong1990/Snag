@@ -43,6 +43,7 @@ public class SnagConfiguration {
         device.name = SnagUtility.deviceName()
         device.description = SnagUtility.deviceDescription()
         device.hostName = SnagUtility.hostName()
+        device.hostMachine = SnagUtility.hostMachine()
         // device.ipAddress -> Defer to background
         
         config.project = project
