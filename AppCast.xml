@@ -7,6 +7,15 @@
         <language>en</language>
         <!-- The workflow will automatically append new releases here -->
         <item>
+            <title>1.2.5</title>
+            <pubDate>Sun, 20 Sep 2026 17:18:07 +0000</pubDate>
+            <link>https://github.com/thanhcuong1990/Snag/releases/tag/v1.2.5</link>
+            <sparkle:version>1.2.5</sparkle:version>
+            <sparkle:shortVersionString>1.2.5</sparkle:shortVersionString>
+            <sparkle:minimumSystemVersion>12.4</sparkle:minimumSystemVersion>
+            <enclosure url="https://github.com/thanhcuong1990/Snag/releases/download/v1.2.5/Snag.zip" length="5529947" type="application/octet-stream" sparkle:edSignature="Yi2bWTHOkatonG+g9Xy4ECEO5xnvo0mZxrGQGFowPxT6tyrm7tHoO1KctoG7O6cEajzbBgjMOQ828Gxdb5CrDQ=="/>
+        </item>
+        <item>
             <title>1.2.4</title>
             <pubDate>Sun, 20 Sep 2026 08:52:30 +0000</pubDate>
             <link>https://github.com/thanhcuong1990/Snag/releases/tag/v1.2.4</link>
@@ -23,15 +32,6 @@
             <sparkle:shortVersionString>1.2.3</sparkle:shortVersionString>
             <sparkle:minimumSystemVersion>12.4</sparkle:minimumSystemVersion>
             <enclosure url="https://github.com/thanhcuong1990/Snag/releases/download/v1.2.3/Snag.zip" length="5526283" type="application/octet-stream" sparkle:edSignature="pRABd0GnDXO2MGMBIZJn6qiGXBrVzLnJ86W6XnulrCqGlMCMSUUDWmtKMvlcc3aSy0+s6b7Tw52BMAq92brjCw=="/>
-        </item>
-        <item>
-            <title>1.2.2</title>
-            <pubDate>Tue, 14 Jul 2026 14:40:44 +0000</pubDate>
-            <link>https://github.com/thanhcuong1990/Snag/releases/tag/v1.2.2</link>
-            <sparkle:version>1.2.2</sparkle:version>
-            <sparkle:shortVersionString>1.2.2</sparkle:shortVersionString>
-            <sparkle:minimumSystemVersion>12.4</sparkle:minimumSystemVersion>
-            <enclosure url="https://github.com/thanhcuong1990/Snag/releases/download/v1.2.2/Snag.zip" length="5522365" type="application/octet-stream" sparkle:edSignature="ZoA1NS+Cl/7VU7ZEUCtJO64YXwTLvUiMEQRsqAqw10u2TBgFCn9Y7HC1UclzCeEcoovnuz9P68dEGs1s1IG8AQ=="/>
         </item>
     </channel>
 </rss>
