@@ -3,7 +3,6 @@ import com.vanniktech.maven.publish.SonatypeHost
 
 plugins {
     id("com.android.library")
-    id("org.jetbrains.kotlin.android")
     alias(libs.plugins.kotlinx.serialization)
     alias(libs.plugins.vanniktechMavenPublish)
 }
@@ -51,8 +50,6 @@ android {
 
     defaultConfig {
         minSdk = libs.versions.minSdk.get().toInt()
-        compileSdk = libs.versions.compileSdk.get().toInt()
-
         aarMetadata {
             minCompileSdk = libs.versions.minSdk.get().toInt()
         }
@@ -75,12 +72,6 @@ android {
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_17
         targetCompatibility = JavaVersion.VERSION_17
-    }
-}
-
-tasks.withType<org.jetbrains.kotlin.gradle.tasks.KotlinCompile>().configureEach {
-    compilerOptions {
-        jvmTarget.set(org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_17)
     }
 }
 

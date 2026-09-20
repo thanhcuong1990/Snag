@@ -4,8 +4,8 @@ targetSdk ="36"
 compileSdk = "36"
 reactAndroid = "0.83.1"
 
-agp = "8.12.0"
-kotlin = "2.1.0"
+agp = "9.4.1"
+kotlin = "2.2.10"
 coreKtx = "1.15.0"
 junit = "4.13.2"
 junitVersion = "1.2.1"
@@ -16,11 +16,11 @@ composeBom = "2024.12.01"
 timber = "5.0.1"
 lifecycleRuntimeCompose = "2.8.7"
 kotlinx-serialization-json = "1.7.3"
-kotlinx-serialization-plugin = "2.1.0"
+kotlinx-serialization-plugin = "2.2.10"
 startupRuntime = "1.2.0"
 retrofitBom = "2.11.0"
-hilt = "2.53"
-ksp = "2.1.0-1.0.28"
+hilt = "2.60.1"
+ksp = "2.2.10-2.0.2"
 loggingInterceptor = "4.12.0"
 retrofit2KotlinxSerializationConverter = "1.0.0"
 appcompat = "1.7.0"
@@ -62,7 +62,6 @@ react-android = { group = "com.facebook.react", name = "react-android", version.
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }
-jetbrains-kotlin-android = { id = "org.jetbrains.kotlin.android", version.ref = "kotlin" }
 kotlinx-serialization = { id = "org.jetbrains.kotlin.plugin.serialization", version.ref = "kotlinx-serialization-plugin" }
 hilt = { id = "com.google.dagger.hilt.android", version.ref = "hilt" }
 compose-compiler = { id = "org.jetbrains.kotlin.plugin.compose", version.ref = "kotlin" }
