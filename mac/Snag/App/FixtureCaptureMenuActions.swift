@@ -55,6 +55,8 @@ final class FixtureCaptureMenuActions: NSObject, NSMenuItemValidation {
         field.stringValue = FixtureCaptureService.shared.hostFilter
         field.placeholderString = "communa.sg"
         alert.accessoryView = field
+        alert.layout()
+        alert.window.initialFirstResponder = field
 
         if alert.runModal() == .alertFirstButtonReturn {
             FixtureCaptureService.shared.hostFilter = field.stringValue
@@ -85,7 +87,12 @@ final class FixtureCaptureMenuActions: NSObject, NSMenuItemValidation {
                 ? "Record Selected Device Only".localized + targetDeviceSuffix(service.targetDevice)
                 : "Record Selected Device Only".localized
             return true
-        case .chooseFolder, .hostFilter:
+        case .hostFilter:
+            menuItem.title = service.hostFilter.isEmpty
+                ? "Host Filter…".localized
+                : "Host Filter…".localized + " (\(service.hostFilter))"
+            return !service.isRecording
+        case .chooseFolder:
             return !service.isRecording
         case .none:
             return true

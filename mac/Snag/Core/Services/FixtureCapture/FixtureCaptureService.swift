@@ -97,6 +97,11 @@ final class FixtureCaptureService: ObservableObject {
     }
 
     private func matchesHostFilter(_ url: String) -> Bool {
+        Self.matches(url: url, hostFilter: hostFilter)
+    }
+
+    /// Whether a URL passes the host filter. An empty filter passes everything.
+    nonisolated static func matches(url: String, hostFilter: String) -> Bool {
         let needle = hostFilter.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !needle.isEmpty else { return true }
         return url.localizedCaseInsensitiveContains(needle)
