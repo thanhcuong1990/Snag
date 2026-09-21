@@ -50,6 +50,7 @@ class SnagCarrier {
     func refreshRequestSnapshot() {
         if let task = self.urlSessionTask {
             self.captureRequest(from: task.currentRequest ?? task.originalRequest)
+            self.captureRequestBody(task.originalRequest?.httpBody)
         }
     }
 
@@ -60,11 +61,15 @@ class SnagCarrier {
         if self.capturedRequestHeaders == nil, let headers = request.allHTTPHeaderFields {
             self.capturedRequestHeaders = headers
         }
-        if self.capturedRequestBody == nil, let body = request.httpBody {
-            let (cappedBody, wasTruncated) = cappedRequestBody(body)
-            self.capturedRequestBody = cappedBody
-            self.capturedRequestBodyTruncated = wasTruncated
-        }
+        self.captureRequestBody(request.httpBody)
+    }
+
+    /// Records the body once; later calls with a nil or duplicate body are ignored.
+    private func captureRequestBody(_ body: Data?) {
+        guard self.capturedRequestBody == nil, let body = body else { return }
+        let (cappedBody, wasTruncated) = cappedRequestBody(body)
+        self.capturedRequestBody = cappedBody
+        self.capturedRequestBodyTruncated = wasTruncated
     }
 
     private func setup() {
