@@ -18,12 +18,30 @@ class SnagUtility {
     }
     
     static func deviceId() -> String {
+        #if targetEnvironment(simulator)
+        if let udid = ProcessInfo.processInfo.environment["SIMULATOR_UDID"]?
+            .trimmingCharacters(in: .whitespacesAndNewlines), !udid.isEmpty {
+            return udid
+        }
+        #endif
         #if canImport(UIKit)
-        return UIDevice.current.identifierForVendor?.uuidString ?? uuid()
+        if let vendorId = UIDevice.current.identifierForVendor?.uuidString {
+            return vendorId
+        }
+        return persistedDeviceId()
         #else
         let ip = ipAddress() ?? "unknown"
         return "\(self.hostName())-\(self.deviceName())-\(self.deviceDescription())-\(ip)"
         #endif
+    }
+
+    /// Device id kept across relaunches when the system supplies no identifier.
+    static func persistedDeviceId(defaults: UserDefaults = .standard) -> String {
+        let key = "com.snag.deviceId"
+        if let stored = defaults.string(forKey: key), !stored.isEmpty { return stored }
+        let generated = uuid()
+        defaults.set(generated, forKey: key)
+        return generated
     }
     
     static func hostName() -> String {
