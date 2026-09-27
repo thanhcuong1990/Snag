@@ -241,6 +241,11 @@ Snag is **zero-config** on Android. Just add the dependency and it will automati
 > [!IMPORTANT]
 > Snag only initializes itself if it detects that the app is debuggable or running in an emulator.
 
+> [!NOTE]
+> On Android 17+, apps targeting API 37 need local network access to reach the viewer. Snag declares
+> `ACCESS_LOCAL_NETWORK` and asks for it once when the first activity resumes; it connects within a
+> few seconds of the user allowing it.
+
 ### Custom OkHttp Client
 
 If you use a custom `OkHttpClient` (or want to use it with Retrofit/Apollo), you can manually add the Snag interceptor:

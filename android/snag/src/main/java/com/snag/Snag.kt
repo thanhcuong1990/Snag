@@ -34,6 +34,7 @@ object Snag {
             this.appContext = appCtx
             SnagInternalLogger.setEnabled(config.enableInternalLogging)
             SnagInterceptor.configure(config.maxBodyCaptureBytes)
+            com.snag.core.SnagLocalNetworkPermission.requestWhenNeeded(appCtx)
 
             val browser = SnagBrowserImpl(
                 context = appCtx,
