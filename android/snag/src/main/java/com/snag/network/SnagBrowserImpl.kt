@@ -18,6 +18,8 @@ import com.snag.core.log.SnagInternalLogger
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.MainScope
 import kotlinx.coroutines.cancel
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.util.concurrent.atomic.AtomicBoolean
@@ -91,12 +93,19 @@ internal class SnagBrowserImpl(
         // Start discovery
         discoveryManager.startDiscovery()
 
-        // Optional debug host connection
+        // Optional debug host connection. Bonjour cannot see the host from an emulator, so this is
+        // the only path there: keep retrying, because a first attempt that times out while the app
+        // is busy launching, or a viewer restart, would otherwise leave Snag disconnected for good.
         config.debugHost?.let { host ->
             snagScope.launch(Dispatchers.IO) {
-                connectionManager.connectToHost(host, config.debugPort, "DebugHost") {
-                    clearServiceAuth("DebugHost")
-                    sendHelloPacket("DebugHost")
+                while (isActive) {
+                    if (!connectionManager.hasActiveConnection(DEBUG_HOST_SERVICE)) {
+                        connectionManager.connectToHost(host, config.debugPort, DEBUG_HOST_SERVICE) {
+                            clearServiceAuth(DEBUG_HOST_SERVICE)
+                            sendHelloPacket(DEBUG_HOST_SERVICE)
+                        }
+                    }
+                    delay(DEBUG_HOST_RETRY_MS)
                 }
             }
         }
@@ -341,6 +350,8 @@ internal class SnagBrowserImpl(
     companion object {
         private const val MAX_PENDING_PACKETS = 500
         private const val DROP_WARNING_LOG_INTERVAL = 100L
+        private const val DEBUG_HOST_SERVICE = "DebugHost"
+        private const val DEBUG_HOST_RETRY_MS = 3_000L
     }
 
     private fun SnagBoundedQueueSnapshot.toExportedMetrics(): SnagQueueMetrics {
