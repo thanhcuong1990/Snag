@@ -90,12 +90,15 @@ internal class SnagBrowserImpl(
             SnagInternalLogger.e(e, "Snag: Failed to acquire multicast lock")
         }
 
-        // Start discovery
-        discoveryManager.startDiscovery()
+        // Bonjour cannot see the host from an emulator, and on Android 17 browsing for it opens the
+        // system device picker over the app, so an emulator uses the debug host alone.
+        if (config.debugHost == null) {
+            discoveryManager.startDiscovery()
+        }
 
-        // Optional debug host connection. Bonjour cannot see the host from an emulator, so this is
-        // the only path there: keep retrying, because a first attempt that times out while the app
-        // is busy launching, or a viewer restart, would otherwise leave Snag disconnected for good.
+        // Optional debug host connection. This is the only path on an emulator: keep retrying,
+        // because a first attempt that times out while the app is busy launching, or a viewer
+        // restart, would otherwise leave Snag disconnected for good.
         config.debugHost?.let { host ->
             snagScope.launch(Dispatchers.IO) {
                 while (isActive) {

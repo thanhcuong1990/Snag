@@ -1,6 +1,7 @@
 package com.snag.discovery
 
 import android.content.Context
+import android.content.pm.PackageManager
 import android.net.nsd.NsdManager
 import android.net.nsd.NsdServiceInfo
 import android.os.Build
@@ -204,6 +205,11 @@ internal class DiscoveryManager(
     private fun invokeDiscoverServices() {
         if (!isWanted.get()) return
         if (isRunning.get()) return
+        if (!hasLocalNetworkAccess()) {
+            SnagInternalLogger.d("Local network access not granted; deferring NSD discovery")
+            scheduleStartRetry(immediate = false)
+            return
+        }
         SnagInternalLogger.d("Starting NSD discovery for ${config.netServiceType}")
         try {
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
@@ -226,6 +232,15 @@ internal class DiscoveryManager(
             scheduleStartRetry(immediate = false)
         }
     }
+
+    /**
+     * Browsing without ACCESS_LOCAL_NETWORK on Android 17 launches the system device picker over
+     * the host app on every attempt, so discovery waits until the user has granted it.
+     */
+    private fun hasLocalNetworkAccess(): Boolean =
+        Build.VERSION.SDK_INT < LOCAL_NETWORK_ENFORCING_SDK ||
+            context.applicationInfo.targetSdkVersion < LOCAL_NETWORK_ENFORCING_SDK ||
+            context.checkSelfPermission(LOCAL_NETWORK_PERMISSION) == PackageManager.PERMISSION_GRANTED
 
     private fun scheduleStartRetry(immediate: Boolean) {
         if (!isWanted.get()) return
@@ -271,6 +286,8 @@ internal class DiscoveryManager(
 
     companion object {
         private const val REFRESH_INTERVAL_MS = 30_000L
+        private const val LOCAL_NETWORK_PERMISSION = "android.permission.ACCESS_LOCAL_NETWORK"
+        private const val LOCAL_NETWORK_ENFORCING_SDK = 37
         private const val MAX_RETRY_BACKOFF_STEPS = 4 // 1s, 2s, 4s, 8s, 16s
         private const val MAX_RETRY_BACKOFF_MS = 16_000L
     }
