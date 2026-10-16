@@ -43,7 +43,7 @@ final class FixtureCaptureService: ObservableObject {
 
         var errorDescription: String? {
             switch self {
-            case .folderNotEmpty(let path): return "\(path) already has captures; pass append to add to it."
+            case .folderNotEmpty(let path): return "\(path) already has captures; pass --append to add to it."
             case .cannotCreateFolder(let reason): return "Cannot create the capture folder: \(reason)"
             }
         }

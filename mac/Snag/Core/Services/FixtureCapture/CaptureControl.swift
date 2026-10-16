@@ -1,3 +1,4 @@
+import AppKit
 import Combine
 import Foundation
 
@@ -7,10 +8,13 @@ final class CaptureControl {
 
     static let shared = CaptureControl()
 
-    static var statusFileURL: URL {
+    nonisolated static var supportDirectory: URL {
         let support = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask)[0]
         return support.appendingPathComponent("Snag", isDirectory: true)
-            .appendingPathComponent("capture-status.json")
+    }
+
+    nonisolated static var statusFileURL: URL {
+        supportDirectory.appendingPathComponent("capture-status.json")
     }
 
     private let service = FixtureCaptureService.shared
@@ -21,10 +25,20 @@ final class CaptureControl {
     private init() {
         Publishers.CombineLatest4(service.$isRecording, service.$writtenCount, service.$lastError, service.$session)
             .dropFirst()
+            // Every captured response moves writtenCount, and the file carries the
+            // whole device list, so rewriting it per packet would be the costliest
+            // part of a busy recording. Commands write immediately in handle(_:).
+            .throttle(for: .milliseconds(500), scheduler: DispatchQueue.main, latest: true)
             .sink { [weak self] _ in
                 DispatchQueue.main.async { self?.writeStatus() }
             }
             .store(in: &cancellables)
+    }
+
+    /// Creates the token a caller needs and records the state of a fresh launch.
+    func prepare() {
+        CaptureToken.ensure()
+        writeStatus()
     }
 
     func handle(_ url: URL) {
@@ -35,8 +49,13 @@ final class CaptureControl {
             commandError = error.localizedDescription
         case .success(let envelope):
             lastRequestId = envelope.requestId
-            commandError = nil
-            run(envelope.command)
+            if CaptureToken.matches(envelope.token) {
+                commandError = nil
+                run(envelope.command)
+            } else {
+                commandError = "Unauthorized: this command carried no valid capture token."
+                    + " The token is in \(CaptureToken.fileURL.path)."
+            }
         }
         writeStatus()
     }
@@ -57,6 +76,10 @@ final class CaptureControl {
     }
 
     func writeStatus() {
+        // A scripted recording opens no window and leaves the menu untouched, so
+        // the dock tile is the only sign that Snag is writing traffic to disk.
+        NSApp.dockTile.badgeLabel = service.session != nil ? "REC" : nil
+
         var devices: [[String: Any]] = []
         for project in SnagController.shared.projectControllers {
             for device in project.deviceControllers {

@@ -17,7 +17,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         // Setup application menu
         SnagMenu.setup()
 
-        CaptureControl.shared.writeStatus()
+        CaptureControl.shared.prepare()
 
         // Create and configure main window using helper extension
         window = NSWindow.createMainWindow(contentViewController: ViewController())

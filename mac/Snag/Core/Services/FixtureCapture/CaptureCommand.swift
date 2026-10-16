@@ -6,22 +6,32 @@ enum CaptureCommand: Equatable {
     case stop
     case status
 
-    /// A parsed command plus the caller's request id, echoed in the status file.
+    /// A parsed command, the caller's token, and the request id echoed in the status file.
     struct Envelope: Equatable {
         let command: CaptureCommand
         let requestId: String?
+        let token: String?
+
+        init(command: CaptureCommand, requestId: String? = nil, token: String? = nil) {
+            self.command = command
+            self.requestId = requestId
+            self.token = token
+        }
     }
 
     enum ParseError: Error, Equatable, LocalizedError {
         case notACaptureURL
         case unknownAction(String)
         case missingFolder
+        case relativeFolder(String)
 
         var errorDescription: String? {
             switch self {
             case .notACaptureURL: return "Not a snag://capture URL."
             case .unknownAction(let action): return "Unknown capture action “\(action)”."
             case .missingFolder: return "start needs a folder."
+            case .relativeFolder(let folder):
+                return "The capture folder must be an absolute path, not “\(folder)”."
             }
         }
     }
@@ -34,24 +44,32 @@ enum CaptureCommand: Equatable {
         func value(_ name: String) -> String {
             items.first { $0.name == name }?.value?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
         }
-        let requestId = value("req").isEmpty ? nil : value("req")
+        func optional(_ name: String) -> String? {
+            value(name).isEmpty ? nil : value(name)
+        }
+        let requestId = optional("req")
+        let token = optional("token")
         let action = url.path.trimmingCharacters(in: CharacterSet(charactersIn: "/")).lowercased()
 
         switch action {
         case "start":
             let folder = value("folder")
             guard !folder.isEmpty else { return .failure(.missingFolder) }
+            let expanded = (folder as NSString).expandingTildeInPath
+            // The app's working directory is "/", so a relative path would
+            // resolve somewhere the caller never named.
+            guard expanded.hasPrefix("/") else { return .failure(.relativeFolder(folder)) }
             let options = CaptureStartOptions(
-                folder: (folder as NSString).expandingTildeInPath,
+                folder: expanded,
                 hostFilter: value("host"),
                 scope: CaptureScope(device: value("device"), bundleId: value("bundle")),
                 append: ["1", "true", "yes"].contains(value("append").lowercased())
             )
-            return .success(Envelope(command: .start(options), requestId: requestId))
+            return .success(Envelope(command: .start(options), requestId: requestId, token: token))
         case "stop":
-            return .success(Envelope(command: .stop, requestId: requestId))
+            return .success(Envelope(command: .stop, requestId: requestId, token: token))
         case "status":
-            return .success(Envelope(command: .status, requestId: requestId))
+            return .success(Envelope(command: .status, requestId: requestId, token: token))
         default:
             return .failure(.unknownAction(action))
         }

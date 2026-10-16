@@ -9,15 +9,16 @@ final class CaptureCommandTests: XCTestCase {
 
     func testStartCarriesEveryOption() throws {
         let envelope = try parse(
-            "snag://capture/start?folder=%2Ftmp%2Fcaps&host=api-staging.communa.sg"
-                + "&device=iPhone%2018%20Pro&bundle=sg.communa.staging&append=1&req=abc-123"
+            "snag://capture/start?folder=%2Ftmp%2Fcaps&host=api-staging.example.com"
+                + "&device=iPhone%2018%20Pro&bundle=com.example.app.staging&append=1&req=abc-123&token=s3cret"
         ).get()
 
         XCTAssertEqual(envelope.requestId, "abc-123")
+        XCTAssertEqual(envelope.token, "s3cret")
         XCTAssertEqual(envelope.command, .start(CaptureStartOptions(
             folder: "/tmp/caps",
-            hostFilter: "api-staging.communa.sg",
-            scope: CaptureScope(device: "iPhone 18 Pro", bundleId: "sg.communa.staging"),
+            hostFilter: "api-staging.example.com",
+            scope: CaptureScope(device: "iPhone 18 Pro", bundleId: "com.example.app.staging"),
             append: true
         )))
     }
@@ -39,7 +40,17 @@ final class CaptureCommandTests: XCTestCase {
     }
 
     func testStartWithoutFolderIsRejected() {
-        XCTAssertEqual(parse("snag://capture/start?host=communa.sg"), .failure(.missingFolder))
+        XCTAssertEqual(parse("snag://capture/start?host=example.com"), .failure(.missingFolder))
+    }
+
+    func testRelativeFolderIsRejected() {
+        XCTAssertEqual(parse("snag://capture/start?folder=caps"), .failure(.relativeFolder("caps")))
+        XCTAssertEqual(parse("snag://capture/start?folder=.%2Fcaps"), .failure(.relativeFolder("./caps")))
+    }
+
+    func testTokenIsNilWhenAbsentOrBlank() throws {
+        XCTAssertNil(try parse("snag://capture/stop").get().token)
+        XCTAssertNil(try parse("snag://capture/stop?token=%20").get().token)
     }
 
     func testStopAndStatus() throws {
@@ -65,7 +76,7 @@ final class CaptureScopeTests: XCTestCase {
 
         XCTAssertTrue(scope.matches(deviceId: "A1", deviceName: "iPhone 18 Pro", bundleId: nil))
         XCTAssertTrue(scope.matches(deviceId: "A1", deviceName: "iphone 18 pro", bundleId: nil))
-        XCTAssertFalse(scope.matches(deviceId: "B2", deviceName: "iPhone 18 Pro - RN", bundleId: nil))
+        XCTAssertFalse(scope.matches(deviceId: "B2", deviceName: "iPhone 18 Pro Max", bundleId: nil))
         XCTAssertFalse(scope.matches(deviceId: "C3", deviceName: nil, bundleId: nil))
     }
 
@@ -77,10 +88,10 @@ final class CaptureScopeTests: XCTestCase {
     }
 
     func testBundleIdMustMatchWhenSet() {
-        let scope = CaptureScope(device: "iPhone 18 Pro", bundleId: "sg.communa.staging")
+        let scope = CaptureScope(device: "iPhone 18 Pro", bundleId: "com.example.app.staging")
 
-        XCTAssertTrue(scope.matches(deviceId: nil, deviceName: "iPhone 18 Pro", bundleId: "sg.communa.staging"))
-        XCTAssertFalse(scope.matches(deviceId: nil, deviceName: "iPhone 18 Pro", bundleId: "sg.communa"))
+        XCTAssertTrue(scope.matches(deviceId: nil, deviceName: "iPhone 18 Pro", bundleId: "com.example.app.staging"))
+        XCTAssertFalse(scope.matches(deviceId: nil, deviceName: "iPhone 18 Pro", bundleId: "com.example.app"))
         XCTAssertFalse(scope.matches(deviceId: nil, deviceName: "iPhone 18 Pro", bundleId: nil))
     }
 }
