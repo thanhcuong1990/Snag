@@ -516,7 +516,8 @@ extension SnagPublisher: SnagLegacyPublisherDelegate {
         // The connection is already started and processing data in LegacyPublisher
         // We need to take over management of this connection.
         
-        self.queue.async {
+        self.queue.async { [weak self] in
+            guard let self = self else { return }
             print("SnagPublisher: Taking over legacy connection from \(connection.endpoint)")
             
             // Add to our lists
