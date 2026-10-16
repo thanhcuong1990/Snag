@@ -1,0 +1,213 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+SNAG_APP="${SNAG_APP:-/Applications/Snag.app}"
+SUPPORT_DIR="${SNAG_SUPPORT_DIR:-$HOME/Library/Application Support/Snag}"
+STATUS_FILE="${SNAG_STATUS_FILE:-$SUPPORT_DIR/capture-status.json}"
+TOKEN_FILE="${SNAG_TOKEN_FILE:-$SUPPORT_DIR/capture-token}"
+TIMEOUT="${SNAG_TIMEOUT:-10}"
+
+usage() {
+  cat <<'EOF'
+snag-capture — drive Snag's fixture recording without the Capture menu
+
+Usage:
+  snag-capture start --folder DIR [--host TEXT] [--device NAME|ID] [--bundle ID] [--append] [--json]
+  snag-capture stop [--json]
+  snag-capture status [--json]
+  snag-capture devices [--json]
+
+start   Records every completed response into DIR as NNNN-<slug>.json plus a
+        .meta.json sidecar. DIR must be an absolute path; it is created if
+        missing, and a DIR that already holds files is refused unless --append,
+        which continues the numbering.
+        --host    keep only URLs containing TEXT (default: everything)
+        --device  keep only one device, by exact name or id (see `devices`)
+        --bundle  keep only one app, by exact bundle id
+stop    Stops recording and reports how many captures were written.
+status  Reports the recording state.
+devices Lists the devices and apps Snag has seen, for --device / --bundle.
+
+--json prints the raw status file (`devices --json` prints its device list),
+so a caller never has to parse the human summary.
+
+Environment:
+  SNAG_APP          Snag.app to send commands to (default /Applications/Snag.app)
+  SNAG_SUPPORT_DIR  where Snag keeps its status and token files
+                    (default ~/Library/Application Support/Snag)
+  SNAG_STATUS_FILE  status file the app writes (default $SNAG_SUPPORT_DIR/capture-status.json)
+  SNAG_TOKEN_FILE   token file the app owns (default $SNAG_SUPPORT_DIR/capture-token)
+  SNAG_TIMEOUT      seconds to wait for the app to answer (default 10)
+
+Snag writes the token on first launch and refuses any command without it, so
+only a caller that can read SNAG_TOKEN_FILE can start a recording.
+
+Exit codes:
+  0  ok
+  1  the app refused the command (permanent: fix the command and retry)
+  2  usage error, or no app at SNAG_APP
+  3  the app did not answer in time (retryable: launch Snag, or check SNAG_APP)
+EOF
+}
+
+die() { echo "snag-capture: $1" >&2; exit "${2:-1}"; }
+usage_error() { echo "snag-capture: $1" >&2; usage >&2; exit 2; }
+
+field() {
+  python3 -I - "$STATUS_FILE" "$1" <<'PY'
+import json, sys
+value = json.load(open(sys.argv[1])).get(sys.argv[2], "")
+print(str(value).lower() if isinstance(value, bool) else value)
+PY
+}
+
+wait_for() {
+  local request_id=$1
+  local deadline=$((SECONDS + TIMEOUT))
+  while [ "$SECONDS" -lt "$deadline" ]; do
+    if [ -f "$STATUS_FILE" ] && [ "$(field lastRequestId 2>/dev/null || true)" = "$request_id" ]; then
+      return 0
+    fi
+    sleep 0.2
+  done
+  die "Snag did not answer within ${TIMEOUT}s. Quit any older Snag that lacks capture commands, or point SNAG_APP at the right build (now: $SNAG_APP)." 3
+}
+
+# Snag writes the token on launch, so a first run has to start the app and wait
+# for the file before it can authenticate anything.
+ensure_token() {
+  [ -f "$TOKEN_FILE" ] && return 0
+  open -g -a "$SNAG_APP"
+  local deadline=$((SECONDS + TIMEOUT))
+  while [ "$SECONDS" -lt "$deadline" ]; do
+    [ -f "$TOKEN_FILE" ] && return 0
+    sleep 0.2
+  done
+  die "no capture token at $TOKEN_FILE after launching $SNAG_APP; that build may predate capture commands." 3
+}
+
+send() {
+  local action=$1
+  shift
+  [ -d "$SNAG_APP" ] || die "no Snag app at $SNAG_APP (set SNAG_APP)" 2
+  ensure_token
+  local request_id url token
+  request_id=$(uuidgen)
+  token=$(cat "$TOKEN_FILE")
+  url=$(python3 -I - "$action" "$request_id" "$token" "$@" <<'PY'
+import sys, urllib.parse
+action, request_id, token, *pairs = sys.argv[1:]
+query = [tuple(pair.split("=", 1)) for pair in pairs]
+query = [(key, value) for key, value in query if value]
+query.append(("req", request_id))
+query.append(("token", token))
+print(f"snag://capture/{action}?" + urllib.parse.urlencode(query, quote_via=urllib.parse.quote))
+PY
+)
+  open -g -a "$SNAG_APP" "$url"
+  wait_for "$request_id"
+  local error
+  error=$(field commandError 2>/dev/null || true)
+  [ -z "$error" ] || die "$error"
+}
+
+summary() {
+  python3 -I - "$STATUS_FILE" <<'PY'
+import json, sys
+s = json.load(open(sys.argv[1]))
+scope = ", ".join(f"{k}={s[k]}" for k in ("hostFilter", "device", "bundleId") if s.get(k)) or "everything"
+if s.get("recording"):
+    print(f"recording: {s.get('writtenCount', 0)} capture(s) in {s.get('destination') or '(no folder)'}")
+    print(f"scope: {scope}")
+else:
+    folder = s.get("lastRecordingFolder") or "(none this session)"
+    print(f"stopped: last recording wrote {s.get('writtenCount', 0)} capture(s) to {folder}")
+if s.get("recording") and s.get("selectedDeviceOnly"):
+    print("note: this menu recording keeps only the device selected in Snag")
+if s.get("lastError"):
+    print(f"last error: {s['lastError']}")
+PY
+}
+
+devices() {
+  python3 -I - "$STATUS_FILE" "${1:-text}" <<'PY'
+import json, sys
+rows = json.load(open(sys.argv[1])).get("devices", [])
+if sys.argv[2] == "json":
+    print(json.dumps(rows, indent=2, sort_keys=True))
+    sys.exit()
+if not rows:
+    print("no devices seen yet; open the app on the device and try again")
+    sys.exit()
+print("name\tid\tbundleId\tproject")
+for d in rows:
+    print(f"{d.get('name') or '?'}\t{d.get('id') or '?'}\t{d.get('bundleId') or '?'}\t{d.get('project') or ''}")
+PY
+}
+
+report() {
+  if [ "$1" = "json" ]; then cat "$STATUS_FILE"; else summary; fi
+}
+
+command=${1:-}
+[ $# -gt 0 ] && shift
+
+case "$command" in
+  start)
+    folder="" host="" device="" bundle="" append="" output="text"
+    while [ $# -gt 0 ]; do
+      case "$1" in
+        --folder|--host|--device|--bundle)
+          [ $# -ge 2 ] || usage_error "$1 needs a value"
+          case "$2" in --*) usage_error "$1 needs a value" ;; esac
+          case "$1" in
+            --folder) folder=$2 ;;
+            --host) host=$2 ;;
+            --device) device=$2 ;;
+            --bundle) bundle=$2 ;;
+          esac
+          shift 2
+          ;;
+        --append) append=1; shift ;;
+        --json) output="json"; shift ;;
+        *) usage_error "unknown option $1" ;;
+      esac
+    done
+    [ -n "$folder" ] || usage_error "start needs --folder"
+    folder=$(python3 -I -c 'import os, sys; print(os.path.abspath(os.path.expanduser(sys.argv[1])))' "$folder")
+    send start "folder=$folder" "host=$host" "device=$device" "bundle=$bundle" "append=$append"
+    report "$output"
+    ;;
+  stop|status)
+    output="text"
+    while [ $# -gt 0 ]; do
+      case "$1" in
+        --json) output="json"; shift ;;
+        *) usage_error "unknown option $1" ;;
+      esac
+    done
+    send "$command"
+    report "$output"
+    ;;
+  devices)
+    output="text"
+    while [ $# -gt 0 ]; do
+      case "$1" in
+        --json) output="json"; shift ;;
+        *) usage_error "unknown option $1" ;;
+      esac
+    done
+    send status
+    devices "$output"
+    ;;
+  -h|--help|help)
+    usage
+    ;;
+  "")
+    usage >&2
+    exit 2
+    ;;
+  *)
+    usage_error "unknown command $command"
+    ;;
+esac

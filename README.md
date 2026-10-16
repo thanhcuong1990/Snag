@@ -96,6 +96,26 @@ When a new device connects over your local network, it appears in the sidebar an
 
 ![Device Authorization](https://raw.githubusercontent.com/thanhcuong1990/Snag/main/assets/device_auth.png)
 
+### Fixture capture from the command line
+
+The **Capture** menu records every completed response to a folder as `NNNN-<slug>.json` (the exact bytes the server sent) plus a `.meta.json` sidecar. `scripts/snag-capture` drives the same recording without the menu, so a script or an agent can run it:
+
+```bash
+scripts/snag-capture devices                       # devices and apps Snag has seen
+scripts/snag-capture start --folder ~/captures/pdp \
+  --host api-staging.example.com --device <simulator UDID> --bundle com.example.app
+scripts/snag-capture status                        # or: status --json
+scripts/snag-capture stop
+```
+
+- `start` creates the folder, refuses one that already holds files unless `--append` (which continues the numbering), and keeps only the given host, device and bundle id. With no filter it records everything. The folder must be an absolute path.
+- `--device` matches a device name or id exactly, so `iPhone 16 Pro` never picks up `iPhone 16 Pro Max`. On a simulator the id is its UDID.
+- A scripted recording leaves the menu's saved folder, host filter and device setting untouched, and shows `REC` on the dock icon while it runs.
+- Every command takes `--json` and prints the raw status file (`devices --json` prints the device list), so a script never has to parse the human summary. Exit codes: `0` ok, `1` the app refused the command, `2` usage error, `3` the app did not answer in time.
+- Commands reach the app through the `snag://capture/{start,stop,status}` URL scheme, and the app answers in `~/Library/Application Support/Snag/capture-status.json`. Set `SNAG_APP` to target a specific build (default `/Applications/Snag.app`); a running Snag older than this feature ignores the commands, and the CLI reports a timeout.
+
+A URL scheme is open to anything on the machine, a web page included, so Snag writes a token to `~/Library/Application Support/Snag/capture-token` (mode `0600`) on first launch and refuses any command that does not carry it. The CLI reads the file for you; only a caller that can read it can start a recording. The token is passed on the `open(1)` command line, so it appears briefly in the process list.
+
 ### Build DMG + upload to GitHub Releases (local)
 
 Prerequisites:

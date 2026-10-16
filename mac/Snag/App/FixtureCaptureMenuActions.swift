@@ -64,7 +64,7 @@ final class FixtureCaptureMenuActions: NSObject, NSMenuItemValidation {
     }
 
     @objc func revealFolder(_ sender: Any?) {
-        guard let destination = FixtureCaptureService.shared.destination else { return }
+        guard let destination = FixtureCaptureService.shared.activeDestination else { return }
         NSWorkspace.shared.activateFileViewerSelecting([destination])
     }
 
@@ -72,16 +72,27 @@ final class FixtureCaptureMenuActions: NSObject, NSMenuItemValidation {
         let service = FixtureCaptureService.shared
         switch Tag(rawValue: menuItem.tag) {
         case .toggleRecording:
-            menuItem.title = service.isRecording
-                ? "Stop Recording".localized + captureCountSuffix(service.writtenCount)
-                : "Start Recording".localized
+            if let session = service.session {
+                menuItem.title = "Stop Recording".localized + captureCountSuffix(service.writtenCount)
+                    + scriptedScopeSuffix(session.scope)
+            } else {
+                menuItem.title = service.isRecording
+                    ? "Stop Recording".localized + captureCountSuffix(service.writtenCount)
+                    : "Start Recording".localized
+            }
             return true
         case .revealFolder:
-            menuItem.title = service.destination.map {
+            menuItem.title = service.activeDestination.map {
                 "Reveal".localized + " “\($0.lastPathComponent)”"
             } ?? "Reveal Capture Folder".localized
-            return service.destination != nil
+            return service.activeDestination != nil
         case .selectedDeviceOnly:
+            // A scripted session carries its own scope and ignores this setting.
+            if let session = service.session {
+                menuItem.state = .off
+                menuItem.title = "Record Selected Device Only".localized + scriptedScopeSuffix(session.scope)
+                return false
+            }
             menuItem.state = service.selectedDeviceOnly ? .on : .off
             menuItem.title = service.selectedDeviceOnly
                 ? "Record Selected Device Only".localized + targetDeviceSuffix(service.targetDevice)
@@ -101,6 +112,12 @@ final class FixtureCaptureMenuActions: NSObject, NSMenuItemValidation {
 
     private func captureCountSuffix(_ count: Int) -> String {
         count == 0 ? "" : " (\(count))"
+    }
+
+    private func scriptedScopeSuffix(_ scope: CaptureScope) -> String {
+        let parts = [scope.device, scope.bundleId].filter { !$0.isEmpty }
+        let scopeText = parts.isEmpty ? "Every Device".localized : parts.joined(separator: ", ")
+        return " — " + "Scripted".localized + ": \(scopeText)"
     }
 
     private func targetDeviceSuffix(_ device: SnagDeviceController?) -> String {
