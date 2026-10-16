@@ -24,6 +24,30 @@ final class FixtureCaptureService: ObservableObject {
     @Published var selectedDeviceOnly: Bool = false {
         didSet { UserDefaults.standard.set(selectedDeviceOnly, forKey: Self.selectedDeviceOnlyKey) }
     }
+    @Published private(set) var session: CaptureSession?
+    @Published private(set) var lastRecordingFolder: URL?
+
+    /// Settings of a scripted recording, applied without touching the saved menu settings.
+    struct CaptureSession: Equatable {
+        let folder: URL
+        let hostFilter: String
+        let scope: CaptureScope
+    }
+
+    var activeDestination: URL? { session?.folder ?? destination }
+    var activeHostFilter: String { session?.hostFilter ?? hostFilter }
+
+    enum StartError: Error, Equatable, LocalizedError {
+        case folderNotEmpty(String)
+        case cannotCreateFolder(String)
+
+        var errorDescription: String? {
+            switch self {
+            case .folderNotEmpty(let path): return "\(path) already has captures; pass append to add to it."
+            case .cannotCreateFolder(let reason): return "Cannot create the capture folder: \(reason)"
+            }
+        }
+    }
 
     private static let destinationKey = "fixtureCapture.destination"
     private static let hostFilterKey = "fixtureCapture.hostFilter"
@@ -46,25 +70,48 @@ final class FixtureCaptureService: ObservableObject {
     }
 
     func start() {
+        session = nil
         guard destination != nil else {
             lastError = "Choose a folder before recording."
             return
         }
+        begin()
+    }
+
+    /// Starts a scripted recording with every filter set explicitly, ignoring menu settings.
+    func start(_ options: CaptureStartOptions) throws {
+        let folder = URL(fileURLWithPath: options.folder, isDirectory: true)
+        do {
+            try FileManager.default.createDirectory(at: folder, withIntermediateDirectories: true)
+        } catch {
+            throw StartError.cannotCreateFolder(error.localizedDescription)
+        }
+        if !options.append, CaptureFolder.hasVisibleContents(folder) {
+            throw StartError.folderNotEmpty(folder.path)
+        }
+        if isRecording { stop() }
+        session = CaptureSession(folder: folder, hostFilter: options.hostFilter, scope: options.scope)
+        begin()
+    }
+
+    func stop() {
+        isRecording = false
+        session = nil
+    }
+
+    private func begin() {
         seenPacketIds.removeAll()
-        sequence = 0
+        sequence = activeDestination.map(CaptureFolder.highestSequence(in:)) ?? 0
+        lastRecordingFolder = activeDestination
         writtenCount = 0
         lastError = nil
         isRecording = true
     }
 
-    func stop() {
-        isRecording = false
-    }
-
     /// Called for every packet the publisher surfaces; ignores anything without
     /// a completed response so a fixture always reflects a finished call.
     func record(_ packet: SnagPacket) {
-        guard isRecording, let destination else { return }
+        guard isRecording, let destination = activeDestination else { return }
         guard matchesSelectedDevice(packet) else { return }
         guard let info = packet.requestInfo,
               let url = info.url,
@@ -90,14 +137,28 @@ final class FixtureCaptureService: ObservableObject {
     }
 
     private func matchesSelectedDevice(_ packet: SnagPacket) -> Bool {
+        if let session { return matches(packet, scope: session.scope) }
         guard selectedDeviceOnly else { return true }
         guard let target = targetDevice?.deviceId?.lowercased() else { return false }
         let deviceId = (packet.device?.deviceId ?? packet.control?.deviceId)?.lowercased()
         return deviceId == target
     }
 
+    private func matches(_ packet: SnagPacket, scope: CaptureScope) -> Bool {
+        guard !scope.isEmpty else { return true }
+        let deviceId = (packet.device?.deviceId ?? packet.control?.deviceId)?.lowercased()
+        var deviceName = packet.device?.deviceName
+        var bundleId = packet.project?.bundleId
+        if let deviceId, deviceName == nil || bundleId == nil,
+           let known = SnagController.shared.knownDevice(id: deviceId) {
+            deviceName = deviceName ?? known.device.deviceName
+            bundleId = bundleId ?? known.project.bundleId
+        }
+        return scope.matches(deviceId: deviceId, deviceName: deviceName, bundleId: bundleId)
+    }
+
     private func matchesHostFilter(_ url: String) -> Bool {
-        Self.matches(url: url, hostFilter: hostFilter)
+        Self.matches(url: url, hostFilter: activeHostFilter)
     }
 
     /// Whether a URL passes the host filter. An empty filter passes everything.

@@ -96,6 +96,23 @@ When a new device connects over your local network, it appears in the sidebar an
 
 ![Device Authorization](https://raw.githubusercontent.com/thanhcuong1990/Snag/main/assets/device_auth.png)
 
+### Fixture capture from the command line
+
+The **Capture** menu records every completed response to a folder as `NNNN-<slug>.json` (the exact bytes the server sent) plus a `.meta.json` sidecar. `scripts/snag-capture` drives the same recording without the menu, so a script or an agent can run it:
+
+```bash
+scripts/snag-capture devices                       # devices and apps Snag has seen
+scripts/snag-capture start --folder ~/captures/pdp \
+  --host api-staging.example.com --device <simulator UDID> --bundle com.example.app
+scripts/snag-capture status                        # or: status --json
+scripts/snag-capture stop
+```
+
+- `start` creates the folder, refuses one that already holds files unless `--append` (which continues the numbering), and keeps only the given host, device and bundle id. With no filter it records everything.
+- `--device` matches a device name or id exactly, so `iPhone 16 Pro` never picks up `iPhone 16 Pro - RN`. On a simulator the id is its UDID.
+- A scripted recording leaves the menu's saved folder, host filter and device setting untouched.
+- Commands reach the app through the `snag://capture/{start,stop,status}` URL scheme, and the app answers in `~/Library/Application Support/Snag/capture-status.json`. Set `SNAG_APP` to target a specific build (default `/Applications/Snag.app`); a running Snag older than this feature ignores the commands, and the CLI reports a timeout.
+
 ### Build DMG + upload to GitHub Releases (local)
 
 Prerequisites:

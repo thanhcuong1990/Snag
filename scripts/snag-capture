@@ -1,0 +1,150 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+SNAG_APP="${SNAG_APP:-/Applications/Snag.app}"
+STATUS_FILE="${SNAG_STATUS_FILE:-$HOME/Library/Application Support/Snag/capture-status.json}"
+TIMEOUT="${SNAG_TIMEOUT:-10}"
+
+usage() {
+  cat <<'EOF'
+snag-capture — drive Snag's fixture recording without the Capture menu
+
+Usage:
+  snag-capture start --folder DIR [--host TEXT] [--device NAME|ID] [--bundle ID] [--append]
+  snag-capture stop
+  snag-capture status [--json]
+  snag-capture devices
+
+start   Records every completed response into DIR as NNNN-<slug>.json plus a
+        .meta.json sidecar. DIR is created if missing; a DIR that already holds
+        files is refused unless --append, which continues the numbering.
+        --host    keep only URLs containing TEXT (default: everything)
+        --device  keep only one device, by exact name or id (see `devices`)
+        --bundle  keep only one app, by exact bundle id
+stop    Stops recording and prints how many captures were written.
+status  Prints the recording state (--json for the raw status file).
+devices Lists the devices and apps Snag has seen, for --device / --bundle.
+
+Environment:
+  SNAG_APP          Snag.app to send commands to (default /Applications/Snag.app)
+  SNAG_STATUS_FILE  status file the app writes (default ~/Library/Application Support/Snag/capture-status.json)
+  SNAG_TIMEOUT      seconds to wait for the app to answer (default 10)
+
+Exit codes: 0 ok, 1 command failed or Snag did not answer, 2 usage error.
+EOF
+}
+
+die() { echo "snag-capture: $*" >&2; exit 1; }
+
+field() {
+  python3 -I - "$STATUS_FILE" "$1" <<'PY'
+import json, sys
+value = json.load(open(sys.argv[1])).get(sys.argv[2], "")
+print(str(value).lower() if isinstance(value, bool) else value)
+PY
+}
+
+wait_for() {
+  local request_id=$1
+  local deadline=$((SECONDS + TIMEOUT))
+  while [ "$SECONDS" -lt "$deadline" ]; do
+    if [ -f "$STATUS_FILE" ] && [ "$(field lastRequestId 2>/dev/null || true)" = "$request_id" ]; then
+      return 0
+    fi
+    sleep 0.2
+  done
+  die "Snag did not answer within ${TIMEOUT}s. Quit any older Snag that lacks capture commands, or point SNAG_APP at the right build (now: $SNAG_APP)."
+}
+
+send() {
+  local action=$1
+  shift
+  [ -d "$SNAG_APP" ] || die "no Snag app at $SNAG_APP (set SNAG_APP)"
+  local request_id url
+  request_id=$(uuidgen)
+  url=$(python3 -I - "$action" "$request_id" "$@" <<'PY'
+import sys, urllib.parse
+action, request_id, *pairs = sys.argv[1:]
+query = [tuple(pair.split("=", 1)) for pair in pairs]
+query = [(key, value) for key, value in query if value]
+query.append(("req", request_id))
+print(f"snag://capture/{action}?" + urllib.parse.urlencode(query, quote_via=urllib.parse.quote))
+PY
+)
+  open -g -a "$SNAG_APP" "$url"
+  wait_for "$request_id"
+  local error
+  error=$(field commandError)
+  [ -z "$error" ] || die "$error"
+}
+
+summary() {
+  python3 -I - "$STATUS_FILE" <<'PY'
+import json, sys
+s = json.load(open(sys.argv[1]))
+scope = ", ".join(f"{k}={s[k]}" for k in ("hostFilter", "device", "bundleId") if s.get(k)) or "everything"
+if s.get("recording"):
+    print(f"recording: {s.get('writtenCount', 0)} capture(s) in {s.get('destination') or '(no folder)'}")
+    print(f"scope: {scope}")
+else:
+    folder = s.get("lastRecordingFolder") or "(none this session)"
+    print(f"stopped: last recording wrote {s.get('writtenCount', 0)} capture(s) to {folder}")
+if s.get("recording") and s.get("selectedDeviceOnly"):
+    print("note: this menu recording keeps only the device selected in Snag")
+if s.get("lastError"):
+    print(f"last error: {s['lastError']}")
+PY
+}
+
+devices() {
+  python3 -I - "$STATUS_FILE" <<'PY'
+import json, sys
+rows = json.load(open(sys.argv[1])).get("devices", [])
+if not rows:
+    print("no devices seen yet; open the app on the device and try again")
+for d in rows:
+    print(f"{d.get('name') or '?'}\t{d.get('id') or '?'}\t{d.get('bundleId') or '?'}\t{d.get('project') or ''}")
+PY
+}
+
+command=${1:-}
+[ $# -gt 0 ] && shift
+
+case "$command" in
+  start)
+    folder="" host="" device="" bundle="" append=""
+    while [ $# -gt 0 ]; do
+      case "$1" in
+        --folder) folder=${2:-}; shift 2 ;;
+        --host) host=${2:-}; shift 2 ;;
+        --device) device=${2:-}; shift 2 ;;
+        --bundle) bundle=${2:-}; shift 2 ;;
+        --append) append=1; shift ;;
+        *) usage >&2; exit 2 ;;
+      esac
+    done
+    [ -n "$folder" ] || { usage >&2; exit 2; }
+    folder=$(python3 -I -c 'import os, sys; print(os.path.abspath(os.path.expanduser(sys.argv[1])))' "$folder")
+    send start "folder=$folder" "host=$host" "device=$device" "bundle=$bundle" "append=$append"
+    summary
+    ;;
+  stop)
+    send stop
+    summary
+    ;;
+  status)
+    send status
+    if [ "${1:-}" = "--json" ]; then cat "$STATUS_FILE"; else summary; fi
+    ;;
+  devices)
+    send status
+    devices
+    ;;
+  -h|--help|help)
+    usage
+    ;;
+  *)
+    usage >&2
+    exit 2
+    ;;
+esac

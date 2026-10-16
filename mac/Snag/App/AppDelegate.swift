@@ -17,6 +17,8 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         // Setup application menu
         SnagMenu.setup()
 
+        CaptureControl.shared.writeStatus()
+
         // Create and configure main window using helper extension
         window = NSWindow.createMainWindow(contentViewController: ViewController())
         window.makeKeyAndOrderFront(nil)
@@ -81,6 +83,12 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         }
         if let didWakeObserver {
             NSWorkspace.shared.notificationCenter.removeObserver(didWakeObserver)
+        }
+    }
+
+    func application(_ application: NSApplication, open urls: [URL]) {
+        for url in urls where url.scheme?.lowercased() == "snag" {
+            CaptureControl.shared.handle(url)
         }
     }
 

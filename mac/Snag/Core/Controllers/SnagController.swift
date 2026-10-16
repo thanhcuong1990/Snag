@@ -214,6 +214,11 @@ class SnagController: NSObject, @MainActor SnagPublisherDelegate, ObservableObje
         }
     }
     
+    /// The project and device a lowercased device id has been seen with.
+    func knownDevice(id: String) -> (project: SnagProjectController, device: SnagDeviceController)? {
+        deviceIndex[id.lowercased()]
+    }
+
     // MARK: - Route helpers
 
     func selectProject(_ project: SnagProjectController?) {
